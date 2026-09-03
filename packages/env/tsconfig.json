@@ -1,0 +1,3 @@
+{
+  "extends": "@olivia/config/tsconfig.base.json"
+}

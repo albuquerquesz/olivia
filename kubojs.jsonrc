@@ -1,0 +1,37 @@
+// kubojs
+//
+// Website: https://www.kubojs.dev/
+// Stack Builder: https://www.kubojs.dev/new
+// Analytics: https://www.kubojs.dev/analytics
+// Showcase: https://www.kubojs.dev/showcase
+//
+// Add new addons with: bun create kubojs add
+// This file is safe to delete
+
+{
+  "$schema": "https://r2.kubojs.dev/schema.json",
+  "version": "0.1.1",
+  "createdAt": "2026-09-03T23:56:50.278Z",
+  "reproducibleCommand": "bun create kubojs@latest olivia --frontend none --backend elysia --runtime bun --database none --orm none --api none --auth none --payments none --disable-observability --communication none --addons turborepo --examples none --testing none --db-setup none --web-deploy none --server-deploy none --git --package-manager bun --no-install",
+  "addonOptions": {},
+  "dbSetupOptions": {},
+  "database": "none",
+  "orm": "none",
+  "backend": "elysia",
+  "runtime": "bun",
+  "frontend": [],
+  "addons": [
+    "turborepo"
+  ],
+  "examples": [],
+  "testing": [],
+  "auth": "none",
+  "payments": [],
+  "observability": [],
+  "communication": "none",
+  "packageManager": "bun",
+  "dbSetup": "none",
+  "api": "none",
+  "webDeploy": "none",
+  "serverDeploy": "none"
+}
