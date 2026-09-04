@@ -1,0 +1,285 @@
+{
+  "schema_version": "1.0",
+  "source_file": "../rules/architecture-diagram.png",
+  "title": "Arquitetura da Olivia",
+  "summary": "A Olivia orienta Mariana enquanto ela grava com os Ray-Ban Meta. O celular é o companion app e ponte obrigatória do Device Access Toolkit; ele analisa frames, emite feedback por áudio, registra eventos e prepara a revisão pós-sessão.",
+  "actors": [
+    {
+      "id": "mariana",
+      "name": "Mariana",
+      "context": "Está de luva, com as mãos na máquina; controla a sessão por voz e ajusta o próprio corpo seguindo o feedback."
+    }
+  ],
+  "zones": [
+    {
+      "id": "mobile_app",
+      "name": "Celular — app Olivia",
+      "role": "Companion app e ponte obrigatória do Device Access Toolkit",
+      "components": [
+        "wake_word",
+        "session",
+        "frame_sampler",
+        "guidance_engine",
+        "audio_feedback",
+        "timeline",
+        "transcription"
+      ]
+    },
+    {
+      "id": "cloud",
+      "name": "Nuvem",
+      "role": "Único ponto fora do dispositivo",
+      "components": [
+        "ai_checkpoint"
+      ]
+    },
+    {
+      "id": "glasses",
+      "name": "Óculos — Ray-Ban Meta Wayfarer Gen 2",
+      "role": "Dispositivo que captura mídia e reproduz áudio",
+      "components": [
+        "camera",
+        "microphone",
+        "native_recording",
+        "audio_checkpoint"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "wake_word",
+      "name": "Wake word",
+      "zone": "mobile_app",
+      "implementation": "Porcupine on-device",
+      "purpose": "Reconhece comandos de voz sem áudio sair do aparelho."
+    },
+    {
+      "id": "session",
+      "name": "Sessão",
+      "zone": "mobile_app",
+      "implementation": "Device Access Toolkit",
+      "states": [
+        "STARTED",
+        "PAUSED",
+        "STOPPED",
+        "DEGRADED"
+      ],
+      "purpose": "Controla o ciclo de vida da gravação."
+    },
+    {
+      "id": "frame_sampler",
+      "name": "Amostrador",
+      "zone": "mobile_app",
+      "configuration": {
+        "sampling_rate_fps": 0.5,
+        "interval_seconds": 2,
+        "timeout_without_frame_seconds": 4
+      },
+      "purpose": "Recebe frames e limita a análise para economizar bateria."
+    },
+    {
+      "id": "guidance_engine",
+      "name": "Motor de direção",
+      "zone": "mobile_app",
+      "configuration": {
+        "cooldown_between_corrections_seconds": 4
+      },
+      "purpose": "Decide se deve emitir uma correção e evita feedback repetitivo."
+    },
+    {
+      "id": "audio_feedback",
+      "name": "Saída de áudio Bluetooth",
+      "zone": "mobile_app",
+      "modes": [
+        "Modo Voz: Android TextToSpeech",
+        "Modo Sinal: WAV local"
+      ],
+      "events": [
+        "queda",
+        "retomada"
+      ],
+      "purpose": "Entrega instruções e tons nos óculos."
+    },
+    {
+      "id": "timeline",
+      "name": "Timeline de marcas",
+      "zone": "mobile_app",
+      "purpose": "Guarda correções ao vivo e cortes sugeridos pela fala."
+    },
+    {
+      "id": "transcription",
+      "name": "Transcrição",
+      "zone": "mobile_app",
+      "implementation": "Whisper",
+      "timing": "Pós-sessão",
+      "purpose": "Converte o áudio do take em informação para revisão e cortes."
+    },
+    {
+      "id": "ai_checkpoint",
+      "name": "Checkpoint IA",
+      "zone": "cloud",
+      "implementation": "Gemini 3.5 Flash-Lite via Firebase AI Logic SDK",
+      "outputs": [
+        "enquadramento",
+        "luz",
+        "horizonte"
+      ]
+    },
+    {
+      "id": "camera",
+      "name": "Checkpoint câmera",
+      "zone": "glasses",
+      "details": "Câmera 12 MP ultra-wide; sensor único, duas saídas."
+    },
+    {
+      "id": "microphone",
+      "name": "Microfone",
+      "zone": "glasses",
+      "details": "Array de 5 microfones; trilha gravada, nunca ao vivo; DAT não expõe mic em tempo real."
+    },
+    {
+      "id": "native_recording",
+      "name": "Gravação nativa",
+      "zone": "glasses",
+      "details": "Vídeo 3K a 30 fps com áudio; 32 GB flash no dispositivo."
+    },
+    {
+      "id": "audio_checkpoint",
+      "name": "Checkpoint áudio",
+      "zone": "glasses",
+      "details": "Alto-falante open-ear entrega a correção."
+    }
+  ],
+  "flows": [
+    {
+      "from": "mariana",
+      "to": "wake_word",
+      "data": "Comando 'Oi, Olivia, gravar'",
+      "transport": "voz"
+    },
+    {
+      "from": "wake_word",
+      "to": "session",
+      "action": "startSession; comandos de pausar e terminar atualizam o estado"
+    },
+    {
+      "from": "camera",
+      "to": "frame_sampler",
+      "data": "Saída 1: frame 720×1280",
+      "transport": "Bluetooth",
+      "role": "sensor"
+    },
+    {
+      "from": "frame_sampler",
+      "to": "ai_checkpoint",
+      "data": "Frame classificado",
+      "transport": "HTTPS"
+    },
+    {
+      "from": "ai_checkpoint",
+      "to": "guidance_engine",
+      "data": "Desvio classificado"
+    },
+    {
+      "from": "frame_sampler",
+      "to": "session",
+      "condition": "Sem frame por 4 segundos",
+      "action": "Marca a sessão como DEGRADED"
+    },
+    {
+      "from": "guidance_engine",
+      "to": "audio_feedback",
+      "data": "Correção de direção"
+    },
+    {
+      "from": "audio_feedback",
+      "to": "audio_checkpoint",
+      "data": "Saída Bluetooth roteada aos óculos",
+      "transport": "Bluetooth 5.3"
+    },
+    {
+      "from": "guidance_engine",
+      "to": "timeline",
+      "data": "Correção obedecida vira marca"
+    },
+    {
+      "from": "native_recording",
+      "to": "transcription",
+      "data": "Saída 2: vídeo 3K e áudio",
+      "transport": "Wi-Fi 6 após encerrar a sessão"
+    },
+    {
+      "from": "transcription",
+      "to": "timeline",
+      "data": "Cortes sugeridos a partir da fala"
+    },
+    {
+      "from": "timeline",
+      "to": "mariana",
+      "data": "Revisão e exportação para CapCut"
+    },
+    {
+      "from": "audio_feedback",
+      "to": "mariana",
+      "data": "Exemplo: 'Vire 20 graus à direita'"
+    },
+    {
+      "from": "mariana",
+      "to": "camera",
+      "data": "Ajuste de corpo; mesmo passo fecha o loop"
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "ai",
+      "requirement": "Uso de IA",
+      "evidence": "Gemini classifica enquadramento, luz e horizonte."
+    },
+    {
+      "id": "camera",
+      "requirement": "Câmera ou microfone",
+      "evidence": "Frame 720×1280 da câmera é usado como entrada do loop ao vivo."
+    },
+    {
+      "id": "audio",
+      "requirement": "Output por áudio",
+      "evidence": "Fala ou WAV é roteado por Bluetooth para o alto-falante open-ear."
+    },
+    {
+      "id": "privacy",
+      "requirement": "Privacidade e dados",
+      "evidence": "Frame é efêmero, descartado após classificar; nenhuma IA usa o microfone durante o take; vídeo final permanece com o criador."
+    },
+    {
+      "id": "battery",
+      "requirement": "Eficiência de bateria",
+      "evidence": "Amostragem de 0,5 fps; inferência a cada 2 segundos; tons WAV locais e sessão estimada de 30–60 segundos."
+    }
+  ],
+  "constraints": [
+    "O celular é a ponte obrigatória para o Device Access Toolkit.",
+    "A análise de frame envia somente um frame por vez para a nuvem.",
+    "Não há streaming de microfone ao vivo pelo DAT.",
+    "O vídeo 3K é transferido somente após encerrar a sessão.",
+    "A mesma pessoa ajusta o corpo após receber a instrução; isso fecha o loop de correção."
+  ],
+  "dat_android_integration": {
+    "rules_file": "meta_wearables_dat_android.json",
+    "required_artifacts": [
+      "mwdat-core",
+      "mwdat-camera",
+      "mwdat-mockdevice"
+    ],
+    "explicitly_not_used": [
+      "mwdat-display"
+    ],
+    "setup_before_hardware_day": [
+      "Android companion project",
+      "DAT package authentication",
+      "Wearables Developer Center application ID",
+      "MockDeviceKit smoke flow",
+      "analytics and crash reporting opt-out"
+    ],
+    "runtime_boundary": "O DAT fica atrás de adapters de sessão e FrameSource; o domínio da Olivia não importa tipos do SDK."
+  }
+}

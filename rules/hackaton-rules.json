@@ -1,0 +1,495 @@
+{
+  "schema_version": "1.0",
+  "source_file": "hackaton-rules.txt",
+  "sections": [
+    {
+      "id": "1",
+      "title": "Apresentação",
+      "content": "O AI Glasses Brasil é um programa de open innovation dedicado à criação de soluções\r\ntecnológicas com alto potencial de adoção no mercado e que se apoiam em tendências emergentes. A iniciativa é uma realização conjunta do Centro de Excelência em\r\nInteligência Artificial (CEIA), Universidade Federal de Goiás (UFG), Fundação de\r\nApoio à Pesquisa (FUNAPE) e Meta e combina bootcamp técnico-imersivo e\r\nhackathons competitivos, conectando participantes a mentores, avaliadores e pesquisadores com sólida visão mercadológica e científica. O programa convida desenvolvedores, pesquisadores e empreendedores a transformarem ideias inovadoras em\r\nprotótipos validados.\r\nEm parceria com a Meta, o programa explora as capacidades do Meta Wearables\r\nDevice Access Toolkit e dos AI Glasses no contexto do lançamento da Meta no\r\nBrasil, conectando desenvolvedores de todo o país ao hardware e ao ecossistema de desenvolvimento de óculos inteligentes.\r\nOs óculos Meta operam sem display, tendo como canais principais a câmera, o microfone e os alto-falantes. Por isso, as soluções desenvolvidas devem ser concebidas para interações baseadas em visão e voz, com a resposta ao usuário entregue\r\npor áudio.",
+      "paragraphs": [
+        "O AI Glasses Brasil é um programa de open innovation dedicado à criação de soluções\r\ntecnológicas com alto potencial de adoção no mercado e que se apoiam em tendências emergentes. A iniciativa é uma realização conjunta do Centro de Excelência em\r\nInteligência Artificial (CEIA), Universidade Federal de Goiás (UFG), Fundação de\r\nApoio à Pesquisa (FUNAPE) e Meta e combina bootcamp técnico-imersivo e\r\nhackathons competitivos, conectando participantes a mentores, avaliadores e pesquisadores com sólida visão mercadológica e científica. O programa convida desenvolvedores, pesquisadores e empreendedores a transformarem ideias inovadoras em\r\nprotótipos validados.\r\nEm parceria com a Meta, o programa explora as capacidades do Meta Wearables\r\nDevice Access Toolkit e dos AI Glasses no contexto do lançamento da Meta no\r\nBrasil, conectando desenvolvedores de todo o país ao hardware e ao ecossistema de desenvolvimento de óculos inteligentes.\r\nOs óculos Meta operam sem display, tendo como canais principais a câmera, o microfone e os alto-falantes. Por isso, as soluções desenvolvidas devem ser concebidas para interações baseadas em visão e voz, com a resposta ao usuário entregue\r\npor áudio."
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Objetivos",
+      "content": "O Programa AI Glasses Brasil foi concebido para estimular a criação de soluções para\r\nAI Glasses que combinem vanguarda tecnológica com aderência real ao mercado.\r\nPara isso, o programa estabelece os seguintes objetivos específicos:\r\n● Explorar o hardware e o toolkit da Meta: promover o uso prático do Meta\r\nWearables Device Access Toolkit e dos AI Glasses como base para novas\r\nexperiências.\r\n● Estimular soluções: incentivar protótipos prontos para validação com usuários reais, capazes de gerar valor imediato por meio de interfaces de visão e\r\nvoz.\r\n● Orientar-se por tendências e inovação: antecipar os movimentos tecnológicos em computação vestível (wearables) e agentes de IA.\r\n● Desenvolver competências profissionais: capacitar em Android/Kotlin ou\r\nIOS/Swift no Meta Wearables Device Access Toolkit e no desenvolvimento de\r\nagentes de IA aplicados a dispositivos vestíveis.\r\n● Gerar impacto e diversidade: estimular projetos com impacto social e equipes\r\nmultidisciplinares com diversidade de perfis.\r\n● Promover experiências imersivas: explorar o potencial dos óculos inteligentes para experiências altamente imersivas e contextuais, aumentando\r\no engajamento e a relevância das experiências.",
+      "paragraphs": [
+        "O Programa AI Glasses Brasil foi concebido para estimular a criação de soluções para\r\nAI Glasses que combinem vanguarda tecnológica com aderência real ao mercado.\r\nPara isso, o programa estabelece os seguintes objetivos específicos:\r\n● Explorar o hardware e o toolkit da Meta: promover o uso prático do Meta\r\nWearables Device Access Toolkit e dos AI Glasses como base para novas\r\nexperiências.\r\n● Estimular soluções: incentivar protótipos prontos para validação com usuários reais, capazes de gerar valor imediato por meio de interfaces de visão e\r\nvoz.\r\n● Orientar-se por tendências e inovação: antecipar os movimentos tecnológicos em computação vestível (wearables) e agentes de IA.\r\n● Desenvolver competências profissionais: capacitar em Android/Kotlin ou\r\nIOS/Swift no Meta Wearables Device Access Toolkit e no desenvolvimento de\r\nagentes de IA aplicados a dispositivos vestíveis.\r\n● Gerar impacto e diversidade: estimular projetos com impacto social e equipes\r\nmultidisciplinares com diversidade de perfis.\r\n● Promover experiências imersivas: explorar o potencial dos óculos inteligentes para experiências altamente imersivas e contextuais, aumentando\r\no engajamento e a relevância das experiências."
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Estrutura do Programa",
+      "content": "O programa foi desenhado para conduzir as equipes progressivamente, da descoberta\r\ndo hardware até o desenvolvimento real de soluções com os AI Glasses da Meta. A\r\ntrajetória é organizada em 7 (sete) etapas, agrupadas em 3 (três) fases. Todas as\r\netapas são online, à exceção da Etapa 7 (Hackathon Presencial).",
+      "paragraphs": [
+        "O programa foi desenhado para conduzir as equipes progressivamente, da descoberta\r\ndo hardware até o desenvolvimento real de soluções com os AI Glasses da Meta. A\r\ntrajetória é organizada em 7 (sete) etapas, agrupadas em 3 (três) fases. Todas as\r\netapas são online, à exceção da Etapa 7 (Hackathon Presencial)."
+      ]
+    },
+    {
+      "id": "3.1",
+      "title": "Fases e etapas",
+      "content": "Fase 1 - Preparação (Descoberta e Imersão). Divulgação, inscrição, primeiro filtro e\r\ncapacitação técnica online (Etapas 1 a 3). A equipe se inscreve com seu projeto/ideia,\r\npassa por uma primeira seleção e recebe acesso a um curso exclusivo sobre o Meta\r\nWearables Device Access Toolkit.\r\nFase 2 - Maturação (Prototipagem). Maturação e refinamento das propostas (Etapas",
+      "paragraphs": [
+        "Fase 1 - Preparação (Descoberta e Imersão). Divulgação, inscrição, primeiro filtro e\r\ncapacitação técnica online (Etapas 1 a 3). A equipe se inscreve com seu projeto/ideia,\r\npassa por uma primeira seleção e recebe acesso a um curso exclusivo sobre o Meta\r\nWearables Device Access Toolkit.\r\nFase 2 - Maturação (Prototipagem). Maturação e refinamento das propostas (Etapas"
+      ]
+    },
+    {
+      "id": "4",
+      "title": "e 5). A equipe aprofunda a pesquisa, projeta a ideia e revisa a proposta.",
+      "content": "Fase 3 - Execução (Desenvolvimento). Seleção final e hackathon presencial na\r\nsede da Meta Brasil (Etapas 6 e 7). No dia do evento, a equipe tem acesso aos equipamentos para construir e validar a solução projetada.",
+      "paragraphs": [
+        "Fase 3 - Execução (Desenvolvimento). Seleção final e hackathon presencial na\r\nsede da Meta Brasil (Etapas 6 e 7). No dia do evento, a equipe tem acesso aos equipamentos para construir e validar a solução projetada."
+      ]
+    },
+    {
+      "id": "3.2",
+      "title": "Visão geral das 7 etapas",
+      "content": "Etapa Nome Formato",
+      "paragraphs": [
+        "Etapa Nome Formato"
+      ]
+    },
+    {
+      "id": "1",
+      "title": "Inscrição no Programa Online",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "2",
+      "title": "Primeiro Filtro Online",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "3",
+      "title": "Cursos Online Online",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "4",
+      "title": "Ideathon Online",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "5",
+      "title": "Entrega Final do Projeto/Ideia Online",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "6",
+      "title": "Segundo Filtro Online",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "7",
+      "title": "Hackathon Presencial Presencial (São Paulo)",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "3.3",
+      "title": "Composição das equipes",
+      "content": "● As equipes são formadas por 3 (três) integrantes.\r\n● Ao menos 1 (um) integrante deve ter experiência em Android/Kotlin ou\r\nIOS/Swift.\r\n● Recomenda-se a formação de equipes multidisciplinares e com diversidade de\r\nperfis.\r\n● Na hipótese de desligamento de integrante, a equipe deverá formalizar o pedido de substituição à organização, apresentando justificativa fundamentada,\r\nsujeita à análise pela Comissão Organizadora. A continuidade com 2 (dois)\r\nmembros fica condicionada à manutenção da competência técnica mínima exigida.",
+      "paragraphs": [
+        "● As equipes são formadas por 3 (três) integrantes.\r\n● Ao menos 1 (um) integrante deve ter experiência em Android/Kotlin ou\r\nIOS/Swift.\r\n● Recomenda-se a formação de equipes multidisciplinares e com diversidade de\r\nperfis.\r\n● Na hipótese de desligamento de integrante, a equipe deverá formalizar o pedido de substituição à organização, apresentando justificativa fundamentada,\r\nsujeita à análise pela Comissão Organizadora. A continuidade com 2 (dois)\r\nmembros fica condicionada à manutenção da competência técnica mínima exigida."
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Inscrições",
+      "content": "As inscrições são gratuitas e abertas a desenvolvedores, pesquisadores e empreendedores de todo o Brasil.\r\nElegibilidade: podem participar pessoas com 18 anos ou mais. Estudantes podem participar normalmente, e não há impedimento de participação para colaboradores ou\r\nparceiros da Meta.\r\nNão há desafio predefinido pela organização: cada equipe concebe a sua própria\r\nproposta e se inscreve com ela. A proposta é autoral, e submetida pela equipe no\r\nmomento da inscrição dentro de uma das trilhas temáticas (ver Seção 7), e é essa\r\nmesma proposta que a equipe desenvolve e refina ao longo de todo o programa, do\r\ndocumento inicial ao protótipo final no hackathon presencial.\r\n● Formato: equipes de 3 (três) integrantes, com pelo menos 1 (um) com experiência em Android/Kotlin ou IOS/Swift. Um mesmo participante não pode participar de mais de uma equipe.\r\n● Documento de projeto/ideia: no ato da inscrição, a equipe envia um documento curto apresentando o seu próprio projeto (por exemplo, um slide, uma\r\npágina HTML ou um arquivo Markdown), que deve se encaixar em uma das\r\ntrilhas do programa.\r\n● Trilha temática: a equipe indica, já na inscrição, a trilha em que pretende atuar\r\n(ver Seção 7).\r\n● Período de inscrição: de 15 a 27 de julho de 2026.\r\n● Link de inscrição: a ser disponibilizado posteriormente pela organização,\r\nantes da abertura do período de inscrições.",
+      "paragraphs": [
+        "As inscrições são gratuitas e abertas a desenvolvedores, pesquisadores e empreendedores de todo o Brasil.\r\nElegibilidade: podem participar pessoas com 18 anos ou mais. Estudantes podem participar normalmente, e não há impedimento de participação para colaboradores ou\r\nparceiros da Meta.\r\nNão há desafio predefinido pela organização: cada equipe concebe a sua própria\r\nproposta e se inscreve com ela. A proposta é autoral, e submetida pela equipe no\r\nmomento da inscrição dentro de uma das trilhas temáticas (ver Seção 7), e é essa\r\nmesma proposta que a equipe desenvolve e refina ao longo de todo o programa, do\r\ndocumento inicial ao protótipo final no hackathon presencial.\r\n● Formato: equipes de 3 (três) integrantes, com pelo menos 1 (um) com experiência em Android/Kotlin ou IOS/Swift. Um mesmo participante não pode participar de mais de uma equipe.\r\n● Documento de projeto/ideia: no ato da inscrição, a equipe envia um documento curto apresentando o seu próprio projeto (por exemplo, um slide, uma\r\npágina HTML ou um arquivo Markdown), que deve se encaixar em uma das\r\ntrilhas do programa.\r\n● Trilha temática: a equipe indica, já na inscrição, a trilha em que pretende atuar\r\n(ver Seção 7).\r\n● Período de inscrição: de 15 a 27 de julho de 2026.\r\n● Link de inscrição: a ser disponibilizado posteriormente pela organização,\r\nantes da abertura do período de inscrições."
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Etapas",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "5.1",
+      "title": "Etapa 1 - Inscrição no Programa",
+      "content": "Equipes de 3 (três) pessoas se inscrevem com a sua própria proposta, apresentada\r\nem um documento curto (por exemplo, um slide, uma página HTML ou um arquivo\r\nMarkdown). A proposta é autoral e definida pela própria equipe neste momento, assim\r\ncomo a trilha temática (Acessibilidade, Educação, Saúde, Turismo, Produtividade ou\r\nCriatividade). Será essa a proposta que a equipe levará adiante ao longo do programa.",
+      "paragraphs": [
+        "Equipes de 3 (três) pessoas se inscrevem com a sua própria proposta, apresentada\r\nem um documento curto (por exemplo, um slide, uma página HTML ou um arquivo\r\nMarkdown). A proposta é autoral e definida pela própria equipe neste momento, assim\r\ncomo a trilha temática (Acessibilidade, Educação, Saúde, Turismo, Produtividade ou\r\nCriatividade). Será essa a proposta que a equipe levará adiante ao longo do programa."
+      ]
+    },
+    {
+      "id": "5.2",
+      "title": "Etapa 2 - Primeiro Filtro",
+      "content": "Banca híbrida (Meta + AKCIT + convidados externos) avalia originalidade, aderência\r\nao programa, viabilidade inicial e área de atuação para selecionar as equipes que\r\navançam ao Ideathon. Não há limite de equipes selecionadas nesta etapa: avançam\r\nao Ideathon todas as equipes aprovadas pela banca.",
+      "paragraphs": [
+        "Banca híbrida (Meta + AKCIT + convidados externos) avalia originalidade, aderência\r\nao programa, viabilidade inicial e área de atuação para selecionar as equipes que\r\navançam ao Ideathon. Não há limite de equipes selecionadas nesta etapa: avançam\r\nao Ideathon todas as equipes aprovadas pela banca."
+      ]
+    },
+    {
+      "id": "5.3",
+      "title": "Etapa 3 - Cursos Online",
+      "content": "Cursos liberados cerca de 2 (duas) semanas antes do Ideathon, cobrindo: Meta Wearables Device Access Toolkit, hardware Wayfarer, Kotlin/Android, IOS/Swift e desenvolvimento de agentes de IA.",
+      "paragraphs": [
+        "Cursos liberados cerca de 2 (duas) semanas antes do Ideathon, cobrindo: Meta Wearables Device Access Toolkit, hardware Wayfarer, Kotlin/Android, IOS/Swift e desenvolvimento de agentes de IA."
+      ]
+    },
+    {
+      "id": "5.4",
+      "title": "Etapa 4 - Ideathon",
+      "content": "Dia dedicado à maturação dos projetos/ideias, com palestras, workshops ao vivo e\r\nmentoria direta para refinar propostas. Foco no Meta Wearables Device Access Toolkit, no hardware e nas boas práticas de desenvolvimento.",
+      "paragraphs": [
+        "Dia dedicado à maturação dos projetos/ideias, com palestras, workshops ao vivo e\r\nmentoria direta para refinar propostas. Foco no Meta Wearables Device Access Toolkit, no hardware e nas boas práticas de desenvolvimento."
+      ]
+    },
+    {
+      "id": "5.5",
+      "title": "Entrega Final do Projeto",
+      "content": "Uma semana após o Ideathon, as equipes precisam enviar o documento final revisado\r\ne a apresentação atualizada, incorporando aprendizados e feedbacks dos mentores.\r\nAs equipes devem obrigatoriamente seguir o modelo de entrega (template) disponibilizado pela organização do programa, garantindo a padronização e qualidade técnica\r\nda documentação submetida.",
+      "paragraphs": [
+        "Uma semana após o Ideathon, as equipes precisam enviar o documento final revisado\r\ne a apresentação atualizada, incorporando aprendizados e feedbacks dos mentores.\r\nAs equipes devem obrigatoriamente seguir o modelo de entrega (template) disponibilizado pela organização do programa, garantindo a padronização e qualidade técnica\r\nda documentação submetida."
+      ]
+    },
+    {
+      "id": "5.6",
+      "title": "Etapa 6 - Segundo Filtro",
+      "content": "Seleção das equipes para o hackathon presencial. Critérios: viabilidade técnica, aderência ao Meta Wearables Device Access Toolkit e ao hardware, impacto da solução e considerações éticas. Ao final, serão selecionadas 5 (Cinco) equipes.",
+      "paragraphs": [
+        "Seleção das equipes para o hackathon presencial. Critérios: viabilidade técnica, aderência ao Meta Wearables Device Access Toolkit e ao hardware, impacto da solução e considerações éticas. Ao final, serão selecionadas 5 (Cinco) equipes."
+      ]
+    },
+    {
+      "id": "5.7",
+      "title": "Etapa 7 - Hackathon Presencial",
+      "content": "Etapa presencial de 1 (um) dia realizada na sede da Meta, em São Paulo, reunindo\r\nas 5 (cinco) equipes selecionadas. Cada equipe desenvolve a solução pela qual foi\r\nclassificada, com posse dos dispositivos, mentoria direta e cumprimento dos checkpoints técnicos obrigatórios definidos pela Meta (ver Seção 8).\r\nObservação: o Hackathon Presencial é a única etapa presencial do programa.",
+      "paragraphs": [
+        "Etapa presencial de 1 (um) dia realizada na sede da Meta, em São Paulo, reunindo\r\nas 5 (cinco) equipes selecionadas. Cada equipe desenvolve a solução pela qual foi\r\nclassificada, com posse dos dispositivos, mentoria direta e cumprimento dos checkpoints técnicos obrigatórios definidos pela Meta (ver Seção 8).\r\nObservação: o Hackathon Presencial é a única etapa presencial do programa."
+      ]
+    },
+    {
+      "id": "5.7.1",
+      "title": "Estrutura do dia",
+      "content": "● Manhã: onboarding hands-on com distribuição dos equipamentos e apresentação dos checkpoints.\r\n● Durante o dia: desenvolvimento da solução com mentoria direta e realização\r\ndos checkpoints técnicos obrigatórios.\r\n● Fim da tarde: pitch final para a banca avaliadora.",
+      "paragraphs": [
+        "● Manhã: onboarding hands-on com distribuição dos equipamentos e apresentação dos checkpoints.\r\n● Durante o dia: desenvolvimento da solução com mentoria direta e realização\r\ndos checkpoints técnicos obrigatórios.\r\n● Fim da tarde: pitch final para a banca avaliadora."
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Premiação",
+      "content": "As equipes selecionadas para o Hackathon Presencial terão toda a logística da etapa\r\npresencial (transporte até São Paulo, hospedagem e alimentação) custeada pela organização. Os demais custos e as etapas online são de responsabilidade dos participantes.",
+      "paragraphs": [
+        "As equipes selecionadas para o Hackathon Presencial terão toda a logística da etapa\r\npresencial (transporte até São Paulo, hospedagem e alimentação) custeada pela organização. Os demais custos e as etapas online são de responsabilidade dos participantes."
+      ]
+    },
+    {
+      "id": "6.1",
+      "title": "Premiação",
+      "content": "1º lugar: USD 3.000 (aprox. R$ 15.000, cotação USD 1 = R$ 5) + valor em espécie correspondente a um óculos AI Glasses por membro da equipe.\r\n2º lugar: USD 2.000 (aprox. R$ 10.000) + valor em espécie correspondente a um óculos AI Glasses por membro da equipe.\r\n3º lugar: USD 1.000 (aprox. R$ 5.000) + valor em espécie correspondente a um óculos\r\nAI Glasses por membro da equipe.\r\nTodas as equipes participantes do Hackathon Presencial recebem certificado de participação.\r\nOs valores em Reais (R$) são estimativas baseadas na taxa de câmbio vigente na\r\ndata de publicação deste Edital. O pagamento final será realizado com base na cotação oficial do Dólar (USD) na data da efetivação do prêmio.\r\nNota: A premiação correspondente aos óculos AI Glasses será realizada integralmente em valor em espécie, não havendo a entrega do dispositivo físico aos membros\r\ndas equipes premiadas.",
+      "paragraphs": [
+        "1º lugar: USD 3.000 (aprox. R$ 15.000, cotação USD 1 = R$ 5) + valor em espécie correspondente a um óculos AI Glasses por membro da equipe.\r\n2º lugar: USD 2.000 (aprox. R$ 10.000) + valor em espécie correspondente a um óculos AI Glasses por membro da equipe.\r\n3º lugar: USD 1.000 (aprox. R$ 5.000) + valor em espécie correspondente a um óculos\r\nAI Glasses por membro da equipe.\r\nTodas as equipes participantes do Hackathon Presencial recebem certificado de participação.\r\nOs valores em Reais (R$) são estimativas baseadas na taxa de câmbio vigente na\r\ndata de publicação deste Edital. O pagamento final será realizado com base na cotação oficial do Dólar (USD) na data da efetivação do prêmio.\r\nNota: A premiação correspondente aos óculos AI Glasses será realizada integralmente em valor em espécie, não havendo a entrega do dispositivo físico aos membros\r\ndas equipes premiadas."
+      ]
+    },
+    {
+      "id": "7",
+      "title": "Trilhas Temáticas",
+      "content": "As equipes escolhem, na inscrição, uma das seis trilhas a seguir como referência de\r\nárea de atuação. Em todas elas, a solução deve explorar os canais nativos dos óculos\r\n(câmera, microfone e áudio) e ao menos uma técnica abordada nos cursos online.\r\nTrilha Foco\r\nAcessibilidade Soluções que ampliam autonomia, inclusão e qualidade de\r\nvida por meio de visão e voz.\r\nInformação Aprendizado, formação e orientação contextual em qualquer\r\nambiente ou situação.\r\nBem-Estar Assistência e apoio a profissionais, pacientes e cuidadores.\r\nCultural Experiências, descoberta de lugares, mediação cultural e\r\napoio à mobilidade.\r\nProdutividade Soluções mãos-livres para o dia a dia profissional e pessoal:\r\ncomunicação, organização, automação de tarefas, apoio à tomada de decisão e outros ganhos de eficiência.\r\nCriatividade Captura, criação e expressão de conteúdo e narrativas em primeira pessoa.",
+      "paragraphs": [
+        "As equipes escolhem, na inscrição, uma das seis trilhas a seguir como referência de\r\nárea de atuação. Em todas elas, a solução deve explorar os canais nativos dos óculos\r\n(câmera, microfone e áudio) e ao menos uma técnica abordada nos cursos online.\r\nTrilha Foco\r\nAcessibilidade Soluções que ampliam autonomia, inclusão e qualidade de\r\nvida por meio de visão e voz.\r\nInformação Aprendizado, formação e orientação contextual em qualquer\r\nambiente ou situação.\r\nBem-Estar Assistência e apoio a profissionais, pacientes e cuidadores.\r\nCultural Experiências, descoberta de lugares, mediação cultural e\r\napoio à mobilidade.\r\nProdutividade Soluções mãos-livres para o dia a dia profissional e pessoal:\r\ncomunicação, organização, automação de tarefas, apoio à tomada de decisão e outros ganhos de eficiência.\r\nCriatividade Captura, criação e expressão de conteúdo e narrativas em primeira pessoa."
+      ]
+    },
+    {
+      "id": "7.1",
+      "title": "Flexibilidade de Propostas e Relação com a Área de Atuação e/ou Negócio",
+      "content": "As trilhas acima estão relacionadas com a abordagem da solução a ser proposta, mas,\r\ndesde que justificadas no formulário de inscrição, abordagens diferentes podem ser\r\naceitas dentro do âmbito do Programa.\r\nCom relação à área de atuação e/ou negócio onde a trilha será aplicada, ela pode ser\r\na mais diversa, desde agronegócio até aeroespacial, passando pelo terceiro setor e\r\ngestão de políticas públicas. Entende-se que há espaço para a utilização dos AI Glasses nos mais diversos contextos e incentiva-se que os proponentes pensem nessas\r\nutilizações variadas.",
+      "paragraphs": [
+        "As trilhas acima estão relacionadas com a abordagem da solução a ser proposta, mas,\r\ndesde que justificadas no formulário de inscrição, abordagens diferentes podem ser\r\naceitas dentro do âmbito do Programa.\r\nCom relação à área de atuação e/ou negócio onde a trilha será aplicada, ela pode ser\r\na mais diversa, desde agronegócio até aeroespacial, passando pelo terceiro setor e\r\ngestão de políticas públicas. Entende-se que há espaço para a utilização dos AI Glasses nos mais diversos contextos e incentiva-se que os proponentes pensem nessas\r\nutilizações variadas."
+      ]
+    },
+    {
+      "id": "8",
+      "title": "Regras da Competição",
+      "content": "Cada equipe desenvolve o projeto/ideia pela qual foi selecionada, mas todas cumprem\r\ncheckpoints técnicos obrigatórios definidos pelos organizadores, nivelando a avaliação e garantindo a exploração real do Meta Wearables Device Access Toolkit e do\r\nhardware.",
+      "paragraphs": [
+        "Cada equipe desenvolve o projeto/ideia pela qual foi selecionada, mas todas cumprem\r\ncheckpoints técnicos obrigatórios definidos pelos organizadores, nivelando a avaliação e garantindo a exploração real do Meta Wearables Device Access Toolkit e do\r\nhardware."
+      ]
+    },
+    {
+      "id": "8.1",
+      "title": "Checkpoints técnicos obrigatórios",
+      "content": "Checkpoint Descrição\r\nUso de Inteligência\r\nArtificial\r\nA solução deve incorporar ao menos um componente de IA,\r\nseja via API, modelo em nuvem ou processamento local de\r\nforma funcional e comprovável durante o hackathon.\r\nCâmera ou microfone\r\nIntegração efetiva com os sensores dos óculos como canal\r\nprincipal de entrada.\r\nOutput por áudio Resposta via alto-falante, o único canal de saída disponível,\r\ndado que não há display.\r\nPrivacidade e dados Justificativa explícita sobre o tratamento de dados e as decisões de privacidade da solução.\r\nEficiência de bateria Estratégia clara de economia de energia no celular e/ou nos\r\nóculos.",
+      "paragraphs": [
+        "Checkpoint Descrição\r\nUso de Inteligência\r\nArtificial\r\nA solução deve incorporar ao menos um componente de IA,\r\nseja via API, modelo em nuvem ou processamento local de\r\nforma funcional e comprovável durante o hackathon.\r\nCâmera ou microfone\r\nIntegração efetiva com os sensores dos óculos como canal\r\nprincipal de entrada.\r\nOutput por áudio Resposta via alto-falante, o único canal de saída disponível,\r\ndado que não há display.\r\nPrivacidade e dados Justificativa explícita sobre o tratamento de dados e as decisões de privacidade da solução.\r\nEficiência de bateria Estratégia clara de economia de energia no celular e/ou nos\r\nóculos."
+      ]
+    },
+    {
+      "id": "9",
+      "title": "Equipamentos Disponibilizados",
+      "content": "Para garantir uma experiência de desenvolvimento fluida e eficaz, a organização disponibilizará a cada equipe, no dia do hackathon presencial:\r\n● Óculos AI Glasses;\r\n● 1 (um) smartphone compatível (ou ambiente de emulação);\r\n● 1 (um) notebook por equipe.\r\nEquipamentos próprios: no dia da competição, a equipe poderá levar notebooks\r\npróprios. Os demais componentes (óculos e smartphone) deverão ser exclusivamente\r\nfornecidos pela organização.\r\nDevolução: ao final do Hackathon Presencial, todos os óculos e smartphones fornecidos pela organização para o desenvolvimento das soluções são devolvidos aos organizadores. Os óculos entregues como parte da premiação às equipes vencedoras (ver\r\nSeção 6.1) não são devolvidos.",
+      "paragraphs": [
+        "Para garantir uma experiência de desenvolvimento fluida e eficaz, a organização disponibilizará a cada equipe, no dia do hackathon presencial:\r\n● Óculos AI Glasses;\r\n● 1 (um) smartphone compatível (ou ambiente de emulação);\r\n● 1 (um) notebook por equipe.\r\nEquipamentos próprios: no dia da competição, a equipe poderá levar notebooks\r\npróprios. Os demais componentes (óculos e smartphone) deverão ser exclusivamente\r\nfornecidos pela organização.\r\nDevolução: ao final do Hackathon Presencial, todos os óculos e smartphones fornecidos pela organização para o desenvolvimento das soluções são devolvidos aos organizadores. Os óculos entregues como parte da premiação às equipes vencedoras (ver\r\nSeção 6.1) não são devolvidos."
+      ]
+    },
+    {
+      "id": "10",
+      "title": "Capacitação Técnica - Cursos Online",
+      "content": "Os cursos são liberados antes do Ideathon e fornecem a base técnica necessária para\r\no desenvolvimento das soluções.\r\nConteúdo O que a equipe aprende\r\nMeta Wearables Device Access\r\nToolkit\r\nAcesso programático aos sensores e canais dos\r\nóculos (câmera, microfone, áudio).\r\nHardware Wayfarer Características, limitações e boas práticas de desenvolvimento para os AI Glasses.\r\nKotlin / Android e IOS/Swift Fundamentos de desenvolvimento da experiência companion no Android e IOS.\r\nDesenvolvimento de Agentes de\r\nIA\r\nConstrução de agentes para interações por visão\r\ne voz, com IA local quando aplicável.",
+      "paragraphs": [
+        "Os cursos são liberados antes do Ideathon e fornecem a base técnica necessária para\r\no desenvolvimento das soluções.\r\nConteúdo O que a equipe aprende\r\nMeta Wearables Device Access\r\nToolkit\r\nAcesso programático aos sensores e canais dos\r\nóculos (câmera, microfone, áudio).\r\nHardware Wayfarer Características, limitações e boas práticas de desenvolvimento para os AI Glasses.\r\nKotlin / Android e IOS/Swift Fundamentos de desenvolvimento da experiência companion no Android e IOS.\r\nDesenvolvimento de Agentes de\r\nIA\r\nConstrução de agentes para interações por visão\r\ne voz, com IA local quando aplicável."
+      ]
+    },
+    {
+      "id": "11",
+      "title": "Critérios de Avaliação",
+      "content": "A avaliação ocorre em dois momentos: o Primeiro Filtro (Etapa 2), que seleciona as\r\nequipes para o Ideathon, e o Segundo Filtro (Etapa 6), que define as 5 equipes do\r\nhackathon presencial.",
+      "paragraphs": [
+        "A avaliação ocorre em dois momentos: o Primeiro Filtro (Etapa 2), que seleciona as\r\nequipes para o Ideathon, e o Segundo Filtro (Etapa 6), que define as 5 equipes do\r\nhackathon presencial."
+      ]
+    },
+    {
+      "id": "11.1",
+      "title": "Primeiro Filtro (Etapa 2)",
+      "content": "Critério Descrição Pontos\r\nOriginalidade Caráter inovador e diferenciado da ideia. 30\r\nAderência ao programa\r\nEncaixe com a proposta, o hardware e as\r\ntrilhas do Programa AI Glasses Brasil.",
+      "paragraphs": [
+        "Critério Descrição Pontos\r\nOriginalidade Caráter inovador e diferenciado da ideia. 30\r\nAderência ao programa\r\nEncaixe com a proposta, o hardware e as\r\ntrilhas do Programa AI Glasses Brasil."
+      ]
+    },
+    {
+      "id": "20",
+      "title": "Viabilidade inicial Plausibilidade técnica e de execução da",
+      "content": "ideia.",
+      "paragraphs": [
+        "ideia."
+      ]
+    },
+    {
+      "id": "30",
+      "title": "Área de atuação Relevância e potencial de impacto da trilha",
+      "content": "escolhida.",
+      "paragraphs": [
+        "escolhida."
+      ]
+    },
+    {
+      "id": "20",
+      "title": "Total 100",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "11.2",
+      "title": "Segundo Filtro (Etapa 6)",
+      "content": "Critério Descrição Pontos\r\nViabilidade técnica Maturidade e exequibilidade da solução\r\nproposta.",
+      "paragraphs": [
+        "Critério Descrição Pontos\r\nViabilidade técnica Maturidade e exequibilidade da solução\r\nproposta."
+      ]
+    },
+    {
+      "id": "30",
+      "title": "Aderência ao toolkit e",
+      "content": "hardware\r\nUso efetivo do Meta Wearables Device\r\nAccess Toolkit e dos óculos.",
+      "paragraphs": [
+        "hardware\r\nUso efetivo do Meta Wearables Device\r\nAccess Toolkit e dos óculos."
+      ]
+    },
+    {
+      "id": "20",
+      "title": "Impacto da solução Potencial de valor e de transformação",
+      "content": "para o público-alvo.",
+      "paragraphs": [
+        "para o público-alvo."
+      ]
+    },
+    {
+      "id": "30",
+      "title": "Considerações éticas Tratamento responsável de dados, privacidade e segurança.",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "20",
+      "title": "Total 100",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "11.3",
+      "title": "Critério de Desempate",
+      "content": "Em caso de empate na pontuação total (Primeiro ou Segundo Filtro), o desempate\r\nsegue esta ordem: (1) maior nota no critério de maior peso da respectiva tabela de\r\navaliação (Originalidade, na Etapa 2, ou Viabilidade técnica, na Etapa 6); (2) persistindo o empate, maior nota no critério seguinte de maior peso; (3) persistindo ainda o\r\nempate, decisão por consenso da banca avaliadora.",
+      "paragraphs": [
+        "Em caso de empate na pontuação total (Primeiro ou Segundo Filtro), o desempate\r\nsegue esta ordem: (1) maior nota no critério de maior peso da respectiva tabela de\r\navaliação (Originalidade, na Etapa 2, ou Viabilidade técnica, na Etapa 6); (2) persistindo o empate, maior nota no critério seguinte de maior peso; (3) persistindo ainda o\r\nempate, decisão por consenso da banca avaliadora."
+      ]
+    },
+    {
+      "id": "12",
+      "title": "Cronogramas",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "12.1",
+      "title": "Cronograma geral",
+      "content": "O programa é estruturado em etapas progressivas, da inscrição ao hackathon presencial, combinando seleção por filtros, capacitação técnica e maturação das propostas\r\nantes da etapa final. As datas detalhadas do Ideathon e do Hackathon Presencial estão descritas nas Seções 12.2 e 12.3.\r\nEtapa Descrição Data\r\nInscrições Período de inscrição das equipes 15 a 27 de julho\r\nInscrições homologadas\r\nDivulgação das equipes com inscrição homologada / Primeiro Filtro",
+      "paragraphs": [
+        "O programa é estruturado em etapas progressivas, da inscrição ao hackathon presencial, combinando seleção por filtros, capacitação técnica e maturação das propostas\r\nantes da etapa final. As datas detalhadas do Ideathon e do Hackathon Presencial estão descritas nas Seções 12.2 e 12.3.\r\nEtapa Descrição Data\r\nInscrições Período de inscrição das equipes 15 a 27 de julho\r\nInscrições homologadas\r\nDivulgação das equipes com inscrição homologada / Primeiro Filtro"
+      ]
+    },
+    {
+      "id": "28",
+      "title": "de julho",
+      "content": "Cursos Online Liberação da capacitação técnica de maneira assíncrona e gravada.\r\n 1 de agosto\r\nIdeathon Ideathon online (maturação das ideias).\r\nCronograma detalhado a seguir",
+      "paragraphs": [
+        "Cursos Online Liberação da capacitação técnica de maneira assíncrona e gravada.\r\n 1 de agosto\r\nIdeathon Ideathon online (maturação das ideias).\r\nCronograma detalhado a seguir"
+      ]
+    },
+    {
+      "id": "15",
+      "title": "de agosto",
+      "content": "Entrega Final da\r\nIdeia\r\nEnvio do documento e apresentação finais 22 de agosto\r\nSegundo Filtro Avaliação das propostas finais. 23 a 29 de\r\nagosto\r\nResultado final Divulgação das 5 equipes selecionadas 31 de agosto\r\nHackathon Presencial\r\nEtapa presencial - Meta, São Paulo. Cronograma detalhado a seguir",
+      "paragraphs": [
+        "Entrega Final da\r\nIdeia\r\nEnvio do documento e apresentação finais 22 de agosto\r\nSegundo Filtro Avaliação das propostas finais. 23 a 29 de\r\nagosto\r\nResultado final Divulgação das 5 equipes selecionadas 31 de agosto\r\nHackathon Presencial\r\nEtapa presencial - Meta, São Paulo. Cronograma detalhado a seguir"
+      ]
+    },
+    {
+      "id": "18",
+      "title": "de setembro",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "12.2",
+      "title": "Cronograma Ideathon Meta",
+      "content": "Sábado, 15 de Agosto - Formato: Online\r\nDia dedicado à maturação das propostas com palestras, workshops ao vivo e mentoria\r\ndireta para refinar as propostas das equipes classificadas no Primeiro Filtro. Foco em\r\nSDK, hardware Wayfarer e boas práticas de desenvolvimento.\r\nHorário Atividade Detalhes\r\nManhã Abertura e Fundamento\r\n09h00 Abertura do Ideathon Abertura CEIA, META; Boas-vindas, apresentação da dinâmica do\r\ndia e dos critérios da Entrega Final\r\nda Ideia.\r\n09h30 Apresentação dos entregáveis\r\nInstruções sobre o programa.\r\n10h00 Workshop sobre Pitch Aprenda a estruturar um pitch impactante, destacando o valor, a viabilidade técnica e os diferenciais\r\nda sua solução para a banca avaliadora\r\n10h30 Palestra: DAT\r\n(Device Acess Tool) e Hardware Wayfarer (Ray-Ban\r\nMeta Wayfarer)\r\nAprofundamento técnico no Meta\r\nWearables Device Access Toolkit e\r\nnas capacidades reais do dispositivo (câmera, microfone, alto-falantes).\r\n11h00 Palestra de Agentes de IA em\r\nAI Glasses\r\nBoas práticas para IA local, latência, e desenho de interação por voz\r\nsem display.\r\n11h30 Workshop: Do conceito ao\r\nprotótipo mercado e inovações (Motivação)\r\nDemonstração prática de fluxo de\r\ndesenvolvimento, exemplos de código e integração com sensores.\r\nTarde Feedback e desenvolvimento\r\n12h30 Intervalo Horário de almoço livre para descanso\r\n13h30 Palestra sobre Desenvolvimento com SDD e técnicas de\r\ndesenvolvimento de software\r\nbaseado em assistentes de\r\ncódigo\r\nPalestra técnica focada em SDD\r\n(Software Defined Development) e\r\nmetodologias para construção de\r\nsoftware com auxílio de assistentes\r\nde IA.\r\n14h00 Palestra: Metodologias de Desenvolvimento Acelerado com\r\nAssistentes de IA (SDP)\r\nPalestra técnica com especialista\r\nexperiente sobre como o Vibe Coding realmente deve ser executado.\r\n15h00 Encerramento Recapitulação dos próximos passos: prazo e formato da Entrega Final do Projeto",
+      "paragraphs": [
+        "Sábado, 15 de Agosto - Formato: Online\r\nDia dedicado à maturação das propostas com palestras, workshops ao vivo e mentoria\r\ndireta para refinar as propostas das equipes classificadas no Primeiro Filtro. Foco em\r\nSDK, hardware Wayfarer e boas práticas de desenvolvimento.\r\nHorário Atividade Detalhes\r\nManhã Abertura e Fundamento\r\n09h00 Abertura do Ideathon Abertura CEIA, META; Boas-vindas, apresentação da dinâmica do\r\ndia e dos critérios da Entrega Final\r\nda Ideia.\r\n09h30 Apresentação dos entregáveis\r\nInstruções sobre o programa.\r\n10h00 Workshop sobre Pitch Aprenda a estruturar um pitch impactante, destacando o valor, a viabilidade técnica e os diferenciais\r\nda sua solução para a banca avaliadora\r\n10h30 Palestra: DAT\r\n(Device Acess Tool) e Hardware Wayfarer (Ray-Ban\r\nMeta Wayfarer)\r\nAprofundamento técnico no Meta\r\nWearables Device Access Toolkit e\r\nnas capacidades reais do dispositivo (câmera, microfone, alto-falantes).\r\n11h00 Palestra de Agentes de IA em\r\nAI Glasses\r\nBoas práticas para IA local, latência, e desenho de interação por voz\r\nsem display.\r\n11h30 Workshop: Do conceito ao\r\nprotótipo mercado e inovações (Motivação)\r\nDemonstração prática de fluxo de\r\ndesenvolvimento, exemplos de código e integração com sensores.\r\nTarde Feedback e desenvolvimento\r\n12h30 Intervalo Horário de almoço livre para descanso\r\n13h30 Palestra sobre Desenvolvimento com SDD e técnicas de\r\ndesenvolvimento de software\r\nbaseado em assistentes de\r\ncódigo\r\nPalestra técnica focada em SDD\r\n(Software Defined Development) e\r\nmetodologias para construção de\r\nsoftware com auxílio de assistentes\r\nde IA.\r\n14h00 Palestra: Metodologias de Desenvolvimento Acelerado com\r\nAssistentes de IA (SDP)\r\nPalestra técnica com especialista\r\nexperiente sobre como o Vibe Coding realmente deve ser executado.\r\n15h00 Encerramento Recapitulação dos próximos passos: prazo e formato da Entrega Final do Projeto"
+      ]
+    },
+    {
+      "id": "12.3",
+      "title": "Cronograma Hackathon Meta",
+      "content": "Sexta, 18 de Setembro - Formato: Presencial\r\nLocal: Meta São Paulo\r\nUm dia presencial com desenvolvimento hands-on, mentoria direta, checkpoints técnicos obrigatórios e pitch final. Cada uma das 5 equipes selecionadas desenvolve o\r\npróprio projeto/ideia com posse dos dispositivos, mentoria direta e cumprimento dos\r\ncheckpoints comuns definidos pelo CEIA e pela Meta.\r\nHorário Atividade/Descrição Detalhes\r\n08h00 Credenciamento e recepção\r\nCheck-in das 5 equipes selecionadas, entrega\r\nde notebooks, óculos e smartphones por equipe.\r\n09h00 Abertura oficial Boas-vindas da Meta e do CEIA organização,\r\napresentação da agenda do dia e dos jurados.\r\nHorário Atividade/Descrição Detalhes\r\n09h30 Onboarding Técnico\r\nhands-on\r\nSetup Guiado do ambiente, pareamento os óculos, validação do DAT e checklist técnico inicial\r\n10h30 Checkpoints Obrigatórios\r\nApresentação formal dos 5 checkpoints técnicos:\r\nIA local, câmera/microfone, output por áudio, privacidade e eficiência de bateria.\r\n11h00 Início do desenvolvimento + Mentoria direta\r\nEquipes começam a implementação da própria\r\nproposta com posse dos dispositivos. Mentores\r\ntécnicos da Meta e do CEIA circulam entre as\r\nequipes para apoio contínuo.\r\nTarde Desenvolvimento e mentoria\r\n12h00 Almoço Pausa para almoço servido no local.\r\n14h00 Retomada do desenvolvimento\r\nContinuação da implementação das soluções.\r\n15h00 Checkpoint técnico 1\r\n(OBRIGATÓRIO)\r\nValidação parcial: Uso de Inteligência Artificial,\r\nCâmera ou microfone e Output por áudio\r\n15h30 Coffee Break Pausa curta para recarregar dispositivos e\r\nequipe.\r\n16h00 Checkpoint técnico 2\r\n(OBRIGATÓRIO)\r\nValidação parcial: Privacidade e dados e Eficiência de bateria\r\n16h45 Reta final de desenvolvimento\r\nÚltimos ajustes, testes de usuário e preparação\r\ndo pitch.\r\n17h30 Fechamento do desenvolvimento técnico e entrega dos pitches\r\nPrazo final para travar a solução; preparação\r\ndos materiais de pitch.\r\nHorário Atividade/Descrição Detalhes\r\n18h00 Pitch Finais Cada equipe apresenta sua solução à banca\r\navaliadora (CEIA + META + convidados).\r\n18h30 Deliberação da Banca Banca a ser definida.\r\nAvaliação com base em viabilidade técnica, aderência ao SDK/hardware, impacto e ética.\r\n18h45 Encerramento e Premiação\r\nAnúncio dos 3 primeiros colocados, entrega da\r\npremiação e dos óculos Meta Glasses.\r\n19h00 Confraternização Encerramento do Hackathon Presencial.",
+      "paragraphs": [
+        "Sexta, 18 de Setembro - Formato: Presencial\r\nLocal: Meta São Paulo\r\nUm dia presencial com desenvolvimento hands-on, mentoria direta, checkpoints técnicos obrigatórios e pitch final. Cada uma das 5 equipes selecionadas desenvolve o\r\npróprio projeto/ideia com posse dos dispositivos, mentoria direta e cumprimento dos\r\ncheckpoints comuns definidos pelo CEIA e pela Meta.\r\nHorário Atividade/Descrição Detalhes\r\n08h00 Credenciamento e recepção\r\nCheck-in das 5 equipes selecionadas, entrega\r\nde notebooks, óculos e smartphones por equipe.\r\n09h00 Abertura oficial Boas-vindas da Meta e do CEIA organização,\r\napresentação da agenda do dia e dos jurados.\r\nHorário Atividade/Descrição Detalhes\r\n09h30 Onboarding Técnico\r\nhands-on\r\nSetup Guiado do ambiente, pareamento os óculos, validação do DAT e checklist técnico inicial\r\n10h30 Checkpoints Obrigatórios\r\nApresentação formal dos 5 checkpoints técnicos:\r\nIA local, câmera/microfone, output por áudio, privacidade e eficiência de bateria.\r\n11h00 Início do desenvolvimento + Mentoria direta\r\nEquipes começam a implementação da própria\r\nproposta com posse dos dispositivos. Mentores\r\ntécnicos da Meta e do CEIA circulam entre as\r\nequipes para apoio contínuo.\r\nTarde Desenvolvimento e mentoria\r\n12h00 Almoço Pausa para almoço servido no local.\r\n14h00 Retomada do desenvolvimento\r\nContinuação da implementação das soluções.\r\n15h00 Checkpoint técnico 1\r\n(OBRIGATÓRIO)\r\nValidação parcial: Uso de Inteligência Artificial,\r\nCâmera ou microfone e Output por áudio\r\n15h30 Coffee Break Pausa curta para recarregar dispositivos e\r\nequipe.\r\n16h00 Checkpoint técnico 2\r\n(OBRIGATÓRIO)\r\nValidação parcial: Privacidade e dados e Eficiência de bateria\r\n16h45 Reta final de desenvolvimento\r\nÚltimos ajustes, testes de usuário e preparação\r\ndo pitch.\r\n17h30 Fechamento do desenvolvimento técnico e entrega dos pitches\r\nPrazo final para travar a solução; preparação\r\ndos materiais de pitch.\r\nHorário Atividade/Descrição Detalhes\r\n18h00 Pitch Finais Cada equipe apresenta sua solução à banca\r\navaliadora (CEIA + META + convidados).\r\n18h30 Deliberação da Banca Banca a ser definida.\r\nAvaliação com base em viabilidade técnica, aderência ao SDK/hardware, impacto e ética.\r\n18h45 Encerramento e Premiação\r\nAnúncio dos 3 primeiros colocados, entrega da\r\npremiação e dos óculos Meta Glasses.\r\n19h00 Confraternização Encerramento do Hackathon Presencial."
+      ]
+    },
+    {
+      "id": "13",
+      "title": "Quadro de Vagas",
+      "content": "Número de vagas destinadas a cada etapa do programa.\r\nEtapa Descrição Vagas\r\nEtapa 1 - Inscrição no\r\nPrograma\r\nEtapa aberta: qualquer equipe que cumpra os requisitos (3 integrantes, ≥1 com\r\nAndroid/Kotlin ou IOS/Swift) pode se inscrever, sem limite de vagas.\r\nIlimitado\r\nEtapa 2 - Primeiro Filtro\r\nSeleção das equipes para o Ideathon\r\ncom base no documento do projeto/ideia, considerando originalidade,\r\naderência ao programa, viabilidade inicial e área de atuação.",
+      "paragraphs": [
+        "Número de vagas destinadas a cada etapa do programa.\r\nEtapa Descrição Vagas\r\nEtapa 1 - Inscrição no\r\nPrograma\r\nEtapa aberta: qualquer equipe que cumpra os requisitos (3 integrantes, ≥1 com\r\nAndroid/Kotlin ou IOS/Swift) pode se inscrever, sem limite de vagas.\r\nIlimitado\r\nEtapa 2 - Primeiro Filtro\r\nSeleção das equipes para o Ideathon\r\ncom base no documento do projeto/ideia, considerando originalidade,\r\naderência ao programa, viabilidade inicial e área de atuação."
+      ]
+    },
+    {
+      "id": "150",
+      "title": "equipes",
+      "content": "(Até 450 participantes)",
+      "paragraphs": [
+        "(Até 450 participantes)"
+      ]
+    },
+    {
+      "id": "5.7",
+      "title": "Etapa 6 - Segundo Filtro",
+      "content": "Seleção das equipes para o Hackathon\r\nPresencial com base na proposta final,\r\nconsiderando viabilidade técnica, aderência ao toolkit e ao hardware, impacto\r\ne considerações éticas.",
+      "paragraphs": [
+        "Seleção das equipes para o Hackathon\r\nPresencial com base na proposta final,\r\nconsiderando viabilidade técnica, aderência ao toolkit e ao hardware, impacto\r\ne considerações éticas."
+      ]
+    },
+    {
+      "id": "5",
+      "title": "14. Disposições Gerais",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "14.1",
+      "title": "Fica terminantemente vedada a alteração do escopo do projeto/ideia submetido",
+      "content": "durante a execução do programa.",
+      "paragraphs": [
+        "durante a execução do programa."
+      ]
+    },
+    {
+      "id": "14.2",
+      "title": "A divulgação do programa será apoiada pelos canais do CEIA, AKCIT e da",
+      "content": "Meta, com o objetivo de atrair inscrições de todo o Brasil.",
+      "paragraphs": [
+        "Meta, com o objetivo de atrair inscrições de todo o Brasil."
+      ]
+    },
+    {
+      "id": "14.3",
+      "title": "As soluções desenvolvidas devem observar as diretrizes técnicas e de privacidade definidas pela organização, bem como os princípios do programa.",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "14.4",
+      "title": "Casos omissos e situações não previstas neste edital serão decididos pela organização do Programa AI Glasses Brasil.",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "14.5",
+      "title": "A organização poderá alterar datas e regras deste edital mediante comunicação oficial nos canais do programa.",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "14.6",
+      "title": "Propriedade intelectual: a propriedade intelectual sobre as ideias, protótipos e",
+      "content": "soluções desenvolvidas ao longo do programa pertence à equipe que as desenvolveu.",
+      "paragraphs": [
+        "soluções desenvolvidas ao longo do programa pertence à equipe que as desenvolveu."
+      ]
+    },
+    {
+      "id": "14.7",
+      "title": "Proteção de dados (LGPD): ao preencher o formulário de inscrição, os participantes consentem com o tratamento de seus dados pessoais para os fins do",
+      "content": "programa, nos termos da LGPD.",
+      "paragraphs": [
+        "programa, nos termos da LGPD."
+      ]
+    },
+    {
+      "id": "14.8",
+      "title": "Comunicação de resultados: os resultados de cada etapa (Primeiro Filtro, Segundo Filtro e resultado final) são comunicados às equipes por e-mail. As decisões da banca avaliadora são soberanas e irrecorríveis.",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "14.9",
+      "title": "Canal de contato: eventuais dúvidas acerca do presente edital deverão ser encaminhadas via correio eletrônico (aiglassesbrasil@ceia.ufg.br).",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "14.10",
+      "title": "Uso do toolkit fora do programa: equipes eliminadas em qualquer etapa podem",
+      "content": "continuar utilizando o Meta Wearables Device Access Toolkit fora do programa.",
+      "paragraphs": [
+        "continuar utilizando o Meta Wearables Device Access Toolkit fora do programa."
+      ]
+    },
+    {
+      "id": "14.11",
+      "title": "Questões não previstas neste Edital ou situações excepcionais serão analisadas e decididas soberanamente pela Comissão Organizadora.",
+      "content": "",
+      "paragraphs": []
+    },
+    {
+      "id": "14.12",
+      "title": "O ato da inscrição implica na aceitação plena e irretratável de todas as normas",
+      "content": "e condições estabelecidas neste Edital.",
+      "paragraphs": [
+        "e condições estabelecidas neste Edital."
+      ]
+    }
+  ],
+  "section_count": 66
+}
