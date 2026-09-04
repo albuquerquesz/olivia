@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.2",
+    "@olivia/auth": "workspace:*",
+    "@olivia/db": "workspace:*",
     "@olivia/env": "workspace:*",
     "@sinclair/typebox": "^0.34.49",
+    "better-auth": "catalog:",
     "dotenv": "catalog:",
     "elysia": "^1.4.29",
     "zod": "catalog:"

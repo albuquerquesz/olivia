@@ -10,7 +10,8 @@
       "dotenv": "^17.4.2",
       "zod": "^4.4.3",
       "typescript": "^6",
-      "@types/bun": "^1.3.14"
+      "@types/bun": "^1.3.14",
+      "better-auth": "1.6.23"
     }
   },
   "type": "module",
@@ -18,7 +19,14 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "check-types": "turbo run check-types",
-    "dev:server": "turbo run dev -F server"
+    "dev:server": "turbo run dev -F server",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:push": "turbo run db:push -F @olivia/db",
+    "db:studio": "turbo run db:studio -F @olivia/db",
+    "db:generate": "turbo run db:generate -F @olivia/db",
+    "db:migrate": "turbo run db:migrate -F @olivia/db"
   },
   "dependencies": {
     "@olivia/env": "workspace:*",

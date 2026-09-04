@@ -7,6 +7,9 @@ This project was created with [kubojs](https://github.com/albuquerquesz/kubo), a
 - **TypeScript** - For type safety and improved developer experience
 - **Elysia** - Type-safe, high-performance framework
 - **Bun** - Runtime environment
+- **Drizzle** - TypeScript-first ORM
+- **PostgreSQL** - Database engine
+- **Authentication** - Better-Auth
 - **Turborepo** - Optimized monorepo build system
 
 ## Getting Started
@@ -16,6 +19,26 @@ First, install the dependencies:
 ```bash
 bun install
 ```
+
+## Database Setup
+
+This project uses PostgreSQL with Drizzle ORM.
+
+1. Start the local PostgreSQL instance with Docker Compose:
+
+```bash
+bun run db:up
+```
+
+2. The default `apps/server/.env` points to the local Compose database. Copy `.env.example` if you need to recreate it or update it with another PostgreSQL connection string.
+
+3. Apply the schema to your database:
+
+```bash
+bun run db:push
+```
+
+Stop PostgreSQL with `bun run db:down`. The Docker volume is preserved between runs.
 
 Then, run the development server:
 
@@ -32,6 +55,8 @@ olivia/
 ├── apps/
 │   └── server/      # Backend API (Elysia)
 ├── packages/
+│   ├── auth/        # Authentication configuration & logic
+│   └── db/          # Database schema & queries
 ```
 
 ## Available Scripts
@@ -40,3 +65,10 @@ olivia/
 - `bun run build`: Build all applications
 - `bun run dev:server`: Start only the server
 - `bun run check-types`: Check TypeScript types across all apps
+- `bun run db:up`: Start PostgreSQL with Docker Compose
+- `bun run db:down`: Stop PostgreSQL without removing its volume
+- `bun run db:logs`: Follow PostgreSQL logs
+- `bun run db:push`: Push schema changes to database
+- `bun run db:generate`: Generate database client/types
+- `bun run db:migrate`: Run database migrations
+- `bun run db:studio`: Open database studio UI
