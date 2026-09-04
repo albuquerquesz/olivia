@@ -1,0 +1,11 @@
+# Copie para local.properties e preencha. local.properties é ignorado pelo Git.
+
+# Caminho do Android SDK.
+# Windows: sdk.dir=C\:\\Users\\<voce>\\AppData\\Local\\Android\\Sdk
+# macOS:   sdk.dir=/Users/<voce>/Library/Android/sdk
+sdk.dir=
+
+# Personal access token (classic) com escopo read:packages, usado pelo repositório
+# Maven do Meta Wearables DAT. Alternativa: variável de ambiente GITHUB_TOKEN.
+# Só é necessário quando o INT-00 ligar os artefatos mwdat; o flavor mock não usa.
+github_token=

@@ -21,6 +21,13 @@
   ],
   "android_setup": {
     "build_system": "Gradle Kotlin DSL com version catalog",
+    "companion_module": "apps/android (flavors mock e glasses)",
+    "pinned_version": {
+      "value": "0.9.0",
+      "observed_at": "2026-09-04",
+      "source": "README público do repositório do SDK",
+      "note": "Declarado em apps/android/gradle/libs.versions.toml; reconferir no GitHub Packages antes de subir."
+    },
     "private_repository": "https://maven.pkg.github.com/facebook/meta-wearables-dat-android",
     "required_secret": {
       "name": "GITHUB_TOKEN",
