@@ -9,6 +9,7 @@ plugins {
 android {
     namespace = "com.olivia.companion"
     compileSdk = libs.versions.androidCompileSdk.get().toInt()
+    buildToolsVersion = "36.0.0"
 
     defaultConfig {
         applicationId = "com.olivia.companion"
