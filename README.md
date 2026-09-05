@@ -47,7 +47,13 @@ This project uses PostgreSQL with Drizzle ORM.
 bun run db:up
 ```
 
-2. The default `apps/server/.env` points to the local Compose database. Copy `.env.example` if you need to recreate it or update it with another PostgreSQL connection string.
+2. Create the single environment file at the repository root:
+
+```bash
+cp .env.example .env
+```
+
+The root `.env` is shared by the entire Bun monorepo. Update it with the PostgreSQL connection string and local secrets when needed. Environment variables are loaded and validated by `@olivia/env`.
 
 3. Apply the schema to your database:
 
@@ -74,7 +80,8 @@ olivia/
 │   └── server/      # Backend API (Elysia)
 ├── packages/
 │   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+│   ├── db/          # Database schema & queries
+│   └── env/         # Shared environment loading & validation
 └── docs/
     └── rules/       # Fonte de verdade: arquitetura, backlog e regras do DAT
 ```
