@@ -280,6 +280,7 @@
       "MockDeviceKit smoke flow",
       "analytics and crash reporting opt-out"
     ],
-    "runtime_boundary": "O DAT fica atrás de adapters de sessão e FrameSource; o domínio da Olivia não importa tipos do SDK."
+    "runtime_boundary": "O DAT fica atrás de adapters de sessão e FrameSource; o domínio da Olivia não importa tipos do SDK.",
+    "contracts_file": "olivia-contracts.json"
   }
 }

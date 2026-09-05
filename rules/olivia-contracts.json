@@ -1,0 +1,162 @@
+{
+  "schema_version": "1.0",
+  "contract_version": "1.0.0",
+  "title": "Contratos entre app, IA, mock e hardware real",
+  "task": "SH-04",
+  "source_of_truth": {
+    "code": "apps/android/core/src/main/kotlin/com/olivia/core",
+    "note": "O módulo :core é Kotlin puro, sem AGP e sem DAT. Este JSON descreve o mesmo contrato para quem não está lendo Kotlin; em caso de divergência, o código vale."
+  },
+  "versioning": {
+    "scheme": "semver",
+    "current": "1.0.0",
+    "rule": "MAJOR quebra consumidores, MINOR adiciona de forma compatível, PATCH é correção de detalhe.",
+    "carried_in": [
+      "TimelineEvent.contractVersion",
+      "SessionReview.contractVersion"
+    ]
+  },
+  "interfaces": [
+    {
+      "name": "GlassesGateway",
+      "owner": "Backend/IA",
+      "purpose": "Conexão e captura nos óculos. Único ponto que o DAT toca.",
+      "implementations": ["mock", "DAT"],
+      "members": [
+        "connection: Flow<GlassesConnection>",
+        "frames: Flow<Frame>",
+        "startCapture(sessionId, config)",
+        "pauseCapture()",
+        "resumeCapture()",
+        "stopCapture()"
+      ],
+      "note": "Não conhece SessionState. Reporta conexão e frames crus; DEGRADED é decidido pela máquina de estados."
+    },
+    {
+      "name": "FrameAnalyzer",
+      "owner": "Backend/IA",
+      "purpose": "Classifica um frame em enquadramento, luz e horizonte.",
+      "implementations": ["mock determinístico", "Gemini via Firebase AI Logic"],
+      "members": ["analyze(frame): Result<FrameAnalysis>"],
+      "note": "Devolve Result em vez de lançar: inferência ruim ou queda de rede não pode matar o loop ao vivo."
+    },
+    {
+      "name": "GuidanceEngine",
+      "owner": "Backend/IA",
+      "purpose": "Aplica thresholds e cooldown para transformar diagnóstico em correção.",
+      "members": [
+        "onAnalysis(analysis, nowEpochMs): Correction?",
+        "onCorrectionOutcome(correctionId, status)"
+      ],
+      "note": "Devolve nulo quando o certo é ficar calado."
+    },
+    {
+      "name": "AudioFeedback",
+      "owner": "Frontend",
+      "purpose": "Entrega a correção por áudio no alto-falante dos óculos.",
+      "members": ["mode", "announce(correction)", "signal(signal)", "stop()"],
+      "note": "Áudio é o único canal de retorno. Não presuma display."
+    },
+    {
+      "name": "Timeline",
+      "owner": "Frontend",
+      "purpose": "Registro único do que aconteceu no take.",
+      "members": ["record(event)", "events(sessionId)"]
+    },
+    {
+      "name": "RecordingSource",
+      "owner": "Backend/IA",
+      "purpose": "Vídeo 3K e áudio nativos dos óculos.",
+      "members": [
+        "listTakes(sessionId)",
+        "fetch(asset): Flow<TransferProgress>",
+        "localPathOf(assetId)"
+      ],
+      "note": "Só entra depois que a sessão encerra; a transferência não disputa banda nem bateria com o loop ao vivo."
+    },
+    {
+      "name": "PostProcessor",
+      "owner": "Backend/IA",
+      "purpose": "Transcrição e cortes sugeridos após o take.",
+      "members": ["process(sessionId, recording, timeline): Result<SessionReview>"],
+      "note": "Usa o áudio da gravação, nunca o microfone ao vivo."
+    }
+  ],
+  "session_states": {
+    "values": [
+      "IDLE",
+      "STARTING",
+      "STARTED",
+      "PAUSED",
+      "DEGRADED",
+      "STOPPING",
+      "STOPPED",
+      "PROCESSING",
+      "READY",
+      "ERROR"
+    ],
+    "invariant": "STARTED, PAUSED, STOPPED e DEGRADED não podem ser removidos ou renomeados.",
+    "note": "A definição de pronto da SH-04 lista nove estados e omite STOPPED, mas AGENTS.md e architecture-diagram.json exigem STOPPED. Mantidos os dez: STOPPING encerra a captura, STOPPED marca o fim do loop ao vivo, PROCESSING é o pós-take e READY é a timeline pronta.",
+    "degraded_rule": "Quatro segundos sem frame marcam DEGRADED; a sessão continua viva e pode voltar para STARTED."
+  },
+  "session_config_defaults": {
+    "samplingFps": 0.5,
+    "analysisIntervalMs": 2000,
+    "degradedAfterMs": 4000,
+    "correctionCooldownMs": 4000,
+    "audioMode": "VOICE",
+    "note": "Configuráveis por exigência de bateria e demo. degradedAfterMs precisa ser maior que analysisIntervalMs."
+  },
+  "timeline_event_schema": {
+    "fields": {
+      "id": "string",
+      "sessionId": "string",
+      "atEpochMs": "long, timestamp absoluto para ordenar e depurar",
+      "offsetMs": "long, milissegundos desde o início da sessão; é o que amarra o evento ao vídeo nativo",
+      "type": "TimelineEventType",
+      "diagnosis": "VisualDiagnosis?, o diagnóstico da IA",
+      "direction": "Direction?",
+      "confidence": "float 0..1?",
+      "correctionStatus": "CorrectionStatus?",
+      "correctionId": "string?",
+      "label": "string?, texto curto para a UI",
+      "contractVersion": "string"
+    },
+    "types": [
+      "SESSION_STARTED",
+      "SESSION_PAUSED",
+      "SESSION_RESUMED",
+      "SESSION_DEGRADED",
+      "SESSION_RECOVERED",
+      "SESSION_STOPPED",
+      "DIAGNOSIS",
+      "CORRECTION_ISSUED",
+      "CORRECTION_RESOLVED",
+      "CUT_SUGGESTED",
+      "ERROR"
+    ],
+    "correction_status": ["PENDING", "OBEYED", "IGNORED", "EXPIRED", "SUPERSEDED"],
+    "privacy": "Por construção não há frame, áudio bruto nem credencial no evento. A timeline sobrevive à sessão e é o que a pessoa revisa e exporta."
+  },
+  "analysis_vocabulary": {
+    "diagnosis_kinds": ["FRAMING", "LIGHT", "HORIZON"],
+    "severity": ["OK", "MINOR", "MAJOR"],
+    "directions": {
+      "FRAMING": ["TURN_LEFT", "TURN_RIGHT", "MOVE_CLOSER", "MOVE_BACK", "RAISE", "LOWER"],
+      "LIGHT": ["FACE_THE_LIGHT", "AVOID_BACKLIGHT", "LEAVE_THE_SHADOW"],
+      "HORIZON": ["LEVEL_HORIZON_LEFT", "LEVEL_HORIZON_RIGHT"]
+    },
+    "note": "Lista fechada. A IA não deve devolver categoria fora dela."
+  },
+  "privacy_invariants": [
+    "Frame é efêmero: classifique e descarte; não persista bytes, não escreva em log, não retenha após a análise retornar.",
+    "Frame.toString() é cego ao conteúdo para que um log acidental não vaze imagem.",
+    "Nenhum tipo do contrato de timeline ou de revisão carrega bytes de mídia.",
+    "A transcrição roda sobre a gravação, nunca sobre microfone ao vivo."
+  ],
+  "isolation_guarantee": {
+    "claim": "O domínio da Olivia não importa tipos do SDK.",
+    "how": "O módulo :core usa apenas o plugin Kotlin JVM. Seu compileClasspath contém somente kotlinx-coroutines-core e kotlin-stdlib.",
+    "verified_at": "2026-09-04"
+  }
+}

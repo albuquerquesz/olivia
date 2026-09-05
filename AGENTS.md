@@ -5,6 +5,7 @@
 Antes de planejar ou mudar algo que afete produto, hardware, IA, dados ou demo, leia o JSON relevante em `rules/`:
 
 - `architecture-diagram.json`: componentes, contratos, estados, fluxos e checkpoints.
+- `olivia-contracts.json`: interfaces, estados de sessão e schema de timeline (código em `apps/android/core`).
 - `meta_wearables_dat_android.json`: setup Android do DAT, artefatos, credenciais, limites e MockDeviceKit.
 - `olivia_backlog.json`: escopo, dependências, critérios de aceite e marcos.
 - `hackaton-rules.json`: regras do programa, cronograma e avaliação.

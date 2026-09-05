@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "olivia-android"
 
 include(":app")
+include(":core")
