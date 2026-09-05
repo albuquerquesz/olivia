@@ -1,0 +1,14 @@
+.git
+.turbo
+node_modules
+dist
+build
+coverage
+
+.env
+.env.*
+!.env.example
+
+.agents
+*.log
+*.tsbuildinfo

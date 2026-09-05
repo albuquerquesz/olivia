@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "kubojs": {
+      "source": "albuquerquesz/kubo",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/kubojs/SKILL.md",
+      "computedHash": "dc15047e1ae94ada44bb1a3652388bed2e07d32d4cf3a3d699ed8c72348a7333"
+    }
+  }
+}
