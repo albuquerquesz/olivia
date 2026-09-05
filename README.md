@@ -75,7 +75,8 @@ olivia/
 ├── packages/
 │   ├── auth/        # Authentication configuration & logic
 │   └── db/          # Database schema & queries
-└── rules/           # Fonte de verdade: arquitetura, backlog e regras do DAT
+└── docs/
+    └── rules/       # Fonte de verdade: arquitetura, backlog e regras do DAT
 ```
 
 ## Available Scripts

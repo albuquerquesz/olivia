@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "source_file": "../rules/architecture-diagram.png",
+  "source_file": "architecture-diagram.png",
   "title": "Arquitetura da Olivia",
   "summary": "A Olivia orienta Mariana enquanto ela grava com os Ray-Ban Meta. O celular é o companion app e ponte obrigatória do Device Access Toolkit; ele analisa frames, emite feedback por áudio, registra eventos e prepara a revisão pós-sessão.",
   "actors": [

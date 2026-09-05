@@ -2,7 +2,7 @@
 
 ## Fonte de verdade
 
-Antes de planejar ou mudar algo que afete produto, hardware, IA, dados ou demo, leia o JSON relevante em `rules/`:
+Antes de planejar ou mudar algo que afete produto, hardware, IA, dados ou demo, leia o JSON relevante em `docs/rules/`:
 
 - `architecture-diagram.json`: componentes, contratos, estados, fluxos e checkpoints.
 - `olivia-contracts.json`: interfaces, estados de sessão e schema de timeline (código em `apps/android/core`).
@@ -34,6 +34,6 @@ Antes de planejar ou mudar algo que afete produto, hardware, IA, dados ou demo, 
 
 - Não adicione auth, contas, feed social, CRUD, editor de vídeo completo ou analytics sem pedido explícito.
 - Relacione a mudança à task do backlog e às dependências antes de implementar. Se não houver task, confirme que não é expansão de escopo.
-- Quando alterar contrato, dados, hardware ou privacidade, atualize o JSON relevante em `rules/`.
+- Quando alterar contrato, dados, hardware ou privacidade, atualize o JSON relevante em `docs/rules/`.
 - Não alegue validação de hardware, latência ou bateria sem medição real.
 - Use os padrões TypeScript/Bun/Turborepo já existentes. Não execute build, lint, typecheck ou testes sem solicitação explícita.
