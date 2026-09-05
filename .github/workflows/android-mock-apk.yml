@@ -39,8 +39,20 @@ jobs:
 
       # O flavor mock não usa o SDK do DAT, então não há token nem local.properties
       # aqui: o build precisa continuar passando sem nenhum segredo.
+      #
+      # Chamado via `sh` de propósito. O gradlew já está commitado como 100755, mas
+      # core.fileMode=false no Windows zera esse bit em qualquer `git add` do arquivo,
+      # e aí o runner Linux falha com "Permission denied". O APK do demo não pode
+      # depender disso; o passo seguinte avisa se o bit se perder.
       - name: Build do APK mock de debug
-        run: ./gradlew assembleMockDebug
+        run: sh gradlew assembleMockDebug
+
+      - name: Conferir o bit de execução do gradlew
+        if: always()
+        run: |
+          if [ ! -x gradlew ]; then
+            echo "::warning file=apps/android/gradlew::gradlew perdeu o bit de execução (está 100644). O build passou porque é chamado via sh, mas './gradlew' quebra para quem clonar em Linux/macOS. Corrija com: git update-index --chmod=+x apps/android/gradlew && git commit"
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
