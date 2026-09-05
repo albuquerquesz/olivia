@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -31,8 +30,9 @@ private enum class OliviaDestination(
     HOME("home", "Início", Icons.Filled.Home),
     RECORD("record", "Gravar", Icons.Filled.Videocam),
     SESSIONS("sessions", "Sessões", Icons.Filled.History),
-    SETTINGS("settings", "Configurações", Icons.Filled.Settings),
 }
+
+private const val SETTINGS_ROUTE = "settings"
 
 @Composable
 fun OliviaApp() {
@@ -76,14 +76,14 @@ fun OliviaApp() {
                 OliviaRecordingScreen(
                     backend = ActiveBackend.current,
                     onOpenSettings = {
-                        navController.navigate(OliviaDestination.SETTINGS.route)
+                        navController.navigate(SETTINGS_ROUTE)
                     },
                 )
             }
             composable(OliviaDestination.SESSIONS.route) {
                 OliviaSessionsScreen()
             }
-            composable(OliviaDestination.SETTINGS.route) {
+            composable(SETTINGS_ROUTE) {
                 OliviaSettingsScreen()
             }
         }
