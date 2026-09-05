@@ -12,6 +12,23 @@ This project was created with [kubojs](https://github.com/albuquerquesz/kubo), a
 - **Authentication** - Better-Auth
 - **Turborepo** - Optimized monorepo build system
 
+## Companion app Android — demo em modo mock
+
+O modo mock é o caminho de demo garantido: ele roda sem óculos, sem o SDK do Device
+Access Toolkit e sem nenhum segredo. Em uma máquina limpa com JDK 17+ e o Android SDK
+(plataforma API 36), um comando basta:
+
+```bash
+cd apps/android && ./gradlew assembleMockDebug
+```
+
+O APK sai em `apps/android/app/build/outputs/apk/mock/debug/`. A CI roda esse mesmo
+comando e publica o APK como artefato do workflow `APK mock (debug)`, que dispara
+manualmente (aba Actions → Run workflow) ou em push na branch `prod`.
+
+Detalhes de flavors, versões e configuração local estão em
+[`apps/android/README.md`](apps/android/README.md).
+
 ## Getting Started
 
 First, install the dependencies:
@@ -53,10 +70,12 @@ The API is running at [http://localhost:3000](http://localhost:3000).
 ```
 olivia/
 ├── apps/
+│   ├── android/     # Companion app Kotlin/Compose (flavors mock e glasses)
 │   └── server/      # Backend API (Elysia)
 ├── packages/
 │   ├── auth/        # Authentication configuration & logic
 │   └── db/          # Database schema & queries
+└── rules/           # Fonte de verdade: arquitetura, backlog e regras do DAT
 ```
 
 ## Available Scripts

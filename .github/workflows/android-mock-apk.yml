@@ -1,0 +1,61 @@
+name: APK mock (debug)
+
+# Não roda a cada commit na main: o APK sai sob demanda ou quando algo chega em prod.
+on:
+  workflow_dispatch:
+  push:
+    branches: [prod]
+
+concurrency:
+  group: android-mock-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mock-debug:
+    name: assembleMockDebug
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-36 build-tools;36.1.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
+
+      # O flavor mock não usa o SDK do DAT, então não há token nem local.properties
+      # aqui: o build precisa continuar passando sem nenhum segredo.
+      #
+      # Chamado via `sh` de propósito. O gradlew já está commitado como 100755, mas
+      # core.fileMode=false no Windows zera esse bit em qualquer `git add` do arquivo,
+      # e aí o runner Linux falha com "Permission denied". O APK do demo não pode
+      # depender disso; o passo seguinte avisa se o bit se perder.
+      - name: Build do APK mock de debug
+        run: sh gradlew assembleMockDebug
+
+      - name: Conferir o bit de execução do gradlew
+        if: always()
+        run: |
+          if [ ! -x gradlew ]; then
+            echo "::warning file=apps/android/gradlew::gradlew perdeu o bit de execução (está 100644). O build passou porque é chamado via sh, mas './gradlew' quebra para quem clonar em Linux/macOS. Corrija com: git update-index --chmod=+x apps/android/gradlew && git commit"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: olivia-mock-debug-apk
+          path: apps/android/app/build/outputs/apk/mock/debug/*.apk
+          if-no-files-found: error

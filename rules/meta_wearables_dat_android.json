@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "title": "Integração Android com Meta Wearables Device Access Toolkit",
+  "status": "developer_preview",
+  "sources": [
+    {
+      "url": "https://developers.meta.com/blog/introducing-meta-wearables-device-access-toolkit/",
+      "purpose": "Visão oficial do preview e limites de plataforma"
+    },
+    {
+      "url": "https://github.com/facebook/meta-wearables-dat-android",
+      "purpose": "SDK Android, sample app, setup Gradle e MockDeviceKit"
+    }
+  ],
+  "product_decisions": [
+    "Olivia é um companion app Android; o DAT conecta o app aos óculos e não substitui o app móvel.",
+    "O wake word e os comandos de voz continuam locais no celular. O preview inicial não inclui as voice commands da Meta como superfície de desenvolvimento.",
+    "Usar apenas mwdat-core, mwdat-camera e mwdat-mockdevice no MVP. Não adicionar mwdat-display: o produto não depende de display nos óculos.",
+    "Usar MockDeviceKit antes do dia 18 para validar lifecycle, frames, ausência de dispositivo e recuperação.",
+    "Fixar a versão do DAT em um version catalog, mas conferir a versão disponível no GitHub Packages no momento da implementação."
+  ],
+  "android_setup": {
+    "build_system": "Gradle Kotlin DSL com version catalog",
+    "companion_module": "apps/android (flavors mock e glasses)",
+    "pinned_version": {
+      "value": "0.9.0",
+      "observed_at": "2026-09-04",
+      "source": "README público do repositório do SDK",
+      "note": "Declarado em apps/android/gradle/libs.versions.toml; reconferir no GitHub Packages antes de subir."
+    },
+    "private_repository": "https://maven.pkg.github.com/facebook/meta-wearables-dat-android",
+    "required_secret": {
+      "name": "GITHUB_TOKEN",
+      "alternative": "github_token em local.properties",
+      "scope": "Personal access token classic com read:packages",
+      "handling": "Nunca versionar; usar secret de CI e local.properties ignorado pelo Git."
+    },
+    "artifacts": [
+      "com.meta.wearable:mwdat-core",
+      "com.meta.wearable:mwdat-camera",
+      "com.meta.wearable:mwdat-mockdevice"
+    ],
+    "manifest": {
+      "application_id": "Obrigatório; obtido no Wearables Developer Center",
+      "analytics_opt_out": "Definir com.meta.wearable.mwdat.ANALYTICS_OPT_OUT=true",
+      "crash_reporting_opt_out": "Definir com.meta.wearable.mwdat.CRASH_REPORTING_OPT_OUT=true para o MVP orientado à privacidade"
+    }
+  },
+  "capabilities_for_olivia": [
+    "Conexão confiável com os AI glasses a partir do app móvel",
+    "Streaming de vídeo/frame para o loop ao vivo",
+    "Captura de foto, se futuramente necessária",
+    "Lifecycle de sessão, pausa/retomada e monitoramento de disponibilidade",
+    "MockDeviceKit para desenvolvimento sem óculos físicos",
+    "Permissões, registro do app e diagnóstico de sessão"
+  ],
+  "non_assumptions": [
+    "Não assumir acesso ao microfone ao vivo pelo DAT.",
+    "Não assumir que vídeo nativo/3K ou download de gravação estarão disponíveis até validar no hardware e na documentação vigente.",
+    "Não assumir publicação pública: o toolkit está em developer preview e distribuição é controlada por organização, projeto e release channel.",
+    "Não usar display como canal de interação; a experiência Olivia é guiada por áudio."
+  ],
+  "agent_reference": {
+    "static_docs": "https://wearables.developer.meta.com/llms.txt",
+    "live_docs_mcp": "https://mcp.developer.meta.com/wearables",
+    "note": "O MCP público de documentação não exige autenticação."
+  }
+}

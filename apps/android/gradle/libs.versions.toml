@@ -1,0 +1,36 @@
+[versions]
+agp = "8.13.2"
+kotlin = "2.3.21"
+androidCompileSdk = "36"
+androidMinSdk = "29"
+androidTargetSdk = "36"
+coreKtx = "1.18.0"
+activityCompose = "1.13.0"
+composeBom = "2026.06.01"
+coroutines = "1.11.0"
+# Confira as versões publicadas no GitHub Packages antes de mudar: o DAT está em
+# developer preview e os artefatos não têm release público no GitHub.
+mwdat = "0.9.0"
+
+[libraries]
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+
+# Meta Wearables Device Access Toolkit. Declarado aqui para INT-00; mwdat-display
+# fica de fora de propósito, porque a Olivia não usa display nos óculos.
+mwdat-core = { group = "com.meta.wearable", name = "mwdat-core", version.ref = "mwdat" }
+mwdat-camera = { group = "com.meta.wearable", name = "mwdat-camera", version.ref = "mwdat" }
+mwdat-mockdevice = { group = "com.meta.wearable", name = "mwdat-mockdevice", version.ref = "mwdat" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
