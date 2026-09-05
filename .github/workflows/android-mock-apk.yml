@@ -1,0 +1,55 @@
+name: APK mock (debug)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/android/**"
+      - ".github/workflows/android-mock-apk.yml"
+  pull_request:
+    paths:
+      - "apps/android/**"
+      - ".github/workflows/android-mock-apk.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: android-mock-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mock-debug:
+    name: assembleMockDebug
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-36 build-tools;36.1.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
+
+      # O flavor mock não usa o SDK do DAT, então não há token nem local.properties
+      # aqui: o build precisa continuar passando sem nenhum segredo.
+      - name: Build do APK mock de debug
+        run: ./gradlew assembleMockDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: olivia-mock-debug-apk
+          path: apps/android/app/build/outputs/apk/mock/debug/*.apk
+          if-no-files-found: error
