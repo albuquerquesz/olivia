@@ -34,10 +34,6 @@ fun OliviaHomeScreen(
 ) {
     OliviaPage {
         Text(
-            text = "Olá, Mariana",
-            style = MaterialTheme.typography.headlineMedium,
-        )
-        Text(
             text = "Pronta para gravar sem tirar as mãos do trabalho?",
             style = MaterialTheme.typography.bodyLarge,
         )
@@ -76,10 +72,6 @@ fun OliviaHomeScreen(
             OliviaStatCard("Sessões", "0", Modifier.weight(1f))
             OliviaStatCard("Correções", "0", Modifier.weight(1f))
         }
-        Text(
-            text = "As estatísticas começam a aparecer depois da primeira sessão.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
     }
 }
 
