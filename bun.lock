@@ -6,7 +6,6 @@
       "name": "olivia",
       "dependencies": {
         "@olivia/env": "workspace:*",
-        "dotenv": "catalog:",
         "zod": "catalog:",
       },
       "devDependencies": {
@@ -25,7 +24,6 @@
         "@olivia/env": "workspace:*",
         "@sinclair/typebox": "^0.34.49",
         "better-auth": "catalog:",
-        "dotenv": "catalog:",
         "elysia": "^1.4.29",
         "zod": "catalog:",
       },
@@ -43,7 +41,6 @@
         "@olivia/db": "workspace:*",
         "@olivia/env": "workspace:*",
         "better-auth": "catalog:",
-        "dotenv": "catalog:",
         "zod": "catalog:",
       },
       "devDependencies": {
@@ -59,7 +56,6 @@
       "name": "@olivia/db",
       "dependencies": {
         "@olivia/env": "workspace:*",
-        "dotenv": "catalog:",
         "drizzle-orm": "^0.45.2",
         "pg": "^8.22.0",
         "zod": "catalog:",

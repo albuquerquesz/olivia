@@ -5,11 +5,11 @@ import { createEnv } from "@t3-oss/env-core";
 import { config } from "dotenv";
 import { z } from "zod";
 
-// Load monorepo package env relative to this file (not process.cwd()).
-// Turbo/`bun run` from the workspace root would otherwise miss apps/*/ .env.
+// Load the single monorepo env file relative to this module (not process.cwd()).
+// This keeps validation consistent when commands run from any workspace package.
 const envFilePath = resolve(
   fileURLToPath(new URL(".", import.meta.url)),
-  "../../../apps/server/.env",
+  "../../../.env",
 );
 config({ path: envFilePath });
 

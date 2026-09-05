@@ -11,6 +11,9 @@
     "dotenv": "catalog:",
     "zod": "catalog:"
   },
+  "scripts": {
+    "check-types": "tsc -b"
+  },
   "devDependencies": {
     "@olivia/config": "workspace:*",
     "@types/bun": "catalog:",

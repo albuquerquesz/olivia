@@ -30,7 +30,6 @@
   },
   "dependencies": {
     "@olivia/env": "workspace:*",
-    "dotenv": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
