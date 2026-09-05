@@ -1,16 +1,10 @@
 name: APK mock (debug)
 
+# Não roda a cada commit na main: o APK sai sob demanda ou quando algo chega em prod.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "apps/android/**"
-      - ".github/workflows/android-mock-apk.yml"
-  pull_request:
-    paths:
-      - "apps/android/**"
-      - ".github/workflows/android-mock-apk.yml"
   workflow_dispatch:
+  push:
+    branches: [prod]
 
 concurrency:
   group: android-mock-apk-${{ github.ref }}

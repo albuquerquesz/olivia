@@ -23,7 +23,8 @@ cd apps/android && ./gradlew assembleMockDebug
 ```
 
 O APK sai em `apps/android/app/build/outputs/apk/mock/debug/`. A CI roda esse mesmo
-comando a cada push e publica o APK como artefato do workflow `APK mock (debug)`.
+comando e publica o APK como artefato do workflow `APK mock (debug)`, que dispara
+manualmente (aba Actions → Run workflow) ou em push na branch `prod`.
 
 Detalhes de flavors, versões e configuração local estão em
 [`apps/android/README.md`](apps/android/README.md).
