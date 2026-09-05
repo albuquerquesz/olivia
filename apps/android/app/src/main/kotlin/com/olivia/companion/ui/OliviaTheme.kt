@@ -1,20 +1,23 @@
 package com.olivia.companion.ui
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val OliviaColors = darkColorScheme(
-    primary = Color(0xFF7CE0C0),
-    background = Color(0xFF0F1115),
-    surface = Color(0xFF181B21),
+private val OliviaLightColors = lightColorScheme(
+    primary = Color(0xFF006B57),
+    onPrimary = Color.White,
+    background = Color(0xFFF8FAFC),
+    onBackground = Color(0xFF1A1C1A),
+    surface = Color.White,
+    onSurface = Color(0xFF1A1C1A),
 )
 
 @Composable
 fun OliviaTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = OliviaColors,
+        colorScheme = OliviaLightColors,
         content = content,
     )
 }
