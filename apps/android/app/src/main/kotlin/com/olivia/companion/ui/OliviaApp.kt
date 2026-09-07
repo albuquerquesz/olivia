@@ -3,8 +3,11 @@ package com.olivia.companion.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -19,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -100,46 +104,52 @@ private fun OliviaBottomBar(
     currentRoute: String?,
     onDestinationSelected: (OliviaDestination) -> Unit,
 ) {
-    NavigationBar {
-        OliviaDestination.entries.forEach { destination ->
-            NavigationBarItem(
-                selected = currentRoute == destination.route,
-                onClick = { onDestinationSelected(destination) },
-                icon = {
-                    if (destination == OliviaDestination.RECORD) {
-                        Box(
-                            modifier = Modifier
-                                .offset(y = (-20).dp)
-                                .zIndex(1f)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(percent = 50),
-                                )
-                                .padding(horizontal = 18.dp, vertical = 8.dp),
-                        ) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(112.dp),
+    ) {
+        NavigationBar(
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            OliviaDestination.entries.forEach { destination ->
+                NavigationBarItem(
+                    selected = currentRoute == destination.route,
+                    onClick = { onDestinationSelected(destination) },
+                    icon = {
+                        if (destination == OliviaDestination.RECORD) {
+                            Spacer(modifier = Modifier.size(24.dp))
+                        } else {
                             Icon(
                                 imageVector = destination.icon,
                                 contentDescription = destination.label,
-                                tint = Color.White,
                             )
                         }
+                    },
+                    label = { Text(destination.label) },
+                    colors = if (destination == OliviaDestination.RECORD) {
+                        NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
                     } else {
-                        Icon(
-                            imageVector = destination.icon,
-                            contentDescription = destination.label,
-                        )
-                    }
-                },
-                label = { Text(destination.label) },
-                colors = if (destination == OliviaDestination.RECORD) {
-                    NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White,
-                        unselectedIconColor = Color.White,
-                        indicatorColor = Color.Transparent,
-                    )
-                } else {
-                    NavigationBarItemDefaults.colors()
-                },
+                        NavigationBarItemDefaults.colors()
+                    },
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .zIndex(1f)
+                .background(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(percent = 50),
+                )
+                .padding(horizontal = 18.dp, vertical = 8.dp),
+        ) {
+            Icon(
+                imageVector = OliviaDestination.RECORD.icon,
+                contentDescription = OliviaDestination.RECORD.label,
+                tint = Color.White,
             )
         }
     }
