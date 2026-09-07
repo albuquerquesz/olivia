@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
@@ -140,16 +140,18 @@ private fun OliviaBottomBar(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .zIndex(1f)
+                .size(56.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(percent = 50),
+                    shape = CircleShape,
                 )
-                .padding(horizontal = 18.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = OliviaDestination.RECORD.icon,
                 contentDescription = OliviaDestination.RECORD.label,
                 tint = Color.White,
+                modifier = Modifier.size(30.dp),
             )
         }
     }
