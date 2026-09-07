@@ -16,6 +16,7 @@ Ajudar Mariana a corrigir enquadramento, luz/sombra na peça e horizonte enquant
 grava. Ao terminar, o fluxo previsto entrega marcas e cortes para revisão e CapCut.
 As regras de produto e contratos em docs/rules/ são a fonte de verdade.
 As telas atuais são um esqueleto: aparência não comprova hardware, voz ou IA ativos.
+A welcome apresenta a promessa e o comando de voz na primeira abertura; não inicia sessão.
 
 ## Brand Personality
 

@@ -28,6 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +52,35 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.GlassesBackend
 import com.olivia.core.AudioMode
+
+@Composable
+fun OliviaWelcomeScreen(onContinue: () -> Unit) {
+    OliviaPage {
+        OliviaPanel {
+            Text("Olivia", style = MaterialTheme.typography.bodyLarge)
+            Text("Grava com as mãos livres", style = MaterialTheme.typography.headlineMedium)
+            PanelDetail(
+                "Eu oriento enquadramento, luz e horizonte por áudio enquanto você trabalha.",
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Comando de voz", style = MaterialTheme.typography.bodyLarge)
+                Text("Oi, Olivia, Gravar", style = MaterialTheme.typography.headlineSmall)
+            }
+            PanelDetail("Frames de análise são efêmeros. Sem conta.")
+        }
+        Button(
+            onClick = onContinue,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
+            Text("Continuar")
+        }
+    }
+}
 
 @Composable
 fun OliviaHomeScreen() {

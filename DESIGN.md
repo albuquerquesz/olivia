@@ -38,6 +38,10 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 - Sem títulos de página (Gravar, Sessões, Configurações). A orientação vem do
   painel e da barra inferior; Configurações mantém só o botão Voltar.
+- Welcome: primeira abertura apenas (`welcome_seen` em SharedPreferences). Painel
+  com promessa, comando `Oi, Olivia, Gravar` e nota de privacidade; CTA Continuar
+  leva ao Início e remove a welcome da stack. Sem barra inferior. Não seleciona
+  modo de áudio aqui (permanece em Configurações / FE-05).
 - Início: painel com Dispositivo e Ray-Ban Meta, resumo com duas colunas abertas.
   Sem título Olivia, selo Modo demonstração ou texto Óculos simulados. A indicação
   do backend continua na tela Gravar. Sem botão Gravar agora ou frase Pronta para.

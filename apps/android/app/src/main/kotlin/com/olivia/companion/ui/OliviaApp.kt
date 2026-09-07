@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -42,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
@@ -52,6 +51,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.olivia.companion.ActiveBackend
+import com.olivia.companion.WelcomePrefs
 
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
     HOME("home", "Início", Icons.Outlined.Home),
@@ -59,15 +59,20 @@ private enum class OliviaDestination(val route: String, val label: String, val i
     SESSIONS("sessions", "Sessões", Icons.Outlined.History),
 }
 
+private const val WELCOME_ROUTE = "welcome"
 private const val SETTINGS_ROUTE = "settings"
 
 @Composable
 fun OliviaApp() {
+    val context = LocalContext.current
+    val welcomePrefs = remember { WelcomePrefs(context) }
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
+    val startDestination =
+        if (welcomePrefs.isSeen()) OliviaDestination.HOME.route else WELCOME_ROUTE
 
     Scaffold(
         bottomBar = {
@@ -84,7 +89,7 @@ fun OliviaApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = OliviaDestination.HOME.route,
+            startDestination = startDestination,
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             enterTransition = {
                 fadeIn(OliviaMotion.navigation()) +
@@ -103,6 +108,16 @@ fun OliviaApp() {
                     slideOutVertically(OliviaMotion.navigation()) { travelPx }
             },
         ) {
+            composable(WELCOME_ROUTE) {
+                OliviaWelcomeScreen(
+                    onContinue = {
+                        welcomePrefs.markSeen()
+                        navController.navigate(OliviaDestination.HOME.route) {
+                            popUpTo(WELCOME_ROUTE) { inclusive = true }
+                        }
+                    },
+                )
+            }
             composable(OliviaDestination.HOME.route) {
                 OliviaHomeScreen()
             }
@@ -174,11 +189,6 @@ private fun OliviaNavigationItem(
         OliviaMotion.selection(),
         label = "navigation selection",
     )
-    val indicatorAlpha by animateFloatAsState(
-        if (selected) 1f else 0f,
-        OliviaMotion.selection(),
-        label = "navigation indicator",
-    )
 
     Column(
         modifier = modifier
@@ -224,11 +234,6 @@ private fun OliviaNavigationItem(
             color = color,
             style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.Center,
-        )
-        Spacer(
-            Modifier.width(16.dp).height(2.dp)
-                .graphicsLayer { alpha = indicatorAlpha }
-                .background(MaterialTheme.colorScheme.primary, CircleShape),
         )
     }
 }
