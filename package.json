@@ -18,6 +18,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "lint": "turbo run lint -F server -F @olivia/db -F @olivia/auth -F @olivia/env",
     "check-types": "turbo run check-types",
     "dev:server": "turbo run dev -F server",
     "db:up": "docker compose up -d postgres",

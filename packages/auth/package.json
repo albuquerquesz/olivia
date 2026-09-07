@@ -9,7 +9,10 @@
       "default": "./src/*.ts"
     }
   },
-  "scripts": {},
+  "scripts": {
+    "lint": "tsc -b",
+    "check-types": "tsc -b"
+  },
   "dependencies": {
     "@olivia/db": "workspace:*",
     "@olivia/env": "workspace:*",
