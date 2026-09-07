@@ -142,7 +142,7 @@ private fun OliviaBottomBar(
                 .align(Alignment.TopCenter)
                 .offset(y = (-12).dp)
                 .zIndex(1f)
-                .size(60.dp)
+                .size(56.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primary,
                     shape = CircleShape,
@@ -153,7 +153,7 @@ private fun OliviaBottomBar(
                 imageVector = OliviaDestination.RECORD.icon,
                 contentDescription = OliviaDestination.RECORD.label,
                 tint = Color.White,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(30.dp),
             )
         }
     }
