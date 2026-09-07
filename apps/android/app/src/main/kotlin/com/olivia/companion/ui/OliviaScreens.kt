@@ -30,11 +30,6 @@ fun OliviaHomeScreen(
     backend: GlassesBackend,
 ) {
     OliviaPage {
-        Text(
-            text = "Pronta para gravar sem tirar as mãos do trabalho?",
-            style = MaterialTheme.typography.bodyLarge,
-        )
-
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),
