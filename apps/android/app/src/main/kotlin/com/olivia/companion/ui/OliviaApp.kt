@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
@@ -139,8 +140,9 @@ private fun OliviaBottomBar(
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
+                .offset(y = (-12).dp)
                 .zIndex(1f)
-                .size(56.dp)
+                .size(60.dp)
                 .background(
                     color = MaterialTheme.colorScheme.primary,
                     shape = CircleShape,
@@ -151,7 +153,7 @@ private fun OliviaBottomBar(
                 imageVector = OliviaDestination.RECORD.icon,
                 contentDescription = OliviaDestination.RECORD.label,
                 tint = Color.White,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(32.dp),
             )
         }
     }
