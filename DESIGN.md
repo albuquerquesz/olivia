@@ -36,10 +36,11 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 ## Telas e componentes
 
+- Sem títulos de página (Gravar, Sessões, Configurações). A orientação vem do
+  painel e da barra inferior; Configurações mantém só o botão Voltar.
 - Início: painel com Dispositivo e Ray-Ban Meta, resumo com duas colunas abertas.
-  Por ajuste posterior solicitado pelo usuário, sem título Olivia, selo Modo
-  demonstração ou texto Óculos simulados na home. A indicação do backend continua
-  na tela Gravar. Sem botão Gravar agora ou frase Pronta para na home.
+  Sem título Olivia, selo Modo demonstração ou texto Óculos simulados. A indicação
+  do backend continua na tela Gravar. Sem botão Gravar agora ou frase Pronta para.
 - Gravar: comando por voz e disponibilidade no painel; configurações abaixo.
   Não alegar que o app está escutando ou que os óculos estão conectados.
 - Sessões: estado vazio no painel, sem dados inventados ou novas telas de revisão.

@@ -73,7 +73,7 @@ fun OliviaHomeScreen() {
 
 @Composable
 fun OliviaRecordingScreen(backend: GlassesBackend, onOpenSettings: () -> Unit) {
-    OliviaPage(title = "Gravar") {
+    OliviaPage {
         OliviaPanel {
             Text("Comando de voz", style = MaterialTheme.typography.bodyLarge)
             Text("Oi, Olivia, Gravar", style = MaterialTheme.typography.headlineMedium)
@@ -110,7 +110,7 @@ fun OliviaRecordingScreen(backend: GlassesBackend, onOpenSettings: () -> Unit) {
 
 @Composable
 fun OliviaSessionsScreen() {
-    OliviaPage(title = "Sessões") {
+    OliviaPage {
         OliviaPanel {
             Text("Seus takes", style = MaterialTheme.typography.bodyLarge)
             Text("Nenhuma sessão ainda", style = MaterialTheme.typography.headlineMedium)
@@ -123,7 +123,7 @@ fun OliviaSessionsScreen() {
 fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
     var audioMode by rememberSaveable { mutableStateOf(AudioMode.VOICE.name) }
 
-    OliviaPage(title = "Configurações", onNavigateBack = onNavigateBack) {
+    OliviaPage(onNavigateBack = onNavigateBack) {
         OliviaPanel {
             SectionTitle("Modo de feedback")
             FlowRow(
@@ -169,7 +169,6 @@ fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
 
 @Composable
 private fun OliviaPage(
-    title: String? = null,
     onNavigateBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -182,20 +181,9 @@ private fun OliviaPage(
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
-            if (title != null || onNavigateBack != null) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (onNavigateBack != null) {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
-                        }
-                    }
-                    if (title != null) {
-                        Text(
-                            title,
-                            style = MaterialTheme.typography.headlineLarge,
-                            modifier = Modifier.semantics { heading() },
-                        )
-                    }
+            if (onNavigateBack != null) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
                 }
             }
             content()
