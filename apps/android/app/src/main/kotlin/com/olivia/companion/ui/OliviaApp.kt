@@ -144,7 +144,7 @@ private fun OliviaBottomBar(
                 .background(
                     color = MaterialTheme.colorScheme.primary,
                     shape = CircleShape,
-                )
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
