@@ -3,7 +3,6 @@ package com.olivia.companion.ui
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -45,7 +43,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -55,15 +52,11 @@ import com.olivia.companion.GlassesBackend
 import com.olivia.core.AudioMode
 
 @Composable
-fun OliviaHomeScreen(backend: GlassesBackend) {
-    OliviaPage(title = "Olivia") {
+fun OliviaHomeScreen() {
+    OliviaPage {
         OliviaPanel {
             Text("Dispositivo", style = MaterialTheme.typography.bodyLarge)
             Text("Ray-Ban Meta", style = MaterialTheme.typography.headlineMedium)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                DeviceStatus(backend)
-                PanelDetail(backend.label)
-            }
         }
         Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
             SectionTitle("Seu resumo")
@@ -176,7 +169,7 @@ fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
 
 @Composable
 private fun OliviaPage(
-    title: String,
+    title: String? = null,
     onNavigateBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -189,17 +182,21 @@ private fun OliviaPage(
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (onNavigateBack != null) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
+            if (title != null || onNavigateBack != null) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (onNavigateBack != null) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
+                        }
+                    }
+                    if (title != null) {
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.headlineLarge,
+                            modifier = Modifier.semantics { heading() },
+                        )
                     }
                 }
-                Text(
-                    title,
-                    style = MaterialTheme.typography.headlineLarge,
-                    modifier = Modifier.semantics { heading() },
-                )
             }
             content()
         }
@@ -216,11 +213,9 @@ private fun OliviaPanel(content: @Composable ColumnScope.() -> Unit) {
     ) {
         Column(
             modifier = Modifier.heightIn(min = 248.dp).padding(24.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            // Explicit spacing also protects the panel when large text exceeds its minimum height.
-            Column(verticalArrangement = Arrangement.spacedBy(24.dp), content = content)
-        }
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+            content = content,
+        )
     }
 }
 

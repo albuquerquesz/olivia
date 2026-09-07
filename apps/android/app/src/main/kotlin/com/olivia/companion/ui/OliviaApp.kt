@@ -104,7 +104,7 @@ fun OliviaApp() {
             },
         ) {
             composable(OliviaDestination.HOME.route) {
-                OliviaHomeScreen(backend = ActiveBackend.current)
+                OliviaHomeScreen()
             }
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
