@@ -67,9 +67,6 @@ fun OliviaApp() {
             composable(OliviaDestination.HOME.route) {
                 OliviaHomeScreen(
                     backend = ActiveBackend.current,
-                    onStartRecording = {
-                        navController.navigate(OliviaDestination.RECORD.route)
-                    },
                 )
             }
             composable(OliviaDestination.RECORD.route) {

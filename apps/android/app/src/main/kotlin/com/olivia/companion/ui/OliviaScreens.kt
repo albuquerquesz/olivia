@@ -3,14 +3,12 @@ package com.olivia.companion.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -30,21 +28,12 @@ import com.olivia.core.AudioMode
 @Composable
 fun OliviaHomeScreen(
     backend: GlassesBackend,
-    onStartRecording: () -> Unit,
 ) {
     OliviaPage {
         Text(
             text = "Pronta para gravar sem tirar as mãos do trabalho?",
             style = MaterialTheme.typography.bodyLarge,
         )
-
-        Button(
-            onClick = onStartRecording,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = 16.dp),
-        ) {
-            Text("Gravar agora")
-        }
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
