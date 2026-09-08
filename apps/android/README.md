@@ -2,7 +2,7 @@
 
 App nativo Kotlin/Compose que hospeda o loop ao vivo da Olivia. O celular é a ponte
 obrigatória do Device Access Toolkit; este módulo é a superfície onde a sessão, os
-frames e o áudio vão viver.
+frames e o áudio vão viver. A interface usa exclusivamente o modo claro.
 
 ## Pré-requisitos
 

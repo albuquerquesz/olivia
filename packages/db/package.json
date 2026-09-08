@@ -10,10 +10,12 @@
     }
   },
   "scripts": {
+    "lint": "tsc -b",
+    "check-types": "tsc -b",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "bun run src/migrate.ts"
   },
   "dependencies": {
     "@olivia/env": "workspace:*",

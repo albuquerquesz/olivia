@@ -12,6 +12,7 @@
     "zod": "catalog:"
   },
   "scripts": {
+    "lint": "tsc -b",
     "check-types": "tsc -b"
   },
   "devDependencies": {
