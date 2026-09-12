@@ -280,18 +280,18 @@
       "MockDeviceKit smoke flow",
       "analytics and crash reporting opt-out"
     ],
-    "runtime_boundary": "O DAT fica atrás de GlassesGateway; o domínio da Olivia não importa tipos do SDK. SH-04 deve resolver e versionar captura antes do sampler e heartbeat independente conforme SDD 00.",
+    "runtime_boundary": "DAT atrás de GlassesGateway 2.0.0 com frames anteriores ao sampler, heartbeat independente e geração de captura; sem tipos do SDK no domínio.",
     "contracts_file": "olivia-contracts.json"
   },
   "implementation_planning_review": {
     "date": "2026-09-12",
     "spec_root": "docs/spec-driven-development",
     "decisions": "docs/spec-driven-development/DECISIONS.md",
-    "runtime_status": "planned_not_validated",
+    "runtime_status": "core_contracts_implemented_pending_validation",
     "backend_boundary": "Elysia/Better Auth/Postgres existentes são scaffold fora do runtime do MVP; BE-13 delimita configuração e BE-14 prepara Docker de integração, sem nova API de frames ou áudio.",
     "transcription_boundary": "Whisper local no Android após STOPPED. Runner Docker CPU serve à integração; transcrição remota não é baseline autorizada pelo planejamento submetido.",
     "native_recording_gate": "BE-12 verifica separadamente acionamento mãos-livres, gravação nativa simultânea ao DAT, continuidade na queda e importação pós-sessão. Fluxos nativos neste diagrama representam intenção submetida, não capacidade medida.",
-    "frame_health": "A detecção de quatro segundos sem frame deve observar saúde da captura independentemente da taxa de inferência; semântica Kotlin a evoluir em SH-04 antes de BE-00/02.",
+    "frame_health": "Contrato 2.0.0 inclui heartbeat anterior ao sampler e CaptureId por geração. FE-02/FE-09 implementam watchdog em 4 s; API implementada não comprova comportamento de hardware.",
     "privacy_gate": "Descarte local não comprova retenção zero no provedor; BE-10/13 exigem configuração e evidências externas antes de mídia real.",
     "metrics": "900 ms no loop e aproximadamente 8 s no pós-processamento permanecem metas; callback Android de áudio não comprova instante acústico nos óculos."
   }

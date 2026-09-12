@@ -1,0 +1,21 @@
+{
+  "sessionId": "fixture-session",
+  "recording": {"id":"fixture-take","sessionId":"fixture-session","startedAtEpochMs":1700000000000,"durationMs":60000,"sizeBytes":1024,"hasAudioTrack":true},
+  "transcript": [{"startMs":30000,"endMs":32000,"text":"deixa eu refazer"}],
+  "suggestedCuts": [{"startMs":30000,"endMs":32000,"reason":"SPEECH_RETAKE","confidence":0.9}],
+  "timeline": [{
+    "id": "resolved-1",
+    "sessionId": "fixture-session",
+    "atEpochMs": 1700000014000,
+    "offsetMs": 14000,
+    "type": "CORRECTION_RESOLVED",
+    "diagnosis": {"kind":"FRAMING","severity":"OK","confidence":0.9,"direction":null,"magnitude":null},
+    "direction": null,
+    "confidence": 0.9,
+    "correctionStatus": "OBEYED",
+    "correctionId": "correction-1",
+    "label": "recentrou",
+    "contractVersion": "2.0.0"
+  }],
+  "contractVersion": "2.0.0"
+}

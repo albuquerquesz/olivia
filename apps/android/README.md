@@ -45,6 +45,11 @@ Tudo — Kotlin, Compose, AGP, SDKs e os artefatos do DAT — fica em
 declarados mas ainda não aplicados: a autenticação no GitHub Packages, o
 `APPLICATION_ID` e o smoke test do MockDeviceKit são da task INT-00.
 
+## Contratos e testes do domínio
+
+O `:core` usa contratos 2.0.0; veja a [migração](../../docs/spec-driven-development/00-contratos-e-fronteiras/implementation.md).
+O [runner de integração](../../infra/testing/README.md) permite testar o mesmo módulo em Docker/JVM sem Android SDK ou DAT, com tarefas separadas de unitários e integração. Os testes desta primeira entrega foram escritos, mas ainda não executados.
+
 ## Segredos
 
 `local.properties`, tokens, keystores e APKs são ignorados pelo Git. O token do DAT

@@ -37,8 +37,8 @@ public enum class CorrectionStatus {
 /** Uma instrução pronta para virar áudio. */
 public data class Correction(
     val id: String,
-    val sessionId: SessionId,
-    val issuedAtEpochMs: Long,
+    val capture: CaptureId,
+    val issuedAt: ClockReading,
     val diagnosis: VisualDiagnosis,
     val direction: Direction,
     val confidence: Confidence,
@@ -54,7 +54,7 @@ public data class Correction(
  * transformar o loop em spam; devolve nulo quando o certo é ficar calado.
  */
 public interface GuidanceEngine {
-    public fun onAnalysis(analysis: FrameAnalysis, nowEpochMs: Long): Correction?
+    public fun onAnalysis(analysis: FrameAnalysis, now: ClockReading): Correction?
 
     public fun onCorrectionOutcome(correctionId: String, status: CorrectionStatus)
 }
@@ -70,7 +70,13 @@ public enum class AudioMode {
 /** Avisos que não são correção de enquadramento. */
 public enum class SessionSignal {
     SESSION_STARTED,
+    SESSION_PAUSED,
+    SESSION_RESUMED,
     SESSION_STOPPED,
+    ANALYSIS_UNAVAILABLE,
+    ANALYSIS_RESTORED,
+    AUDIO_UNAVAILABLE,
+    AUDIO_RESTORED,
 
     /** Queda de conexão com os óculos. */
     CONNECTION_LOST,
@@ -83,13 +89,22 @@ public enum class SessionSignal {
  * Saída de áudio roteada para o alto-falante dos óculos por Bluetooth.
  *
  * Nunca presuma display: áudio é o único canal de retorno para a pessoa.
+ * Falhas operacionais retornam Result.failure; CancellationException propaga.
  */
 public interface AudioFeedback {
     public val mode: AudioMode
 
-    public suspend fun announce(correction: Correction)
+    /** Sucesso significa callback de início, não apenas pedido TTS enfileirado. */
+    public suspend fun announce(correction: Correction): Result<AudioReceipt>
 
-    public suspend fun signal(signal: SessionSignal)
+    public suspend fun signal(signal: SessionSignal): Result<ClockReading>
 
     public suspend fun stop()
 }
+
+/** Callback Android não comprova instante acústico nos óculos. */
+public data class AudioReceipt(
+    val correctionId: String,
+    val capture: CaptureId,
+    val startedAt: ClockReading,
+)

@@ -1,0 +1,15 @@
+**
+!apps/
+!apps/android/
+!apps/android/gradlew
+!apps/android/gradle/
+!apps/android/gradle/libs.versions.toml
+!apps/android/gradle/wrapper/
+!apps/android/gradle/wrapper/**
+!apps/android/core/
+!apps/android/core/build.gradle.kts
+!apps/android/core/src/
+!apps/android/core/src/**
+!infra/
+!infra/testing/
+!infra/testing/settings.gradle.kts

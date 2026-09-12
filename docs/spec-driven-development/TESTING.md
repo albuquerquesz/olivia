@@ -1,6 +1,6 @@
 # Contrato de testes e ambiente
 
-Cada task funcional entrega implementação, testes unitários e pelo menos um teste de integração relevante no mesmo conjunto de alterações. Docker faz parte obrigatória do harness BE-14. Não é suficiente testar apenas mocks de todos os colaboradores. As chamadas/comandos descritos aqui são alvos futuros a implementar, não scripts disponíveis hoje nem autorização para executá-los nesta revisão.
+Cada task funcional entrega implementação, testes unitários e pelo menos um teste de integração relevante no mesmo conjunto de alterações. Docker faz parte obrigatória do harness BE-14. Não é suficiente testar apenas mocks de todos os colaboradores. O [runner inicial de contratos](../../infra/testing/README.md) está implementado, sem execução. Os demais perfis abaixo são alvos futuros e não representam autorização para executar verificações.
 
 ## Camadas de evidência
 

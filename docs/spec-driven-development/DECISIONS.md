@@ -1,6 +1,6 @@
 # Decisões e pendências de arquitetura
 
-Estas decisões orientam a implementação futura. A API Kotlin atual continua em 1.0.0 até SH-04 implementar e versionar os ajustes.
+Estas decisões orientam a implementação. A API Kotlin evoluiu para 2.0.0 na primeira entrega SH-04; compilação/testes ainda não executados. Ver [migração e limites](00-contratos-e-fronteiras/implementation.md). As seções de resolução abaixo registram o desenho original, implementado nos contratos; efeitos de runtime e mídia permanecem nas tasks responsáveis.
 
 | ID | Decisão | Estado / responsável |
 |---|---|---|
@@ -9,8 +9,8 @@ Estas decisões orientam a implementação futura. A API Kotlin atual continua e
 | ADR-03 | Docker serve ao desenvolvimento e integração. Runner JVM e stub HTTP exercitam domínio/transportes reais; SDK DAT, Firebase Android e áudio exigem camada Android adicional | Planejado; BE-14 |
 | ADR-04 | Whisper executa localmente no celular após STOPPED. Primeiro spike compara modelo multilíngue pequeno e versão fixa. Serviço remoto de áudio exigiria decisão explícita de dados e revisão do submit | Baseline preservada; BE-08 |
 | ADR-05 | Sessão DAT de captura não equivale a gravação nativa. Comandos, simultaneidade, preservação na queda e importação são capacidades independentes a comprovar | Em aberto; BE-12/INT-04/06 |
-| ADR-06 | Um relógio monotônico para duração, cooldown, timeout e offsets; epoch somente para correlação externa. Definir mapa sessão→mídia antes de gerar cortes | Evolução de contrato pendente; SH-04/BE-12 |
-| ADR-07 | Sampler recebe captura antes de reduzir a frequência. Disponibilidade usa chegada de frames de captura, nunca término de inferência. Buffer limitado: um em análise e no máximo um mais recente aguardando | Evolução de contrato pendente; SH-04/BE-00/02 |
+| ADR-06 | Um relógio monotônico para duração, cooldown, timeout e offsets; epoch somente para correlação externa. Definir mapa sessão→mídia antes de gerar cortes | Clock implementado em SH-04, sem execução; mapa de mídia pendente BE-12 |
+| ADR-07 | Sampler recebe captura antes de reduzir a frequência. Disponibilidade usa chegada de frames de captura, nunca término de inferência. Buffer limitado: um em análise e no máximo um mais recente aguardando | Contrato 2.0.0 implementado, sem execução; pipeline pendente BE-00/02 |
 | ADR-08 | Falha de IA não significa frame saudável nem queda Bluetooth. Suspender orientação e sinalizar indisponibilidade; manter causa tipada e recuperação sem reiniciar timeline | Planejado; SH-04/BE-03/FE-09 |
 | ADR-09 | Vídeo original e transcrição permanecem locais; somente frame amostrado segue ao provedor visual. Nada de bytes de mídia, texto de transcrição ou tokens em logs/test reports | Planejado; BE-10 |
 | ADR-10 | Sem usuários/contas no MVP. App Check e quotas protegem uso da IA; CORS, package name ou API key isoladamente não autenticam chamadores | Planejado; BE-13 |

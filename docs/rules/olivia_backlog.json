@@ -262,7 +262,19 @@
             "tasks": "docs/spec-driven-development/00-contratos-e-fronteiras/tasks.md",
             "runtime": "shared_boundary",
             "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
-            "status": "planning_reviewed_not_runtime_validated"
+            "status": "implemented_pending_validation"
+          },
+          "implementation": {
+            "status": "implemented_pending_validation",
+            "summary": "Contratos 2.0.0, relógio monotônico, CaptureFence/heartbeat, grafo de transições, causas/sinais, recibo de áudio e codec JSON com fixtures/testes.",
+            "files": [
+              "apps/android/core",
+              "docs/spec-driven-development/00-contratos-e-fronteiras/implementation.md"
+            ],
+            "tests": "written_not_run",
+            "remaining": [
+              "Validação de compilação e testes mediante solicitação explícita."
+            ]
           }
         },
         {
@@ -419,9 +431,21 @@
             "tasks": "docs/spec-driven-development/01-setup-backend-e-infra/tasks.md",
             "runtime": "development_infrastructure",
             "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
-            "status": "planning_reviewed_not_runtime_validated"
+            "status": "partially_implemented"
           },
-          "description": "## Objetivo\n\nEstabelecer ambiente reproduzível em Docker para integração entre componentes concretos, com stubs controlados e Whisper local, e camada adicional Android para SDKs reais e hardware.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-03, SH-04\n\n## Definição de pronto\n\n- Criar Compose de testes separado do banco de desenvolvimento; runner JVM/stub HTTP e perfil Whisper com versões fixas.\n- Offline executa sem egress ou secrets; live é opt-in, limitado por chamadas/orçamento e falha claramente se configurado incorretamente.\n- Docker não substitui SDK Android, DAT/BT, Firebase real ou medição física; definir entrypoints e requisitos separados.\n- Entregar unitários e integração do harness incluindo falha de startup, isolamento e teardown.\n- Toda feature deve entregar testes unitários e de integração no mesmo trabalho; registrar não executado sem alegar sucesso.\n\n## Notas / risco\n\nSuporte necessário ao fluxo submetido; não amplia produto. Execuções e configuração externa não ocorreram nesta revisão.\n\n## Especificação e testes\n\ndocs/spec-driven-development/01-setup-backend-e-infra/spec.md\ndocs/spec-driven-development/01-setup-backend-e-infra/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência."
+          "description": "## Objetivo\n\nEstabelecer ambiente reproduzível em Docker para integração entre componentes concretos, com stubs controlados e Whisper local, e camada adicional Android para SDKs reais e hardware.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-03, SH-04\n\n## Definição de pronto\n\n- Criar Compose de testes separado do banco de desenvolvimento; runner JVM/stub HTTP e perfil Whisper com versões fixas.\n- Offline executa sem egress ou secrets; live é opt-in, limitado por chamadas/orçamento e falha claramente se configurado incorretamente.\n- Docker não substitui SDK Android, DAT/BT, Firebase real ou medição física; definir entrypoints e requisitos separados.\n- Entregar unitários e integração do harness incluindo falha de startup, isolamento e teardown.\n- Toda feature deve entregar testes unitários e de integração no mesmo trabalho; registrar não executado sem alegar sucesso.\n\n## Notas / risco\n\nSuporte necessário ao fluxo submetido; não amplia produto. Execuções e configuração externa não ocorreram nesta revisão.\n\n## Especificação e testes\n\ndocs/spec-driven-development/01-setup-backend-e-infra/spec.md\ndocs/spec-driven-development/01-setup-backend-e-infra/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "implementation": {
+            "status": "partially_implemented",
+            "summary": "Runner Docker offline e settings Gradle isolado para :core; demais perfis e CI ainda pendentes.",
+            "files": [
+              "infra/testing"
+            ],
+            "tests": "written_not_run",
+            "remaining": [
+              "Validar runner Docker mediante solicitação explícita.",
+              "Adicionar stub HTTP, Whisper, Android/live IA e reports de CI nas próximas features."
+            ]
+          }
         }
       ]
     },
@@ -1549,6 +1573,14 @@
       "ethics": 20
     },
     "evaluation_source": "Tabela Etapa 6 fornecida pelo usuário nesta revisão; cobertura planejada não garante pontuação.",
-    "execution_performed": false
+    "execution_performed": false,
+    "implementation_started": {
+      "tasks": [
+        "SH-04",
+        "BE-14"
+      ],
+      "status": "first_slice_implemented_pending_validation",
+      "note": "O conteúdo de planning_review acima registra a revisão original. Progresso de código está em implementation nas respectivas tasks; nenhuma validação executada."
+    }
   }
 }

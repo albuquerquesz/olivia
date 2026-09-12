@@ -1,6 +1,6 @@
 # Desenvolvimento por especificações — Olivia
 
-Revisão de planejamento em 12/09/2026. Escopo: arquitetura, infraestrutura, segurança, domínio e integrações de backend/IA. As interfaces Android entram apenas quando são fronteiras necessárias do fluxo. Nenhuma feature de runtime foi implementada nesta revisão.
+Revisão de planejamento em 12/09/2026. Escopo: arquitetura, infraestrutura, segurança, domínio e integrações de backend/IA. As interfaces Android entram apenas quando são fronteiras necessárias do fluxo. Implementação iniciada: [SH-04 — contratos 2.0.0 e testes](00-contratos-e-fronteiras/implementation.md), com runner Docker parcial BE-14. Validação por execução pendente.
 
 Comece pela [review](REVIEW.md), pelas [decisões](DECISIONS.md) e pela [política de testes](TESTING.md). O [backlog canônico](../rules/olivia_backlog.json) preserva os IDs existentes; cada task aponta para sua especificação. O código de contratos em `apps/android/core` continua sendo a fonte da API vigente. Mudanças propostas de contrato estão identificadas como pendentes, não como implementadas.
 

@@ -1,6 +1,6 @@
 # Contratos e fronteiras do domínio
 
-Status: planejado; implementação e execução de testes pendentes.
+Status: contratos 2.0.0 e testes implementados; validação por execução pendente. Ver [entrega e migração](implementation.md). Executor de sessão e mapa real de mídia continuam nas tasks posteriores.
 
 Tasks canônicas: SH-01, SH-02, SH-04.
 
@@ -25,4 +25,3 @@ Unitários: transições, consistência da configuração, confidence inválida,
 Pronto quando a matriz de transição, exemplos de mensagens e decisão de buffers/heartbeat não se contradizem entre Kotlin, JSON e specs. Não marcar SH-01 concluída sem resposta oficial.
 
 Veja [subtasks](tasks.md), [diagrama](diagram.mmd), [decisões](../DECISIONS.md) e [contrato de testes](../TESTING.md). Os critérios aqui são obrigatórios para fechar as tasks associadas; nenhum resultado foi medido nesta revisão.
-

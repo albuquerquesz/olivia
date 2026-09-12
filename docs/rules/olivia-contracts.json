@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "contract_version": "1.0.0",
+  "contract_version": "2.0.0",
   "title": "Contratos entre app, IA, mock e hardware real",
   "task": "SH-04",
   "source_of_truth": {
@@ -9,35 +9,45 @@
   },
   "versioning": {
     "scheme": "semver",
-    "current": "1.0.0",
+    "current": "2.0.0",
     "rule": "MAJOR quebra consumidores, MINOR adiciona de forma compatível, PATCH é correção de detalhe.",
     "carried_in": [
       "TimelineEvent.contractVersion",
       "SessionReview.contractVersion"
-    ]
+    ],
+    "reader_policy": "ContractJson exige versão explícita 2.0.0 em review e em cada evento. Versões ausentes, antigas ou futuras são rejeitadas; não há migração automática de arquivos 1.x."
   },
   "interfaces": [
     {
       "name": "GlassesGateway",
       "owner": "Backend/IA",
       "purpose": "Conexão e captura nos óculos. Único ponto que o DAT toca.",
-      "implementations": ["mock", "DAT"],
+      "implementations": [
+        "mock",
+        "DAT"
+      ],
       "members": [
         "connection: Flow<GlassesConnection>",
-        "frames: Flow<Frame>",
-        "startCapture(sessionId, config)",
+        "frames: Flow<Frame> (antes do sampler, consumidor único)",
+        "heartbeat: StateFlow<CaptureHeartbeat?>",
+        "startCapture(capture: CaptureId)",
         "pauseCapture()",
-        "resumeCapture()",
+        "resumeCapture(capture: CaptureId)",
         "stopCapture()"
       ],
-      "note": "Não conhece SessionState. Reporta conexão e frames crus; DEGRADED é decidido pela máquina de estados."
+      "note": "Adapter atualiza heartbeat no callback de captura independentemente do consumidor/IA. Pausa mantém sessão DAT/conexão; coordenador não aplica timeout de frame a pausa intencional. Início e retomada recebem geração nova. Contrato não comprova gravação nativa."
     },
     {
       "name": "FrameAnalyzer",
       "owner": "Backend/IA",
       "purpose": "Classifica um frame em enquadramento, luz e horizonte.",
-      "implementations": ["mock determinístico", "Gemini via Firebase AI Logic"],
-      "members": ["analyze(frame): Result<FrameAnalysis>"],
+      "implementations": [
+        "mock determinístico",
+        "Gemini via Firebase AI Logic"
+      ],
+      "members": [
+        "analyze(frame): Result<FrameAnalysis>"
+      ],
       "note": "Devolve Result em vez de lançar: inferência ruim ou queda de rede não pode matar o loop ao vivo."
     },
     {
@@ -45,7 +55,7 @@
       "owner": "Backend/IA",
       "purpose": "Aplica thresholds e cooldown para transformar diagnóstico em correção.",
       "members": [
-        "onAnalysis(analysis, nowEpochMs): Correction?",
+        "onAnalysis(analysis, now: ClockReading): Correction?",
         "onCorrectionOutcome(correctionId, status)"
       ],
       "note": "Devolve nulo quando o certo é ficar calado."
@@ -54,14 +64,22 @@
       "name": "AudioFeedback",
       "owner": "Frontend",
       "purpose": "Entrega a correção por áudio no alto-falante dos óculos.",
-      "members": ["mode", "announce(correction)", "signal(signal)", "stop()"],
-      "note": "Áudio é o único canal de retorno. Não presuma display."
+      "members": [
+        "mode",
+        "announce(correction): Result<AudioReceipt>",
+        "signal(signal): Result<ClockReading>",
+        "stop()"
+      ],
+      "note": "AudioReceipt inclui correctionId, CaptureId e ClockReading do callback de início; pedido TTS enfileirado não é sucesso. Callback não prova instante acústico nos óculos. CancellationException deve propagar."
     },
     {
       "name": "Timeline",
       "owner": "Frontend",
       "purpose": "Registro único do que aconteceu no take.",
-      "members": ["record(event)", "events(sessionId)"]
+      "members": [
+        "record(event)",
+        "events(sessionId)"
+      ]
     },
     {
       "name": "RecordingSource",
@@ -78,8 +96,33 @@
       "name": "PostProcessor",
       "owner": "Backend/IA",
       "purpose": "Transcrição e cortes sugeridos após o take.",
-      "members": ["process(sessionId, recording, timeline): Result<SessionReview>"],
+      "members": [
+        "process(sessionId, recording, timeline): Result<SessionReview>"
+      ],
       "note": "Usa o áudio da gravação, nunca o microfone ao vivo."
+    },
+    {
+      "name": "OliviaClock",
+      "owner": "Backend/IA",
+      "purpose": "Relógio injetável compartilhado no processo; monotônico para intervalos e epoch para correlação externa.",
+      "members": [
+        "now(): ClockReading"
+      ],
+      "implementations": [
+        "SystemOliviaClock",
+        "clock virtual em testes"
+      ]
+    },
+    {
+      "name": "ContractJson",
+      "owner": "Backend/IA",
+      "purpose": "Codec JSON estrito para metadados locais de timeline e revisão; saída privada, nunca logável.",
+      "members": [
+        "encodeEvent(event): String",
+        "decodeEvent(json): TimelineEvent",
+        "encodeReview(review): String",
+        "decodeReview(json): SessionReview"
+      ]
     }
   ],
   "session_states": {
@@ -97,7 +140,13 @@
     ],
     "invariant": "STARTED, PAUSED, STOPPED e DEGRADED não podem ser removidos ou renomeados.",
     "note": "SH-04 foi alinhada aos dez estados na revisão SDD de 12/09/2026. STOPPING encerra a captura, STOPPED marca o fim do loop ao vivo, PROCESSING é o pós-take e READY é a timeline pronta.",
-    "degraded_rule": "Quatro segundos sem frame marcam DEGRADED; a sessão continua viva e pode voltar para STARTED."
+    "degraded_rule": "Coordenador aplicará quatro segundos sem heartbeat de captura quando esperado; causas independentes e intenção de retorno STARTED/PAUSED são campos do snapshot. Executor do watchdog permanece FE-02/FE-09.",
+    "transition_policy": "SessionTransitions.allows define grafo; callbacks, idempotência e guardas de causa/intenção são responsabilidade de FE-02. PROCESSING somente vem de STOPPED; cancelamento de PROCESSING retorna a STOPPED.",
+    "degradation_causes": [
+      "CAPTURE_UNAVAILABLE",
+      "ANALYSIS_UNAVAILABLE",
+      "AUDIO_UNAVAILABLE"
+    ]
   },
   "session_config_defaults": {
     "samplingFps": 0.5,
@@ -105,14 +154,14 @@
     "degradedAfterMs": 4000,
     "correctionCooldownMs": 4000,
     "audioMode": "VOICE",
-    "note": "Configuráveis por exigência de bateria e demo. degradedAfterMs precisa ser maior que analysisIntervalMs."
+    "note": "analysisIntervalMs é fonte única; samplingFps = 1000.0/analysisIntervalMs (somente leitura). degradedAfterMs independe do intervalo de análise e observa heartbeat anterior ao sampler."
   },
   "timeline_event_schema": {
     "fields": {
       "id": "string",
       "sessionId": "string",
-      "atEpochMs": "long, timestamp absoluto para ordenar e depurar",
-      "offsetMs": "long, milissegundos desde o início da sessão; é o que amarra o evento ao vídeo nativo",
+      "atEpochMs": "long, âncora de relógio civil; não usar para calcular duração/cooldown ou ordenar ao custo de offsets",
+      "offsetMs": "long não negativo, duração monotônica desde início da sessão; BE-12 deve mapear para posição de mídia nativa",
       "type": "TimelineEventType",
       "diagnosis": "VisualDiagnosis?, o diagnóstico da IA",
       "direction": "Direction?",
@@ -135,16 +184,44 @@
       "CUT_SUGGESTED",
       "ERROR"
     ],
-    "correction_status": ["PENDING", "OBEYED", "IGNORED", "EXPIRED", "SUPERSEDED"],
+    "correction_status": [
+      "PENDING",
+      "OBEYED",
+      "IGNORED",
+      "EXPIRED",
+      "SUPERSEDED"
+    ],
     "privacy": "Por construção não há frame, áudio bruto nem credencial no evento. A timeline sobrevive à sessão e é o que a pessoa revisa e exporta."
   },
   "analysis_vocabulary": {
-    "diagnosis_kinds": ["FRAMING", "LIGHT", "HORIZON"],
-    "severity": ["OK", "MINOR", "MAJOR"],
+    "diagnosis_kinds": [
+      "FRAMING",
+      "LIGHT",
+      "HORIZON"
+    ],
+    "severity": [
+      "OK",
+      "MINOR",
+      "MAJOR"
+    ],
     "directions": {
-      "FRAMING": ["TURN_LEFT", "TURN_RIGHT", "MOVE_CLOSER", "MOVE_BACK", "RAISE", "LOWER"],
-      "LIGHT": ["FACE_THE_LIGHT", "AVOID_BACKLIGHT", "LEAVE_THE_SHADOW"],
-      "HORIZON": ["LEVEL_HORIZON_LEFT", "LEVEL_HORIZON_RIGHT"]
+      "FRAMING": [
+        "TURN_LEFT",
+        "TURN_RIGHT",
+        "MOVE_CLOSER",
+        "MOVE_BACK",
+        "RAISE",
+        "LOWER"
+      ],
+      "LIGHT": [
+        "FACE_THE_LIGHT",
+        "AVOID_BACKLIGHT",
+        "LEAVE_THE_SHADOW"
+      ],
+      "HORIZON": [
+        "LEVEL_HORIZON_LEFT",
+        "LEVEL_HORIZON_RIGHT"
+      ]
     },
     "note": "Lista fechada. A IA não deve devolver categoria fora dela."
   },
@@ -156,23 +233,47 @@
   ],
   "isolation_guarantee": {
     "claim": "O domínio da Olivia não importa tipos do SDK.",
-    "how": "O módulo :core usa apenas o plugin Kotlin JVM. Seu compileClasspath contém somente kotlinx-coroutines-core e kotlin-stdlib.",
-    "verified_at": "2026-09-04"
+    "how": ":core aplica somente Kotlin JVM e serialization; usa coroutines e serialization JSON, sem dependências Android/DAT. Runner separado em infra/testing não configura :app.",
+    "verified_at": "2026-09-04",
+    "current_validation": "Mudança 2.0.0 implementada, sem compilação/testes executados; verified_at é registro histórico anterior, não valida esta versão."
   },
-  "pending_spec_evolution": {
-    "date": "2026-09-12",
+  "capture_contract": {
+    "capture_id": "CaptureId(sessionId, generation > 0)",
+    "frame_stamp": "FrameStamp(capture, sequence >= 0, receivedAt: ClockReading)",
+    "timestamp_semantics": "receivedAt é chegada ao app, não timestamp físico de exposição do sensor.",
+    "frame": "Frame(stamp, width > 0, height > 0, format, origin, bytes); não serializável.",
+    "heartbeat": "CaptureHeartbeat(capture, receivedAtMonotonicMs >= 0); sem bytes.",
+    "fence": "CaptureFence.open cria geração crescente; invalidate cancela aceitação. accepts exige geração ativa e STARTED. Usar no contexto serializado do coordenador.",
+    "ownership": "Adapter libera intermediários descartados; consumidor libera os recebidos; não reter bytes. Implementação de buffers/sampler é BE-00/02."
+  },
+  "analysis_contract": {
+    "frame_analysis": "FrameAnalysis(frameStamp, analyzedAt: ClockReading, latencyMs >= 0, source, diagnoses)",
+    "validation": "Confidence 0..1, tipos e direções compatíveis, OK sem direção/magnitude, magnitude finita/não negativa, sem categorias duplicadas; parse externo e política de abstenção são BE-03."
+  },
+  "audio_signals": [
+    "SESSION_STARTED",
+    "SESSION_PAUSED",
+    "SESSION_RESUMED",
+    "SESSION_STOPPED",
+    "ANALYSIS_UNAVAILABLE",
+    "ANALYSIS_RESTORED",
+    "AUDIO_UNAVAILABLE",
+    "AUDIO_RESTORED",
+    "CONNECTION_LOST",
+    "CONNECTION_RESTORED"
+  ],
+  "sdd_implementation": {
     "task": "SH-04",
-    "spec": "docs/spec-driven-development/00-contratos-e-fronteiras/spec.md",
-    "status": "planned_not_implemented",
-    "current_code_version_unchanged": "1.0.0",
-    "changes": [
-      "Resolver divergência: comentário Kotlin de GlassesGateway.frames diz amostrados, descrição JSON diz crus. Definir captura antes do sampler e heartbeat independente; não implementar dupla amostragem.",
-      "Clock monotônico para duração, cooldown e watchdog; epoch somente para âncoras externas. Atualizar assinaturas/semântica conforme compatibilidade e versionar.",
-      "Adicionar sinais de pausa/retomada de sessão e indisponibilidade de análise, ausentes da API de SessionSignal atual; distinguir causas e intenção de pausa.",
-      "Definir fonte única da configuração samplingFps/analysisIntervalMs e rever relação do watchdog com redução de sampling.",
-      "Especificar correlação de áudio efetivamente iniciado, correctionId e frame posterior válido, sem aceitar resposta de geração anterior.",
-      "BE-12 define mapa sessão para mídia nativa e incerteza antes que BE-09 use offsets para cortes."
+    "version": "2.0.0",
+    "status": "implemented_pending_validation",
+    "migration": "docs/spec-driven-development/00-contratos-e-fronteiras/implementation.md",
+    "tests": "apps/android/core/src/test",
+    "runner": "infra/testing",
+    "remaining": [
+      "Executar compilação, unitários e integração quando solicitados.",
+      "FE-02/FE-09 implementam executor de sessão, efeitos e watchdog.",
+      "BE-12 define mapeamento temporal real da mídia e capacidades nativas."
     ],
-    "rule": "A revisão documental não altera o contrato Kotlin nem sua versão. Implementação deve atualizar código, JSON, consumidores e testes no mesmo trabalho."
+    "test_execution": "not_run"
   }
 }

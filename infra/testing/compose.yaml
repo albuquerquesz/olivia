@@ -1,0 +1,16 @@
+services:
+  core-contracts:
+    build:
+      context: ../..
+      dockerfile: infra/testing/Core.Dockerfile
+    network_mode: none
+    user: "10001:10001"
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: 2
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=256m
+    # Workspace/caches precisam de escrita para Gradle. Camada é descartável;
+    # nenhum volume, porta, credencial ou diretório do host é montado.
