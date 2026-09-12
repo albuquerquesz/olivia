@@ -17,6 +17,22 @@ android {
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Live tests must be selected explicitly; default instrumentation is offline.
+        testInstrumentationRunnerArguments["class"] = "com.olivia.companion.infra.InfraConfigurationIntegrationTest"
+        if (System.getenv("OLIVIA_LIVE_AI_ENABLED") == "true") {
+            mapOf(
+                "oliviaLiveAiEnabled" to "OLIVIA_LIVE_AI_ENABLED",
+                "oliviaFirebaseProjectId" to "OLIVIA_FIREBASE_PROJECT_ID",
+                "oliviaFirebaseAppId" to "OLIVIA_FIREBASE_APP_ID",
+                "oliviaFirebaseApiKey" to "OLIVIA_FIREBASE_API_KEY",
+                "oliviaAiModel" to "OLIVIA_AI_MODEL",
+                "firebaseAppCheckDebugSecret" to "FIREBASE_APP_CHECK_DEBUG_TOKEN",
+            ).forEach { (argument, variable) ->
+                testInstrumentationRunnerArguments[argument] =
+                    requireNotNull(System.getenv(variable)?.takeIf { it.isNotBlank() }) { "Missing infrastructure test configuration: $variable" }
+            }
+        }
     }
 
     flavorDimensions += "device"
@@ -58,6 +74,12 @@ kotlin {
 }
 
 dependencies {
+    // Test APK only: no Firebase/debug provider shipped in the product APK.
+    androidTestImplementation(platform(libs.firebase.bom))
+    androidTestImplementation(libs.firebase.ai)
+    androidTestImplementation(libs.firebase.appcheck.debug.testing)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.junit)
     implementation(project(":core"))
 
     implementation(libs.androidx.core.ktx)

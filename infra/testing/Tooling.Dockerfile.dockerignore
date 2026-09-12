@@ -1,0 +1,10 @@
+**
+!packages/
+!packages/env/
+!packages/env/src/
+!packages/env/src/infra.ts
+!infra/
+!infra/testing/
+!infra/testing/*.ts
+!infra/testing/tests/
+!infra/testing/tests/*.ts

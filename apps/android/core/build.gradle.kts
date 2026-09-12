@@ -27,6 +27,7 @@ dependencies {
 
 tasks.test {
     exclude("**/*IntegrationTest.class")
+    exclude("**/*InfrastructureTest.class")
 }
 
 val integrationTest by tasks.registering(Test::class) {
@@ -39,6 +40,14 @@ val integrationTest by tasks.registering(Test::class) {
 }
 
 tasks.check { dependsOn(integrationTest) }
+
+tasks.register<Test>("infrastructureTest") {
+    description = "HTTP real entre runner JVM e stub Docker isolado."
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    include("**/*InfrastructureTest.class")
+}
 
 // Prepara o runner offline sem executar testes durante a criação da imagem.
 tasks.register("prepareOfflineTests") {

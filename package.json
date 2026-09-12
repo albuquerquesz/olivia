@@ -16,6 +16,11 @@
   },
   "type": "module",
   "scripts": {
+    "test:infra:unit": "bun infra/testing/run.ts unit",
+    "test:integration:offline": "bun infra/testing/run.ts integration-offline",
+    "test:integration:android": "bun infra/testing/run.ts integration-android",
+    "test:integration:live-ai": "bun infra/testing/run.ts integration-live-ai",
+    "test:integration:whisper": "bun infra/testing/run.ts integration-whisper",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint -F server -F @olivia/db -F @olivia/auth -F @olivia/env",

@@ -1,0 +1,4 @@
+**
+!infra/
+!infra/testing/
+!infra/testing/whisper_runner.py

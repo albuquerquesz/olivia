@@ -12,6 +12,9 @@ build
 .env
 .env.*
 !.env.example
+google-services.json
+*.gguf
+ggml-*.bin
 
 # IDEs and editors
 .vscode/*
