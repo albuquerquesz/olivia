@@ -1,0 +1,9 @@
+flowchart LR
+  Contract[Core Kotlin versionado] --> Session[Sessao]
+  Contract --> Analyze[FrameAnalyzer]
+  Contract --> Guide[Guidance e Timeline]
+  Contract --> Media[RecordingSource e PostProcessor]
+  DAT[Adapter DAT] --> Contract
+  Firebase[Adapter Firebase] --> Contract
+  Mock[Mocks] --> Contract
+

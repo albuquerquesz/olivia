@@ -57,14 +57,14 @@
       "id": "session",
       "name": "Sessão",
       "zone": "mobile_app",
-      "implementation": "Device Access Toolkit",
+      "implementation": "SessionCoordinator no companion app; Device Access Toolkit atrás de adapter de captura",
       "states": [
         "STARTED",
         "PAUSED",
         "STOPPED",
         "DEGRADED"
       ],
-      "purpose": "Controla o ciclo de vida da gravação."
+      "purpose": "Controla o ciclo da sessão Olivia e a captura DAT; controle da gravação nativa 3K é capacidade independente a comprovar em BE-12."
     },
     {
       "id": "frame_sampler",
@@ -172,7 +172,7 @@
     {
       "from": "frame_sampler",
       "to": "ai_checkpoint",
-      "data": "Frame classificado",
+      "data": "Frame efêmero para classificação",
       "transport": "HTTPS"
     },
     {
@@ -280,7 +280,19 @@
       "MockDeviceKit smoke flow",
       "analytics and crash reporting opt-out"
     ],
-    "runtime_boundary": "O DAT fica atrás de adapters de sessão e FrameSource; o domínio da Olivia não importa tipos do SDK.",
+    "runtime_boundary": "O DAT fica atrás de GlassesGateway; o domínio da Olivia não importa tipos do SDK. SH-04 deve resolver e versionar captura antes do sampler e heartbeat independente conforme SDD 00.",
     "contracts_file": "olivia-contracts.json"
+  },
+  "implementation_planning_review": {
+    "date": "2026-09-12",
+    "spec_root": "docs/spec-driven-development",
+    "decisions": "docs/spec-driven-development/DECISIONS.md",
+    "runtime_status": "planned_not_validated",
+    "backend_boundary": "Elysia/Better Auth/Postgres existentes são scaffold fora do runtime do MVP; BE-13 delimita configuração e BE-14 prepara Docker de integração, sem nova API de frames ou áudio.",
+    "transcription_boundary": "Whisper local no Android após STOPPED. Runner Docker CPU serve à integração; transcrição remota não é baseline autorizada pelo planejamento submetido.",
+    "native_recording_gate": "BE-12 verifica separadamente acionamento mãos-livres, gravação nativa simultânea ao DAT, continuidade na queda e importação pós-sessão. Fluxos nativos neste diagrama representam intenção submetida, não capacidade medida.",
+    "frame_health": "A detecção de quatro segundos sem frame deve observar saúde da captura independentemente da taxa de inferência; semântica Kotlin a evoluir em SH-04 antes de BE-00/02.",
+    "privacy_gate": "Descarte local não comprova retenção zero no provedor; BE-10/13 exigem configuração e evidências externas antes de mídia real.",
+    "metrics": "900 ms no loop e aproximadamente 8 s no pós-processamento permanecem metas; callback Android de áudio não comprova instante acústico nos óculos."
   }
 }

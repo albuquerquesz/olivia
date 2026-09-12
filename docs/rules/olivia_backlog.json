@@ -32,9 +32,17 @@
             "Version catalog centraliza versões de Kotlin, Compose e dependências do DAT.",
             "local.properties, tokens e demais segredos ficam ignorados pelo Git."
           ],
-          "notes_and_risks": "O repositório atual só contém servidor TypeScript. Esta task cria a superfície Android exigida pela arquitetura e pela integração com o DAT, sem transformar o backend existente em dependência do loop ao vivo.",
-          "description": "## Objetivo\n\nCriar o aplicativo Android nativo que será a casa da Olivia: projeto Gradle/Kotlin, UI base, flavor MOCK e um caminho para gerar APK de debug. Sem essa fundação não existe companion app para receber o DAT, controlar a sessão ou entregar áudio nos óculos.\n\n**Responsável:** Frontend\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-03\n\n## Definição de pronto\n\n- Projeto Android em Kotlin compila em máquina limpa e gera APK/debug.\n- Há flavor MOCK que inicia sem SDK ou óculos físicos.\n- Version catalog centraliza versões de Kotlin, Compose e dependências do DAT.\n- local.properties, tokens e demais segredos ficam ignorados pelo Git.\n\n## Notas / risco\n\nO repositório atual só contém servidor TypeScript. Esta task cria a superfície Android exigida pela arquitetura e pela integração com o DAT, sem transformar o backend existente em dependência do loop ao vivo.",
-          "review_status": "manually_added_from_dat_android_review"
+          "notes_and_risks": "Fundação Android já possui scaffold no repositório; existência de telas não prova os aceites de build/hardware. SH-03 prepara ambiente, FE-00 entrega o app; não recriar projeto nem inferir progresso.",
+          "description": "## Objetivo\n\nCriar o aplicativo Android nativo que será a casa da Olivia: projeto Gradle/Kotlin, UI base, flavor MOCK e um caminho para gerar APK de debug. Sem essa fundação não existe companion app para receber o DAT, controlar a sessão ou entregar áudio nos óculos.\n\n**Responsável:** Frontend\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-03\n\n## Definição de pronto\n\n- Projeto Android em Kotlin compila em máquina limpa e gera APK/debug.\n- Há flavor MOCK que inicia sem SDK ou óculos físicos.\n- Version catalog centraliza versões de Kotlin, Compose e dependências do DAT.\n- local.properties, tokens e demais segredos ficam ignorados pelo Git.\n\n## Notas / risco\n\nFundação Android já possui scaffold no repositório; existência de telas não prova os aceites de build/hardware. SH-03 prepara ambiente, FE-00 entrega o app; não recriar projeto nem inferir progresso.\n\n## Especificação e testes\n\ndocs/spec-driven-development/02-meta-wearables-sdk/spec.md\ndocs/spec-driven-development/02-meta-wearables-sdk/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "sdd": {
+            "module": "02-meta-wearables-sdk",
+            "spec": "docs/spec-driven-development/02-meta-wearables-sdk/spec.md",
+            "tasks": "docs/spec-driven-development/02-meta-wearables-sdk/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "INT-00",
@@ -66,8 +74,16 @@
             "MockDeviceKit abre uma sessão, emite frame e simula indisponibilidade sem óculos físicos."
           ],
           "notes_and_risks": "O DAT está em developer preview. Registro do app, credenciais de pacote, versão e permissões são risco de acesso; tratar qualquer bloqueio como risco explícito e guardar o diagnóstico, não como detalhe do dia 18.",
-          "description": "## Objetivo\n\nDeixar o Meta Wearables Device Access Toolkit realmente instalável e verificável antes do hackathon: pacote Gradle privado, Application ID, políticas de telemetria e um smoke test usando MockDeviceKit. Assim, no dia 18 a equipe valida hardware, não descobre configuração de SDK.\n\n**Responsável:** Both\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-00, SH-01\n\n## Definição de pronto\n\n- Repositório Maven do DAT e os artefatos core, camera e mockdevice estão declarados no app Android.\n- GITHUB_TOKEN/read:packages ou github_token local funciona sem entrar no repositório.\n- APPLICATION_ID do Wearables Developer Center é injetado por configuração local/CI.\n- Manifest ativa ANALYTICS_OPT_OUT e CRASH_REPORTING_OPT_OUT para o MVP.\n- MockDeviceKit abre uma sessão, emite frame e simula indisponibilidade sem óculos físicos.\n\n## Notas / risco\n\nO DAT está em developer preview. Registro do app, credenciais de pacote, versão e permissões são risco de acesso; tratar qualquer bloqueio como risco explícito e guardar o diagnóstico, não como detalhe do dia 18.",
-          "review_status": "manually_added_from_dat_android_review"
+          "description": "## Objetivo\n\nDeixar o Meta Wearables Device Access Toolkit realmente instalável e verificável antes do hackathon: pacote Gradle privado, Application ID, políticas de telemetria e um smoke test usando MockDeviceKit. Assim, no dia 18 a equipe valida hardware, não descobre configuração de SDK.\n\n**Responsável:** Both\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** FE-00, SH-01\n\n## Definição de pronto\n\n- Repositório Maven do DAT e os artefatos core, camera e mockdevice estão declarados no app Android.\n- GITHUB_TOKEN/read:packages ou github_token local funciona sem entrar no repositório.\n- APPLICATION_ID do Wearables Developer Center é injetado por configuração local/CI.\n- Manifest ativa ANALYTICS_OPT_OUT e CRASH_REPORTING_OPT_OUT para o MVP.\n- MockDeviceKit abre uma sessão, emite frame e simula indisponibilidade sem óculos físicos.\n\n## Notas / risco\n\nO DAT está em developer preview. Registro do app, credenciais de pacote, versão e permissões são risco de acesso; tratar qualquer bloqueio como risco explícito e guardar o diagnóstico, não como detalhe do dia 18.\n\n## Especificação e testes\n\ndocs/spec-driven-development/02-meta-wearables-sdk/spec.md\ndocs/spec-driven-development/02-meta-wearables-sdk/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "sdd": {
+            "module": "02-meta-wearables-sdk",
+            "spec": "docs/spec-driven-development/02-meta-wearables-sdk/spec.md",
+            "tasks": "docs/spec-driven-development/02-meta-wearables-sdk/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-00",
@@ -91,16 +107,25 @@
             "camera",
             "mock"
           ],
-          "objective": "Criar a implementação Android que adapta frames e disponibilidade do DAT ao contrato FrameSource definido pela Olivia. O mesmo consumidor precisa funcionar com MockDeviceKit hoje e com os Ray-Ban Meta no dia 18, mantendo o sampler e a IA independentes do SDK.",
+          "objective": "Implementar no Android o adapter DAT de GlassesGateway, isolando SDK, buffers, orientação e disponibilidade do domínio. Resolver o contrato de captura em SH-04 antes de conectar o sampler; mock local e MockDeviceKit devem permanecer distinguíveis.",
           "definition_of_done": [
-            "Adapter converte a saída de câmera do DAT para o contrato FrameSource da Olivia.",
-            "MockDeviceKit e dispositivo real usam a mesma interface pública do app.",
-            "Adapter expõe início, pausa, retomada, indisponibilidade e encerramento sem vazar tipos do SDK para o domínio.",
-            "Metadados mínimos de origem e timestamp chegam à instrumentação e à timeline."
+            "Adapter usa GlassesGateway vigente, sem tipos DAT no domínio; não criar uma interface FrameSource paralela sem decisão versionada.",
+            "Normalizar formato, orientação e timestamps; conferir o alvo 720×1280 e diagnosticar divergência real.",
+            "Expor saúde da captura independentemente da inferência e liberar buffers em sucesso, erro, descarte e cancelamento.",
+            "Manter início, pausa, retomada e encerramento da captura separados da capacidade de gravação nativa.",
+            "Implementar testes unitários e integração Android/MockDeviceKit e de contrato Docker conforme módulo SDD 03."
           ],
           "notes_and_risks": "Não assumir resolução, taxa de frame ou callbacks finais além do que for validado na versão do SDK usada. O adapter existe justamente para conter mudanças do preview e do hardware.",
-          "description": "## Objetivo\n\nCriar a implementação Android que adapta frames e disponibilidade do DAT ao contrato FrameSource definido pela Olivia. O mesmo consumidor precisa funcionar com MockDeviceKit hoje e com os Ray-Ban Meta no dia 18, mantendo o sampler e a IA independentes do SDK.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-04, FE-00, INT-00\n\n## Definição de pronto\n\n- Adapter converte a saída de câmera do DAT para o contrato FrameSource da Olivia.\n- MockDeviceKit e dispositivo real usam a mesma interface pública do app.\n- Adapter expõe início, pausa, retomada, indisponibilidade e encerramento sem vazar tipos do SDK para o domínio.\n- Metadados mínimos de origem e timestamp chegam à instrumentação e à timeline.\n\n## Notas / risco\n\nNão assumir resolução, taxa de frame ou callbacks finais além do que for validado na versão do SDK usada. O adapter existe justamente para conter mudanças do preview e do hardware.",
-          "review_status": "manually_added_from_dat_android_review"
+          "description": "## Objetivo\n\nImplementar no Android o adapter DAT de GlassesGateway, isolando SDK, buffers, orientação e disponibilidade do domínio. Resolver o contrato de captura em SH-04 antes de conectar o sampler; mock local e MockDeviceKit devem permanecer distinguíveis.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, FE-00, INT-00\n\n## Definição de pronto\n\n- Adapter usa GlassesGateway vigente, sem tipos DAT no domínio; não criar uma interface FrameSource paralela sem decisão versionada.\n- Normalizar formato, orientação e timestamps; conferir o alvo 720×1280 e diagnosticar divergência real.\n- Expor saúde da captura independentemente da inferência e liberar buffers em sucesso, erro, descarte e cancelamento.\n- Manter início, pausa, retomada e encerramento da captura separados da capacidade de gravação nativa.\n- Implementar testes unitários e integração Android/MockDeviceKit e de contrato Docker conforme módulo SDD 03.\n\n## Notas / risco\n\nNão assumir resolução, taxa de frame ou callbacks finais além do que for validado na versão do SDK usada. O adapter existe justamente para conter mudanças do preview e do hardware.\n\n## Especificação e testes\n\ndocs/spec-driven-development/03-captura-e-sessao/spec.md\ndocs/spec-driven-development/03-captura-e-sessao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "sdd": {
+            "module": "03-captura-e-sessao",
+            "spec": "docs/spec-driven-development/03-captura-e-sessao/spec.md",
+            "tasks": "docs/spec-driven-development/03-captura-e-sessao/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "SH-01",
@@ -123,9 +148,17 @@
             "shared",
             "rules"
           ],
-          "description": "## Objetivo\n\nConfirme por escrito com a organização se app base, bibliotecas, mocks, fixtures e código de suporte podem ser preparados antes de 18/09. A resposta define o que pode continuar no plano atual e evita que a equipe chegue ao evento com trabalho considerado inválido.\n\n**Responsável:** Shared\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Enviar pergunta objetiva ao canal oficial sobre uso de código, mocks, bibliotecas e app pré-construído antes de 18/09.\n- Salvar a resposta no Linear/README do projeto.\n- Se houver restrição, marcar imediatamente as issues afetadas.\n\n## Notas / risco\n\nO edital descreve o hackathon como etapa de desenvolvimento/validação com hardware, mas não traz no texto analisado uma regra explícita sobre pré-build. Tratar isso como risco administrativo, não como suposição.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Confirme por escrito com a organização se app base, bibliotecas, mocks, fixtures e código de suporte podem ser preparados antes de 18/09. A resposta define o que pode continuar no plano atual e evita que a equipe chegue ao evento com trabalho considerado inválido."
+          "description": "## Objetivo\n\nConfirme por escrito com a organização se app base, bibliotecas, mocks, fixtures e código de suporte podem ser preparados antes de 18/09. A resposta define o que pode continuar no plano atual e evita que a equipe chegue ao evento com trabalho considerado inválido.\n\n**Responsável:** Shared\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Enviar pergunta objetiva ao canal oficial sobre uso de código, mocks, bibliotecas e app pré-construído antes de 18/09.\n- Salvar a resposta no Linear/README do projeto.\n- Se houver restrição, marcar imediatamente as issues afetadas.\n\n## Notas / risco\n\nO edital descreve o hackathon como etapa de desenvolvimento/validação com hardware, mas não traz no texto analisado uma regra explícita sobre pré-build. Tratar isso como risco administrativo, não como suposição.\n\n## Especificação e testes\n\ndocs/spec-driven-development/00-contratos-e-fronteiras/spec.md\ndocs/spec-driven-development/00-contratos-e-fronteiras/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Confirme por escrito com a organização se app base, bibliotecas, mocks, fixtures e código de suporte podem ser preparados antes de 18/09. A resposta define o que pode continuar no plano atual e evita que a equipe chegue ao evento com trabalho considerado inválido.",
+          "sdd": {
+            "module": "00-contratos-e-fronteiras",
+            "spec": "docs/spec-driven-development/00-contratos-e-fronteiras/spec.md",
+            "tasks": "docs/spec-driven-development/00-contratos-e-fronteiras/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "SH-02",
@@ -148,9 +181,17 @@
             "shared",
             "scope"
           ],
-          "description": "## Objetivo\n\nTransforme a proposta submetida em uma lista objetiva do que a Olivia vai provar: direção de enquadramento, luz/sombra e horizonte por áudio, seguida de timeline e cortes sugeridos. Registre explicitamente o que fica fora para proteger o tempo do time e não descaracterizar a proposta aprovada.\n\n**Responsável:** Shared\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Fixar o caminho principal: iniciar → analisar frame → orientar por áudio → confirmar correção → finalizar → mostrar timeline/cortes.\n- Fixar os 3 tipos de detecção do submit: enquadramento, luz/sombra e horizonte.\n- Registrar explicitamente o que NÃO entra: auth, contas, feed social, backend CRUD, edição de vídeo completa, analytics de produto.\n\n## Notas / risco\n\nO edital veda alteração de escopo; o backlog deve aprofundar a solução Olivia, não inventar um produto novo.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Transforme a proposta submetida em uma lista objetiva do que a Olivia vai provar: direção de enquadramento, luz/sombra e horizonte por áudio, seguida de timeline e cortes sugeridos. Registre explicitamente o que fica fora para proteger o tempo do time e não descaracterizar a proposta aprovada."
+          "description": "## Objetivo\n\nTransforme a proposta submetida em uma lista objetiva do que a Olivia vai provar: direção de enquadramento, luz/sombra e horizonte por áudio, seguida de timeline e cortes sugeridos. Registre explicitamente o que fica fora para proteger o tempo do time e não descaracterizar a proposta aprovada.\n\n**Responsável:** Shared\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Fixar o caminho principal: iniciar → analisar frame → orientar por áudio → confirmar correção → finalizar → mostrar timeline/cortes.\n- Fixar os 3 tipos de detecção do submit: enquadramento, luz/sombra e horizonte.\n- Registrar explicitamente o que NÃO entra: auth, contas, feed social, backend CRUD, edição de vídeo completa, analytics de produto.\n\n## Notas / risco\n\nO edital veda alteração de escopo; o backlog deve aprofundar a solução Olivia, não inventar um produto novo.\n\n## Especificação e testes\n\ndocs/spec-driven-development/00-contratos-e-fronteiras/spec.md\ndocs/spec-driven-development/00-contratos-e-fronteiras/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Transforme a proposta submetida em uma lista objetiva do que a Olivia vai provar: direção de enquadramento, luz/sombra e horizonte por áudio, seguida de timeline e cortes sugeridos. Registre explicitamente o que fica fora para proteger o tempo do time e não descaracterizar a proposta aprovada.",
+          "sdd": {
+            "module": "00-contratos-e-fronteiras",
+            "spec": "docs/spec-driven-development/00-contratos-e-fronteiras/spec.md",
+            "tasks": "docs/spec-driven-development/00-contratos-e-fronteiras/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "SH-03",
@@ -175,9 +216,17 @@
             "frontend",
             "foundation"
           ],
-          "description": "## Objetivo\n\nPrepare o repositório para que qualquer integrante consiga abrir, configurar e gerar uma versão demonstrável sem depender dos óculos. O modo mock precisa ser tratado como produto de primeira classe, pois ele é a garantia de demo antes e durante o hackathon.\n\n**Responsável:** Frontend\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Projeto compila em máquina limpa com um comando/documentação curta.\n- Secrets ficam fora do repositório e há .env/local config de exemplo.\n- Build de debug gerado automaticamente em CI.\n- Há flavor/configuração MOCK que roda sem óculos.\n- Companion app Android/Kotlin gera APK de debug no flavor MOCK.\n\n## Notas / risco\n\nA prioridade é ter um APK/app demonstrável em modo mock antes de qualquer integração de hardware.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Prepare o repositório para que qualquer integrante consiga abrir, configurar e gerar uma versão demonstrável sem depender dos óculos. O modo mock precisa ser tratado como produto de primeira classe, pois ele é a garantia de demo antes e durante o hackathon."
+          "description": "## Objetivo\n\nPrepare o repositório para que qualquer integrante consiga abrir, configurar e gerar uma versão demonstrável sem depender dos óculos. O modo mock precisa ser tratado como produto de primeira classe, pois ele é a garantia de demo antes e durante o hackathon.\n\n**Responsável:** Frontend\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Projeto compila em máquina limpa com um comando/documentação curta.\n- Secrets ficam fora do repositório e há .env/local config de exemplo.\n- Build de debug gerado automaticamente em CI.\n- Há flavor/configuração MOCK que roda sem óculos.\n- Companion app Android/Kotlin gera APK de debug no flavor MOCK.\n\n## Notas / risco\n\nA prioridade é ter um APK/app demonstrável em modo mock antes de qualquer integração de hardware.\n\n## Especificação e testes\n\ndocs/spec-driven-development/01-setup-backend-e-infra/spec.md\ndocs/spec-driven-development/01-setup-backend-e-infra/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Prepare o repositório para que qualquer integrante consiga abrir, configurar e gerar uma versão demonstrável sem depender dos óculos. O modo mock precisa ser tratado como produto de primeira classe, pois ele é a garantia de demo antes e durante o hackathon.",
+          "sdd": {
+            "module": "01-setup-backend-e-infra",
+            "spec": "docs/spec-driven-development/01-setup-backend-e-infra/spec.md",
+            "tasks": "docs/spec-driven-development/01-setup-backend-e-infra/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "SH-04",
@@ -188,12 +237,14 @@
           "can_do_before_hackathon": true,
           "dependencies": [],
           "definition_of_done": [
-            "Definir interfaces equivalentes a GlassesGateway, FrameAnalyzer, AudioFeedback, RecordingSource e PostProcessor.",
-            "Definir estados de sessão: IDLE, STARTING, STARTED, PAUSED, DEGRADED, STOPPING, PROCESSING, READY, ERROR.",
-            "Definir schema de evento/timeline com timestamp, tipo, diagnóstico, direção, confidence, status de correção.",
-            "Contratos versionados e consumíveis pelos dois devs."
+            "Documentar GlassesGateway, FrameAnalyzer, GuidanceEngine, AudioFeedback, Timeline, RecordingSource e PostProcessor de acordo com o código Kotlin em :core.",
+            "Preservar os dez estados: IDLE, STARTING, STARTED, PAUSED, DEGRADED, STOPPING, STOPPED, PROCESSING, READY e ERROR.",
+            "Resolver e versionar a semântica de captura antes do sampler, heartbeat, clocks monotônicos e consistência samplingFps/analysisIntervalMs.",
+            "Adicionar os sinais necessários de pausa/retomada e falha de análise sem confundir conexão com intenção de sessão.",
+            "Versionar schemas de timeline/review e exemplos de compatibilidade; atualizar código e JSON juntos na implementação.",
+            "Implementar testes unitários e integração de contratos conforme módulo SDD 00."
           ],
-          "notes_and_risks": "O objetivo é fazer toda a aplicação funcionar com adapters mock agora e trocar apenas os adapters do DAT no dia.",
+          "notes_and_risks": "O objetivo é fazer toda a aplicação funcionar com adapters mock agora e trocar apenas os adapters do DAT no dia. Revisão SDD 12/09/2026: alterações de API são propostas pendentes, não executadas por esta revisão.",
           "priority": "High",
           "estimate": 2,
           "labels": [
@@ -202,9 +253,17 @@
             "architecture",
             "shared"
           ],
-          "description": "## Objetivo\n\nDocumente as interfaces e os eventos que conectam sessão, frames, análise, áudio, gravação e pós-processamento. O objetivo é permitir que o mock faça o produto evoluir agora e que, no dia 18, o DAT entre apenas como um adapter substituível.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Definir interfaces equivalentes a GlassesGateway, FrameAnalyzer, AudioFeedback, RecordingSource e PostProcessor.\n- Definir estados de sessão: IDLE, STARTING, STARTED, PAUSED, DEGRADED, STOPPING, PROCESSING, READY, ERROR.\n- Definir schema de evento/timeline com timestamp, tipo, diagnóstico, direção, confidence, status de correção.\n- Contratos versionados e consumíveis pelos dois devs.\n\n## Notas / risco\n\nO objetivo é fazer toda a aplicação funcionar com adapters mock agora e trocar apenas os adapters do DAT no dia.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Documente as interfaces e os eventos que conectam sessão, frames, análise, áudio, gravação e pós-processamento. O objetivo é permitir que o mock faça o produto evoluir agora e que, no dia 18, o DAT entre apenas como um adapter substituível."
+          "description": "## Objetivo\n\nDocumente as interfaces e os eventos que conectam sessão, frames, análise, áudio, gravação e pós-processamento. O objetivo é permitir que o mock faça o produto evoluir agora e que, no dia 18, o DAT entre apenas como um adapter substituível.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Documentar GlassesGateway, FrameAnalyzer, GuidanceEngine, AudioFeedback, Timeline, RecordingSource e PostProcessor de acordo com o código Kotlin em :core.\n- Preservar os dez estados: IDLE, STARTING, STARTED, PAUSED, DEGRADED, STOPPING, STOPPED, PROCESSING, READY e ERROR.\n- Resolver e versionar a semântica de captura antes do sampler, heartbeat, clocks monotônicos e consistência samplingFps/analysisIntervalMs.\n- Adicionar os sinais necessários de pausa/retomada e falha de análise sem confundir conexão com intenção de sessão.\n- Versionar schemas de timeline/review e exemplos de compatibilidade; atualizar código e JSON juntos na implementação.\n- Implementar testes unitários e integração de contratos conforme módulo SDD 00.\n\n## Notas / risco\n\nO objetivo é fazer toda a aplicação funcionar com adapters mock agora e trocar apenas os adapters do DAT no dia. Revisão SDD 12/09/2026: alterações de API são propostas pendentes, não executadas por esta revisão.\n\n## Especificação e testes\n\ndocs/spec-driven-development/00-contratos-e-fronteiras/spec.md\ndocs/spec-driven-development/00-contratos-e-fronteiras/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Documente as interfaces e os eventos que conectam sessão, frames, análise, áudio, gravação e pós-processamento. O objetivo é permitir que o mock faça o produto evoluir agora e que, no dia 18, o DAT entre apenas como um adapter substituível.",
+          "sdd": {
+            "module": "00-contratos-e-fronteiras",
+            "spec": "docs/spec-driven-development/00-contratos-e-fronteiras/spec.md",
+            "tasks": "docs/spec-driven-development/00-contratos-e-fronteiras/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-01",
@@ -217,9 +276,10 @@
             "SH-04"
           ],
           "definition_of_done": [
-            "Dataset pequeno contém casos: centralizado, fora do quadro, sombra/baixa luz e horizonte inclinado.",
-            "Há exemplos positivos e negativos para cada classe.",
-            "Fixtures podem ser reproduzidas como stream mock em timestamps previsíveis."
+            "Manifesto contém fixtures sintéticas/consentidas com origem, formato, orientação, ROI e rótulos esperados.",
+            "Há positivos, negativos, casos ambíguos e conflito de classes para enquadramento, luz/sombra e horizonte.",
+            "Replay usa timestamps previsíveis, clock virtual e oráculo de classe/direção.",
+            "Implementar testes unitários do manifesto/oráculo e integração de replay no Docker; não persistir frames reais do usuário como fixtures."
           ],
           "notes_and_risks": "Isso permite testar IA, UI e demo sem os óculos.",
           "priority": "High",
@@ -230,9 +290,138 @@
             "ai",
             "fixtures"
           ],
-          "description": "## Objetivo\n\nMonte uma coleção pequena, nomeada e repetível de imagens e trechos de vídeo com enquadramento correto/incorreto, sombra/boa luz e horizonte inclinado/alinhado. Esses casos serão a referência compartilhada para testar o analisador, o motor de direção e a narrativa do demo sem hardware.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-04\n\n## Definição de pronto\n\n- Dataset pequeno contém casos: centralizado, fora do quadro, sombra/baixa luz e horizonte inclinado.\n- Há exemplos positivos e negativos para cada classe.\n- Fixtures podem ser reproduzidas como stream mock em timestamps previsíveis.\n\n## Notas / risco\n\nIsso permite testar IA, UI e demo sem os óculos.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Monte uma coleção pequena, nomeada e repetível de imagens e trechos de vídeo com enquadramento correto/incorreto, sombra/boa luz e horizonte inclinado/alinhado. Esses casos serão a referência compartilhada para testar o analisador, o motor de direção e a narrativa do demo sem hardware."
+          "description": "## Objetivo\n\nMonte uma coleção pequena, nomeada e repetível de imagens e trechos de vídeo com enquadramento correto/incorreto, sombra/boa luz e horizonte inclinado/alinhado. Esses casos serão a referência compartilhada para testar o analisador, o motor de direção e a narrativa do demo sem hardware.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04\n\n## Definição de pronto\n\n- Manifesto contém fixtures sintéticas/consentidas com origem, formato, orientação, ROI e rótulos esperados.\n- Há positivos, negativos, casos ambíguos e conflito de classes para enquadramento, luz/sombra e horizonte.\n- Replay usa timestamps previsíveis, clock virtual e oráculo de classe/direção.\n- Implementar testes unitários do manifesto/oráculo e integração de replay no Docker; não persistir frames reais do usuário como fixtures.\n\n## Notas / risco\n\nIsso permite testar IA, UI e demo sem os óculos.\n\n## Especificação e testes\n\ndocs/spec-driven-development/04-fixtures-mock-e-sampler/spec.md\ndocs/spec-driven-development/04-fixtures-mock-e-sampler/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Monte uma coleção pequena, nomeada e repetível de imagens e trechos de vídeo com enquadramento correto/incorreto, sombra/boa luz e horizonte inclinado/alinhado. Esses casos serão a referência compartilhada para testar o analisador, o motor de direção e a narrativa do demo sem hardware.",
+          "sdd": {
+            "module": "04-fixtures-mock-e-sampler",
+            "spec": "docs/spec-driven-development/04-fixtures-mock-e-sampler/spec.md",
+            "tasks": "docs/spec-driven-development/04-fixtures-mock-e-sampler/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
+        },
+        {
+          "code": "BE-12",
+          "title": "Validar cedo a gravação nativa e preparar importação e alinhamento do vídeo",
+          "owner": "Backend/IA",
+          "milestone": "M0 • Fundação (04–05/09)",
+          "phase": "Pré-hackathon",
+          "can_do_before_hackathon": false,
+          "dependencies": [
+            "SH-04"
+          ],
+          "definition_of_done": [
+            "Iniciar spike em M0 junto ao setup DAT; registrar versão, hardware, fonte e evidência separada das quatro capacidades nativas.",
+            "Não equiparar startCapture/startSession de streaming a iniciar gravação nativa 3K.",
+            "Implementar RecordingSource com fixture/local, validação de mídia, progresso/cancelamento e ausência de transferências antes de STOPPED.",
+            "Definir mapa tempo de sessão→mídia, pausas e incerteza; testar marcas conhecidas com tolerância inicial de 250 ms.",
+            "Documentar seleção manual de arquivo como fallback de importação quando necessário, sem alegar automação/simultaneidade comprovada.",
+            "Implementar unitários e integração Docker/Android com vídeo real de fixture e falhas; prova física permanece INT-06.",
+            "Incompatibilidade entre streaming e gravação nativa é bloqueio da promessa, não autorização para reconstruir vídeo do stream."
+          ],
+          "notes_and_risks": "Risco crítico antecipado: spike começa em M0; conector e prova física têm gates posteriores. Datas de milestones são referência histórica, não evidência de conclusão.",
+          "priority": "High",
+          "estimate": 3,
+          "labels": [
+            "P0",
+            "backend",
+            "video",
+            "hardware",
+            "risk"
+          ],
+          "description": "## Objetivo\n\nAntecipar a investigação da promessa nativa do submit: acionamento mãos-livres, gravação simultânea ao streaming DAT, preservação do take na queda BT e importação pós-STOPPED. Implementar RecordingSource de fixture/local e mapa temporal sem transformar capacidades não verificadas em garantias.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** SH-04\n\n## Definição de pronto\n\n- Iniciar spike em M0 junto ao setup DAT; registrar versão, hardware, fonte e evidência separada das quatro capacidades nativas.\n- Não equiparar startCapture/startSession de streaming a iniciar gravação nativa 3K.\n- Implementar RecordingSource com fixture/local, validação de mídia, progresso/cancelamento e ausência de transferências antes de STOPPED.\n- Definir mapa tempo de sessão→mídia, pausas e incerteza; testar marcas conhecidas com tolerância inicial de 250 ms.\n- Documentar seleção manual de arquivo como fallback de importação quando necessário, sem alegar automação/simultaneidade comprovada.\n- Implementar unitários e integração Docker/Android com vídeo real de fixture e falhas; prova física permanece INT-06.\n- Incompatibilidade entre streaming e gravação nativa é bloqueio da promessa, não autorização para reconstruir vídeo do stream.\n\n## Notas / risco\n\nRisco crítico antecipado: spike começa em M0; conector e prova física têm gates posteriores. Datas de milestones são referência histórica, não evidência de conclusão.\n\n## Especificação e testes\n\ndocs/spec-driven-development/07-gravacao-nativa-e-importacao/spec.md\ndocs/spec-driven-development/07-gravacao-nativa-e-importacao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Antecipar a investigação da promessa nativa do submit: acionamento mãos-livres, gravação simultânea ao streaming DAT, preservação do take na queda BT e importação pós-STOPPED. Implementar RecordingSource de fixture/local e mapa temporal sem transformar capacidades não verificadas em garantias.",
+          "original_milestone": "M3 • Hardening (14–16/09)",
+          "sdd": {
+            "module": "07-gravacao-nativa-e-importacao",
+            "spec": "docs/spec-driven-development/07-gravacao-nativa-e-importacao/spec.md",
+            "tasks": "docs/spec-driven-development/07-gravacao-nativa-e-importacao/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
+        },
+        {
+          "code": "BE-13",
+          "title": "Preparar configuração segura de backend e IA sem ampliar o runtime do MVP",
+          "owner": "Backend/IA",
+          "milestone": "M0 • Fundação (04–05/09)",
+          "phase": "Pré-hackathon",
+          "can_do_before_hackathon": true,
+          "dependencies": [
+            "SH-02",
+            "SH-04"
+          ],
+          "priority": "High",
+          "estimate": 3,
+          "labels": [
+            "P0",
+            "backend",
+            "infrastructure",
+            "security",
+            "integration"
+          ],
+          "objective": "Delimitar o scaffold Elysia/Better Auth/Postgres existente e preparar configuração dev/CI/Android, Firebase AI Logic, App Check, restrições e quotas sem adicionar contas, CRUD ou uploads de mídia.",
+          "definition_of_done": [
+            "Documentar fronteira Android/Firebase e manter backend legado fora do caminho crítico.",
+            "Entregar exemplos sem segredos e carregador por allowlist para .env/configuração Android/CI.",
+            "Preparar projeto Firebase dev, configuração do modelo e proteção App Check/quotas; registrar configuração efetiva sem tokens.",
+            "Implementar unitários de ambiente/redaction e integração Android do acesso protegido conforme SDD 01."
+          ],
+          "notes_and_risks": "Suporte necessário ao fluxo submetido; não amplia produto. Execuções e configuração externa não ocorreram nesta revisão.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "sdd": {
+            "module": "01-setup-backend-e-infra",
+            "spec": "docs/spec-driven-development/01-setup-backend-e-infra/spec.md",
+            "tasks": "docs/spec-driven-development/01-setup-backend-e-infra/tasks.md",
+            "runtime": "development_infrastructure",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          },
+          "description": "## Objetivo\n\nDelimitar o scaffold Elysia/Better Auth/Postgres existente e preparar configuração dev/CI/Android, Firebase AI Logic, App Check, restrições e quotas sem adicionar contas, CRUD ou uploads de mídia.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-02, SH-04\n\n## Definição de pronto\n\n- Documentar fronteira Android/Firebase e manter backend legado fora do caminho crítico.\n- Entregar exemplos sem segredos e carregador por allowlist para .env/configuração Android/CI.\n- Preparar projeto Firebase dev, configuração do modelo e proteção App Check/quotas; registrar configuração efetiva sem tokens.\n- Implementar unitários de ambiente/redaction e integração Android do acesso protegido conforme SDD 01.\n\n## Notas / risco\n\nSuporte necessário ao fluxo submetido; não amplia produto. Execuções e configuração externa não ocorreram nesta revisão.\n\n## Especificação e testes\n\ndocs/spec-driven-development/01-setup-backend-e-infra/spec.md\ndocs/spec-driven-development/01-setup-backend-e-infra/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência."
+        },
+        {
+          "code": "BE-14",
+          "title": "Criar harness Docker e camadas de integração offline, Android e IA real",
+          "owner": "Backend/IA",
+          "milestone": "M0 • Fundação (04–05/09)",
+          "phase": "Pré-hackathon",
+          "can_do_before_hackathon": true,
+          "dependencies": [
+            "SH-03",
+            "SH-04"
+          ],
+          "priority": "High",
+          "estimate": 3,
+          "labels": [
+            "P0",
+            "backend",
+            "infrastructure",
+            "security",
+            "integration"
+          ],
+          "objective": "Estabelecer ambiente reproduzível em Docker para integração entre componentes concretos, com stubs controlados e Whisper local, e camada adicional Android para SDKs reais e hardware.",
+          "definition_of_done": [
+            "Criar Compose de testes separado do banco de desenvolvimento; runner JVM/stub HTTP e perfil Whisper com versões fixas.",
+            "Offline executa sem egress ou secrets; live é opt-in, limitado por chamadas/orçamento e falha claramente se configurado incorretamente.",
+            "Docker não substitui SDK Android, DAT/BT, Firebase real ou medição física; definir entrypoints e requisitos separados.",
+            "Entregar unitários e integração do harness incluindo falha de startup, isolamento e teardown.",
+            "Toda feature deve entregar testes unitários e de integração no mesmo trabalho; registrar não executado sem alegar sucesso."
+          ],
+          "notes_and_risks": "Suporte necessário ao fluxo submetido; não amplia produto. Execuções e configuração externa não ocorreram nesta revisão.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "sdd": {
+            "module": "01-setup-backend-e-infra",
+            "spec": "docs/spec-driven-development/01-setup-backend-e-infra/spec.md",
+            "tasks": "docs/spec-driven-development/01-setup-backend-e-infra/tasks.md",
+            "runtime": "development_infrastructure",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          },
+          "description": "## Objetivo\n\nEstabelecer ambiente reproduzível em Docker para integração entre componentes concretos, com stubs controlados e Whisper local, e camada adicional Android para SDKs reais e hardware.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-03, SH-04\n\n## Definição de pronto\n\n- Criar Compose de testes separado do banco de desenvolvimento; runner JVM/stub HTTP e perfil Whisper com versões fixas.\n- Offline executa sem egress ou secrets; live é opt-in, limitado por chamadas/orçamento e falha claramente se configurado incorretamente.\n- Docker não substitui SDK Android, DAT/BT, Firebase real ou medição física; definir entrypoints e requisitos separados.\n- Entregar unitários e integração do harness incluindo falha de startup, isolamento e teardown.\n- Toda feature deve entregar testes unitários e de integração no mesmo trabalho; registrar não executado sem alegar sucesso.\n\n## Notas / risco\n\nSuporte necessário ao fluxo submetido; não amplia produto. Execuções e configuração externa não ocorreram nesta revisão.\n\n## Especificação e testes\n\ndocs/spec-driven-development/01-setup-backend-e-infra/spec.md\ndocs/spec-driven-development/01-setup-backend-e-infra/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência."
         }
       ]
     },
@@ -264,9 +453,17 @@
             "frontend",
             "mobile"
           ],
-          "description": "## Objetivo\n\nConstrua a tela que a pessoa abre para acompanhar conexão, estado da sessão, cronômetro e modo de feedback, com controles de debug só para o mock. Ela deve priorizar leitura rápida do estado da Olivia durante a demo, e não acabamento visual de produto final.\n\n**Responsável:** Frontend\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-03, SH-04, FE-00\n\n## Definição de pronto\n\n- Tela mostra estado de conexão, estado da sessão, timer e modo de feedback.\n- Ações de debug permitem iniciar/pausar/terminar em MOCK.\n- Nenhuma tela depende diretamente do SDK dos óculos.\n\n## Notas / risco\n\nEvitar polimento visual excessivo; clareza do estado operacional vale mais para o demo.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Construa a tela que a pessoa abre para acompanhar conexão, estado da sessão, cronômetro e modo de feedback, com controles de debug só para o mock. Ela deve priorizar leitura rápida do estado da Olivia durante a demo, e não acabamento visual de produto final."
+          "description": "## Objetivo\n\nConstrua a tela que a pessoa abre para acompanhar conexão, estado da sessão, cronômetro e modo de feedback, com controles de debug só para o mock. Ela deve priorizar leitura rápida do estado da Olivia durante a demo, e não acabamento visual de produto final.\n\n**Responsável:** Frontend\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-03, SH-04, FE-00\n\n## Definição de pronto\n\n- Tela mostra estado de conexão, estado da sessão, timer e modo de feedback.\n- Ações de debug permitem iniciar/pausar/terminar em MOCK.\n- Nenhuma tela depende diretamente do SDK dos óculos.\n\n## Notas / risco\n\nEvitar polimento visual excessivo; clareza do estado operacional vale mais para o demo.\n\n## Especificação e testes\n\ndocs/spec-driven-development/03-captura-e-sessao/spec.md\ndocs/spec-driven-development/03-captura-e-sessao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Construa a tela que a pessoa abre para acompanhar conexão, estado da sessão, cronômetro e modo de feedback, com controles de debug só para o mock. Ela deve priorizar leitura rápida do estado da Olivia durante a demo, e não acabamento visual de produto final.",
+          "sdd": {
+            "module": "03-captura-e-sessao",
+            "spec": "docs/spec-driven-development/03-captura-e-sessao/spec.md",
+            "tasks": "docs/spec-driven-development/03-captura-e-sessao/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "FE-02",
@@ -294,9 +491,17 @@
             "state-machine",
             "mock"
           ],
-          "description": "## Objetivo\n\nFaça o app reagir de forma previsível a iniciar, pausar, retomar, degradar e encerrar a sessão, mesmo quando frames param de chegar. O MockGlassesGateway deve permitir ensaiar quedas e recuperações agora, para que o fluxo não precise ser reinventado ao conectar o DAT.\n\n**Responsável:** Frontend\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-04, FE-00\n\n## Definição de pronto\n\n- Transições válidas e inválidas cobertas por testes.\n- STARTED, PAUSED, DEGRADED e STOPPED aparecem corretamente na UI.\n- Mock consegue emitir frames, queda de conexão e recuperação.\n- Eventos de sessão ficam disponíveis para a timeline.\n\n## Notas / risco\n\nEssa issue é o principal desacoplamento que reduz o trabalho do dia 18.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Faça o app reagir de forma previsível a iniciar, pausar, retomar, degradar e encerrar a sessão, mesmo quando frames param de chegar. O MockGlassesGateway deve permitir ensaiar quedas e recuperações agora, para que o fluxo não precise ser reinventado ao conectar o DAT."
+          "description": "## Objetivo\n\nFaça o app reagir de forma previsível a iniciar, pausar, retomar, degradar e encerrar a sessão, mesmo quando frames param de chegar. O MockGlassesGateway deve permitir ensaiar quedas e recuperações agora, para que o fluxo não precise ser reinventado ao conectar o DAT.\n\n**Responsável:** Frontend\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, FE-00\n\n## Definição de pronto\n\n- Transições válidas e inválidas cobertas por testes.\n- STARTED, PAUSED, DEGRADED e STOPPED aparecem corretamente na UI.\n- Mock consegue emitir frames, queda de conexão e recuperação.\n- Eventos de sessão ficam disponíveis para a timeline.\n\n## Notas / risco\n\nEssa issue é o principal desacoplamento que reduz o trabalho do dia 18.\n\n## Especificação e testes\n\ndocs/spec-driven-development/03-captura-e-sessao/spec.md\ndocs/spec-driven-development/03-captura-e-sessao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Faça o app reagir de forma previsível a iniciar, pausar, retomar, degradar e encerrar a sessão, mesmo quando frames param de chegar. O MockGlassesGateway deve permitir ensaiar quedas e recuperações agora, para que o fluxo não precise ser reinventado ao conectar o DAT.",
+          "sdd": {
+            "module": "03-captura-e-sessao",
+            "spec": "docs/spec-driven-development/03-captura-e-sessao/spec.md",
+            "tasks": "docs/spec-driven-development/03-captura-e-sessao/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "FE-04",
@@ -325,9 +530,17 @@
             "bluetooth",
             "checkpoint"
           ],
-          "description": "## Objetivo\n\nCrie uma camada de áudio que receba intenções como 'vire à direita', pausa ou conexão perdida e escolha TTS ou WAV curto conforme o modo selecionado. Valide primeiro com headset Bluetooth comum; no hackathon a única incógnita deve ser o roteamento para os alto-falantes dos óculos.\n\n**Responsável:** Frontend\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-04, FE-00\n\n## Definição de pronto\n\n- Modo Voz fala instruções curtas via TTS.\n- Modo Sinal toca WAVs locais de ~80 ms com distinção esquerda/direita e eventos de pausa/queda/retomada.\n- Saída funciona com headset Bluetooth comum antes do hackathon.\n- API não conhece o hardware específico: recebe apenas AudioCue/SpokenInstruction.\n\n## Notas / risco\n\nO edital exige output por áudio; deixar o engine pronto para apenas validar o roteamento nos óculos no dia.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Crie uma camada de áudio que receba intenções como 'vire à direita', pausa ou conexão perdida e escolha TTS ou WAV curto conforme o modo selecionado. Valide primeiro com headset Bluetooth comum; no hackathon a única incógnita deve ser o roteamento para os alto-falantes dos óculos."
+          "description": "## Objetivo\n\nCrie uma camada de áudio que receba intenções como 'vire à direita', pausa ou conexão perdida e escolha TTS ou WAV curto conforme o modo selecionado. Valide primeiro com headset Bluetooth comum; no hackathon a única incógnita deve ser o roteamento para os alto-falantes dos óculos.\n\n**Responsável:** Frontend\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, FE-00\n\n## Definição de pronto\n\n- Modo Voz fala instruções curtas via TTS.\n- Modo Sinal toca WAVs locais de ~80 ms com distinção esquerda/direita e eventos de pausa/queda/retomada.\n- Saída funciona com headset Bluetooth comum antes do hackathon.\n- API não conhece o hardware específico: recebe apenas AudioCue/SpokenInstruction.\n\n## Notas / risco\n\nO edital exige output por áudio; deixar o engine pronto para apenas validar o roteamento nos óculos no dia.\n\n## Especificação e testes\n\ndocs/spec-driven-development/06-direcao-audio-e-timeline/spec.md\ndocs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Crie uma camada de áudio que receba intenções como 'vire à direita', pausa ou conexão perdida e escolha TTS ou WAV curto conforme o modo selecionado. Valide primeiro com headset Bluetooth comum; no hackathon a única incógnita deve ser o roteamento para os alto-falantes dos óculos.",
+          "sdd": {
+            "module": "06-direcao-audio-e-timeline",
+            "spec": "docs/spec-driven-development/06-direcao-audio-e-timeline/spec.md",
+            "tasks": "docs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-02",
@@ -338,14 +551,15 @@
           "can_do_before_hackathon": true,
           "dependencies": [
             "SH-04",
-            "BE-01",
-            "BE-00"
+            "BE-01"
           ],
           "definition_of_done": [
-            "Recebe frames de uma fonte abstrata.",
-            "Amostra 1 frame a cada 2s por padrão.",
-            "Permite alterar taxa por config para tuning.",
-            "Descarta frame após análise e não grava em disco por padrão."
+            "Consumir fonte abstrata definida em SH-04; aceite offline não depende de DAT ou Gemini real.",
+            "Amostrar um frame a cada 2000 ms por padrão, com configuração consistente e sem dupla amostragem.",
+            "Uma inferência em voo e no máximo um frame mais recente aguardando; descartar intermediários e respostas de sessão inválida.",
+            "Descartar bytes em sucesso, erro, timeout, pausa, STOP e cancelamento, sem persistência de frames.",
+            "Separar heartbeat de captura e frequência de análise para manter DEGRADED aos 4 s sem frame.",
+            "Implementar unitários com clock virtual e integração Docker fonte→sampler→analisador conforme módulo SDD 04."
           ],
           "notes_and_risks": "Replica o trade-off submetido de 0,5 fps e já implementa a estratégia de bateria.",
           "priority": "High",
@@ -356,9 +570,17 @@
             "ai",
             "battery"
           ],
-          "description": "## Objetivo\n\nImplemente uma fonte abstrata de frames e aplique o padrão de 0,5 fps usado na arquitetura: um frame a cada dois segundos, configurável para ajuste. O frame deve existir só pelo tempo da análise, preservando a estratégia de bateria e a promessa de privacidade.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-04, BE-01, BE-00\n\n## Definição de pronto\n\n- Recebe frames de uma fonte abstrata.\n- Amostra 1 frame a cada 2s por padrão.\n- Permite alterar taxa por config para tuning.\n- Descarta frame após análise e não grava em disco por padrão.\n\n## Notas / risco\n\nReplica o trade-off submetido de 0,5 fps e já implementa a estratégia de bateria.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Implemente uma fonte abstrata de frames e aplique o padrão de 0,5 fps usado na arquitetura: um frame a cada dois segundos, configurável para ajuste. O frame deve existir só pelo tempo da análise, preservando a estratégia de bateria e a promessa de privacidade."
+          "description": "## Objetivo\n\nImplemente uma fonte abstrata de frames e aplique o padrão de 0,5 fps usado na arquitetura: um frame a cada dois segundos, configurável para ajuste. O frame deve existir só pelo tempo da análise, preservando a estratégia de bateria e a promessa de privacidade.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, BE-01\n\n## Definição de pronto\n\n- Consumir fonte abstrata definida em SH-04; aceite offline não depende de DAT ou Gemini real.\n- Amostrar um frame a cada 2000 ms por padrão, com configuração consistente e sem dupla amostragem.\n- Uma inferência em voo e no máximo um frame mais recente aguardando; descartar intermediários e respostas de sessão inválida.\n- Descartar bytes em sucesso, erro, timeout, pausa, STOP e cancelamento, sem persistência de frames.\n- Separar heartbeat de captura e frequência de análise para manter DEGRADED aos 4 s sem frame.\n- Implementar unitários com clock virtual e integração Docker fonte→sampler→analisador conforme módulo SDD 04.\n\n## Notas / risco\n\nReplica o trade-off submetido de 0,5 fps e já implementa a estratégia de bateria.\n\n## Especificação e testes\n\ndocs/spec-driven-development/04-fixtures-mock-e-sampler/spec.md\ndocs/spec-driven-development/04-fixtures-mock-e-sampler/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Implemente uma fonte abstrata de frames e aplique o padrão de 0,5 fps usado na arquitetura: um frame a cada dois segundos, configurável para ajuste. O frame deve existir só pelo tempo da análise, preservando a estratégia de bateria e a promessa de privacidade.",
+          "sdd": {
+            "module": "04-fixtures-mock-e-sampler",
+            "spec": "docs/spec-driven-development/04-fixtures-mock-e-sampler/spec.md",
+            "tasks": "docs/spec-driven-development/04-fixtures-mock-e-sampler/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-03",
@@ -368,14 +590,19 @@
           "phase": "Pré-hackathon",
           "can_do_before_hackathon": true,
           "dependencies": [
+            "SH-04",
             "BE-01",
-            "BE-02"
+            "BE-02",
+            "BE-13",
+            "BE-14"
           ],
           "definition_of_done": [
-            "Prompt retorna JSON validável, sem texto livre obrigatório.",
-            "Schema inclui issueType, severity, direction/action, confidence e spokenText opcional.",
-            "Três classes do MVP são detectáveis nos fixtures.",
-            "Timeout/erro vira resultado controlado, não crash."
+            "Adapter Firebase AI Logic usa modelo submetido e retorna FrameAnalysis/VisualDiagnosis, com enums Kotlin fechados e validação de confidence/direção/magnitude.",
+            "Metadados de sessão, origem e tempos são preenchidos pelo app; resposta do modelo nunca vira comando ou fala livre.",
+            "Fixture ambígua gera abstenção controlada; diferenciar sombra da mão de baixa luz sem atribuição não sustentada.",
+            "Timeout/cancelamento, 401/403/429/5xx, JSON inválido e resposta tardia não derrubam a sessão nem confirmam correção.",
+            "Entregar unitários, integração Docker de transporte/parser e integração Android com Firebase real via configuração dev.",
+            "Avaliar qualidade e direção por classe com fixtures rotuladas e limites de teste de TESTING.md, além do smoke de acesso."
           ],
           "notes_and_risks": "Manter provider atrás de FrameAnalyzer para poder trocar modelo sem alterar app.",
           "priority": "High",
@@ -386,9 +613,17 @@
             "ai",
             "gemini"
           ],
-          "description": "## Objetivo\n\nConecte o FrameAnalyzer ao Gemini/Firebase AI Logic para identificar enquadramento, luz/sombra e horizonte nos fixtures. Em vez de texto livre, retorne um objeto validado que o app consiga usar para decidir ação, gravidade, confiança e fala; timeout ou erro precisam degradar sem derrubar a sessão.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** BE-01, BE-02\n\n## Definição de pronto\n\n- Prompt retorna JSON validável, sem texto livre obrigatório.\n- Schema inclui issueType, severity, direction/action, confidence e spokenText opcional.\n- Três classes do MVP são detectáveis nos fixtures.\n- Timeout/erro vira resultado controlado, não crash.\n\n## Notas / risco\n\nManter provider atrás de FrameAnalyzer para poder trocar modelo sem alterar app.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Conecte o FrameAnalyzer ao Gemini/Firebase AI Logic para identificar enquadramento, luz/sombra e horizonte nos fixtures. Em vez de texto livre, retorne um objeto validado que o app consiga usar para decidir ação, gravidade, confiança e fala; timeout ou erro precisam degradar sem derrubar a sessão."
+          "description": "## Objetivo\n\nConecte o FrameAnalyzer ao Gemini/Firebase AI Logic para identificar enquadramento, luz/sombra e horizonte nos fixtures. Em vez de texto livre, retorne um objeto validado que o app consiga usar para decidir ação, gravidade, confiança e fala; timeout ou erro precisam degradar sem derrubar a sessão.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, BE-01, BE-02, BE-13, BE-14\n\n## Definição de pronto\n\n- Adapter Firebase AI Logic usa modelo submetido e retorna FrameAnalysis/VisualDiagnosis, com enums Kotlin fechados e validação de confidence/direção/magnitude.\n- Metadados de sessão, origem e tempos são preenchidos pelo app; resposta do modelo nunca vira comando ou fala livre.\n- Fixture ambígua gera abstenção controlada; diferenciar sombra da mão de baixa luz sem atribuição não sustentada.\n- Timeout/cancelamento, 401/403/429/5xx, JSON inválido e resposta tardia não derrubam a sessão nem confirmam correção.\n- Entregar unitários, integração Docker de transporte/parser e integração Android com Firebase real via configuração dev.\n- Avaliar qualidade e direção por classe com fixtures rotuladas e limites de teste de TESTING.md, além do smoke de acesso.\n\n## Notas / risco\n\nManter provider atrás de FrameAnalyzer para poder trocar modelo sem alterar app.\n\n## Especificação e testes\n\ndocs/spec-driven-development/05-classificacao-visual/spec.md\ndocs/spec-driven-development/05-classificacao-visual/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Conecte o FrameAnalyzer ao Gemini/Firebase AI Logic para identificar enquadramento, luz/sombra e horizonte nos fixtures. Em vez de texto livre, retorne um objeto validado que o app consiga usar para decidir ação, gravidade, confiança e fala; timeout ou erro precisam degradar sem derrubar a sessão.",
+          "sdd": {
+            "module": "05-classificacao-visual",
+            "spec": "docs/spec-driven-development/05-classificacao-visual/spec.md",
+            "tasks": "docs/spec-driven-development/05-classificacao-visual/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-04",
@@ -398,13 +633,14 @@
           "phase": "Pré-hackathon",
           "can_do_before_hackathon": true,
           "dependencies": [
-            "BE-03"
+            "SH-04",
+            "BE-06"
           ],
           "definition_of_done": [
-            "Resultado do modelo é convertido em instruções curtas e determinísticas.",
-            "Mesma instrução não dispara continuamente em frames consecutivos.",
-            "Thresholds/config ficam centralizados.",
-            "Quando não há problema, não emite áudio de correção."
+            "Política determinística usa catálogo de falas, threshold inicial confidence >= 0.80/severity MAJOR e cooldown global de 4000 ms configurável.",
+            "Definir desempate entre classes e manter no máximo uma correção pendente; ausência de desvio resulta em silêncio saudável.",
+            "Não confiar em texto livre ou graus sem calibração; magnitude não validada produz instrução qualitativa.",
+            "Implementar unitários nos limites de threshold/cooldown e integração Docker com tracker/timeline; Gemini real não bloqueia desenvolvimento da política."
           ],
           "notes_and_risks": "O demo precisa parecer um diretor assistivo, não um chatbot verboso.",
           "priority": "High",
@@ -415,9 +651,17 @@
             "ai",
             "guidance"
           ],
-          "description": "## Objetivo\n\nDefina a política que transforma um diagnóstico em uma instrução concreta, como ajustar direção ou avisar sombra, e centralize thresholds e cooldowns. O resultado precisa parecer assistência de direção: fala só quando há algo a corrigir e não repete o mesmo aviso a cada frame.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** BE-03\n\n## Definição de pronto\n\n- Resultado do modelo é convertido em instruções curtas e determinísticas.\n- Mesma instrução não dispara continuamente em frames consecutivos.\n- Thresholds/config ficam centralizados.\n- Quando não há problema, não emite áudio de correção.\n\n## Notas / risco\n\nO demo precisa parecer um diretor assistivo, não um chatbot verboso.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Defina a política que transforma um diagnóstico em uma instrução concreta, como ajustar direção ou avisar sombra, e centralize thresholds e cooldowns. O resultado precisa parecer assistência de direção: fala só quando há algo a corrigir e não repete o mesmo aviso a cada frame."
+          "description": "## Objetivo\n\nDefina a política que transforma um diagnóstico em uma instrução concreta, como ajustar direção ou avisar sombra, e centralize thresholds e cooldowns. O resultado precisa parecer assistência de direção: fala só quando há algo a corrigir e não repete o mesmo aviso a cada frame.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, BE-06\n\n## Definição de pronto\n\n- Política determinística usa catálogo de falas, threshold inicial confidence >= 0.80/severity MAJOR e cooldown global de 4000 ms configurável.\n- Definir desempate entre classes e manter no máximo uma correção pendente; ausência de desvio resulta em silêncio saudável.\n- Não confiar em texto livre ou graus sem calibração; magnitude não validada produz instrução qualitativa.\n- Implementar unitários nos limites de threshold/cooldown e integração Docker com tracker/timeline; Gemini real não bloqueia desenvolvimento da política.\n\n## Notas / risco\n\nO demo precisa parecer um diretor assistivo, não um chatbot verboso.\n\n## Especificação e testes\n\ndocs/spec-driven-development/06-direcao-audio-e-timeline/spec.md\ndocs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Defina a política que transforma um diagnóstico em uma instrução concreta, como ajustar direção ou avisar sombra, e centralize thresholds e cooldowns. O resultado precisa parecer assistência de direção: fala só quando há algo a corrigir e não repete o mesmo aviso a cada frame.",
+          "sdd": {
+            "module": "06-direcao-audio-e-timeline",
+            "spec": "docs/spec-driven-development/06-direcao-audio-e-timeline/spec.md",
+            "tasks": "docs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-06",
@@ -430,9 +674,10 @@
             "SH-04"
           ],
           "definition_of_done": [
-            "Mock produz uma sequência conhecida de diagnósticos e latências.",
-            "Happy path de 30–60s roda sem internet.",
-            "Pode simular erro de IA e timeout."
+            "Mock produz sequência de 30–60 s com dois desvios, confirmações e latências previsíveis por relógio virtual.",
+            "Simular timeout, erro, retorno atrasado e indisponibilidade, com origem MOCK explícita.",
+            "Happy path e falhas executam sem internet e sem credenciais.",
+            "Implementar unitários e integração Docker com sampler e domínio concreto conforme SDD 04."
           ],
           "notes_and_risks": "Essencial para o front avançar em paralelo e para ter demo de backup.",
           "priority": "High",
@@ -443,9 +688,17 @@
             "mock",
             "testing"
           ],
-          "description": "## Objetivo\n\nImplemente uma sequência determinística de resultados de IA, latências, timeout e erro para um take de 30–60 segundos. Esse componente é o alicerce do ensaio completo offline e permite que front e integração avancem em paralelo ao acesso ao hardware.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-04\n\n## Definição de pronto\n\n- Mock produz uma sequência conhecida de diagnósticos e latências.\n- Happy path de 30–60s roda sem internet.\n- Pode simular erro de IA e timeout.\n\n## Notas / risco\n\nEssencial para o front avançar em paralelo e para ter demo de backup.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Implemente uma sequência determinística de resultados de IA, latências, timeout e erro para um take de 30–60 segundos. Esse componente é o alicerce do ensaio completo offline e permite que front e integração avancem em paralelo ao acesso ao hardware."
+          "description": "## Objetivo\n\nImplemente uma sequência determinística de resultados de IA, latências, timeout e erro para um take de 30–60 segundos. Esse componente é o alicerce do ensaio completo offline e permite que front e integração avancem em paralelo ao acesso ao hardware.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04\n\n## Definição de pronto\n\n- Mock produz sequência de 30–60 s com dois desvios, confirmações e latências previsíveis por relógio virtual.\n- Simular timeout, erro, retorno atrasado e indisponibilidade, com origem MOCK explícita.\n- Happy path e falhas executam sem internet e sem credenciais.\n- Implementar unitários e integração Docker com sampler e domínio concreto conforme SDD 04.\n\n## Notas / risco\n\nEssencial para o front avançar em paralelo e para ter demo de backup.\n\n## Especificação e testes\n\ndocs/spec-driven-development/04-fixtures-mock-e-sampler/spec.md\ndocs/spec-driven-development/04-fixtures-mock-e-sampler/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Implemente uma sequência determinística de resultados de IA, latências, timeout e erro para um take de 30–60 segundos. Esse componente é o alicerce do ensaio completo offline e permite que front e integração avancem em paralelo ao acesso ao hardware.",
+          "sdd": {
+            "module": "04-fixtures-mock-e-sampler",
+            "spec": "docs/spec-driven-development/04-fixtures-mock-e-sampler/spec.md",
+            "tasks": "docs/spec-driven-development/04-fixtures-mock-e-sampler/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "INT-01",
@@ -457,10 +710,14 @@
           "dependencies": [
             "FE-01",
             "FE-02",
+            "FE-03",
             "FE-04",
-            "BE-03",
+            "FE-06",
+            "BE-02",
             "BE-04",
-            "BE-06"
+            "BE-05",
+            "BE-06",
+            "BE-14"
           ],
           "definition_of_done": [
             "Um take de 30–60s percorre START → 2 correções → STOP sem intervenção manual de debug.",
@@ -468,7 +725,7 @@
             "Timeline mostra as correções.",
             "Demo é repetível pelo menos 5 vezes seguidas."
           ],
-          "notes_and_risks": "Este é o primeiro milestone realmente importante. Fechem isso antes de adicionar Whisper/CapCut.",
+          "notes_and_risks": "Este é o primeiro milestone realmente importante. Fechem isso antes de adicionar Whisper/CapCut. Gate offline usa BE-06; a integração Gemini real é requisito separado em BE-03/INT-03. Não marcar hardware comprovado por headset.",
           "priority": "High",
           "estimate": 3,
           "labels": [
@@ -477,9 +734,17 @@
             "demo",
             "mock"
           ],
-          "description": "## Objetivo\n\nUna sessão, frames mock, IA, política de direção, áudio e timeline em um take que inicia, entrega duas correções e termina sem intervenção de debug. Repita o mesmo roteiro pelo menos cinco vezes: este é o marco que prova que o core funciona antes de investir em transcrição, exportação ou integração real.\n\n**Responsável:** Both\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-01, FE-02, FE-04, BE-03, BE-04, BE-06\n\n## Definição de pronto\n\n- Um take de 30–60s percorre START → 2 correções → STOP sem intervenção manual de debug.\n- Áudio sai em headset Bluetooth.\n- Timeline mostra as correções.\n- Demo é repetível pelo menos 5 vezes seguidas.\n\n## Notas / risco\n\nEste é o primeiro milestone realmente importante. Fechem isso antes de adicionar Whisper/CapCut.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Una sessão, frames mock, IA, política de direção, áudio e timeline em um take que inicia, entrega duas correções e termina sem intervenção de debug. Repita o mesmo roteiro pelo menos cinco vezes: este é o marco que prova que o core funciona antes de investir em transcrição, exportação ou integração real."
+          "description": "## Objetivo\n\nUna sessão, frames mock, IA, política de direção, áudio e timeline em um take que inicia, entrega duas correções e termina sem intervenção de debug. Repita o mesmo roteiro pelo menos cinco vezes: este é o marco que prova que o core funciona antes de investir em transcrição, exportação ou integração real.\n\n**Responsável:** Both\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** FE-01, FE-02, FE-03, FE-04, FE-06, BE-02, BE-04, BE-05, BE-06, BE-14\n\n## Definição de pronto\n\n- Um take de 30–60s percorre START → 2 correções → STOP sem intervenção manual de debug.\n- Áudio sai em headset Bluetooth.\n- Timeline mostra as correções.\n- Demo é repetível pelo menos 5 vezes seguidas.\n\n## Notas / risco\n\nEste é o primeiro milestone realmente importante. Fechem isso antes de adicionar Whisper/CapCut. Gate offline usa BE-06; a integração Gemini real é requisito separado em BE-03/INT-03. Não marcar hardware comprovado por headset.\n\n## Especificação e testes\n\ndocs/spec-driven-development/06-direcao-audio-e-timeline/spec.md\ndocs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Una sessão, frames mock, IA, política de direção, áudio e timeline em um take que inicia, entrega duas correções e termina sem intervenção de debug. Repita o mesmo roteiro pelo menos cinco vezes: este é o marco que prova que o core funciona antes de investir em transcrição, exportação ou integração real.",
+          "sdd": {
+            "module": "06-direcao-audio-e-timeline",
+            "spec": "docs/spec-driven-development/06-direcao-audio-e-timeline/spec.md",
+            "tasks": "docs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         }
       ]
     },
@@ -495,7 +760,8 @@
           "can_do_before_hackathon": true,
           "dependencies": [
             "FE-02",
-            "FE-00"
+            "FE-00",
+            "FE-04"
           ],
           "definition_of_done": [
             "Wake word roda localmente sem enviar áudio à nuvem.",
@@ -512,9 +778,17 @@
             "voice",
             "porcupine"
           ],
-          "description": "## Objetivo\n\nIntegre wake word e comandos de gravar, pausar, retomar e terminar sem enviar o áudio à nuvem. Como Mariana está com as mãos ocupadas e o celular na bancada, teste alcance e retorno sonoro; o botão de debug é apenas um fallback de desenvolvimento.\n\n**Responsável:** Frontend\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-02, FE-00\n\n## Definição de pronto\n\n- Wake word roda localmente sem enviar áudio à nuvem.\n- Reconhece pelo menos: gravar, pausar, retomar e terminar.\n- Há feedback audível curto para cada comando.\n- Existe botão/debug fallback apenas para desenvolvimento.\n\n## Notas / risco\n\nTestar com celular distante na bancada; o caso de uso depende de mãos livres.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Integre wake word e comandos de gravar, pausar, retomar e terminar sem enviar o áudio à nuvem. Como Mariana está com as mãos ocupadas e o celular na bancada, teste alcance e retorno sonoro; o botão de debug é apenas um fallback de desenvolvimento."
+          "description": "## Objetivo\n\nIntegre wake word e comandos de gravar, pausar, retomar e terminar sem enviar o áudio à nuvem. Como Mariana está com as mãos ocupadas e o celular na bancada, teste alcance e retorno sonoro; o botão de debug é apenas um fallback de desenvolvimento.\n\n**Responsável:** Frontend\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** FE-02, FE-00, FE-04\n\n## Definição de pronto\n\n- Wake word roda localmente sem enviar áudio à nuvem.\n- Reconhece pelo menos: gravar, pausar, retomar e terminar.\n- Há feedback audível curto para cada comando.\n- Existe botão/debug fallback apenas para desenvolvimento.\n\n## Notas / risco\n\nTestar com celular distante na bancada; o caso de uso depende de mãos livres.\n\n## Especificação e testes\n\ndocs/spec-driven-development/03-captura-e-sessao/spec.md\ndocs/spec-driven-development/03-captura-e-sessao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Integre wake word e comandos de gravar, pausar, retomar e terminar sem enviar o áudio à nuvem. Como Mariana está com as mãos ocupadas e o celular na bancada, teste alcance e retorno sonoro; o botão de debug é apenas um fallback de desenvolvimento.",
+          "sdd": {
+            "module": "03-captura-e-sessao",
+            "spec": "docs/spec-driven-development/03-captura-e-sessao/spec.md",
+            "tasks": "docs/spec-driven-development/03-captura-e-sessao/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "FE-06",
@@ -540,9 +814,17 @@
             "frontend",
             "timeline"
           ],
-          "description": "## Objetivo\n\nConstrua uma timeline legível com timestamp, tipo de evento e status de correção para enquadramento, luz, horizonte, pausa, reconexão e cortes. Ela deve funcionar totalmente com dados mock e mostrar a ponte entre o que Olivia falou ao vivo e o que a pessoa revisa no fim.\n\n**Responsável:** Frontend\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-04, BE-05\n\n## Definição de pronto\n\n- Timeline renderiza eventos de enquadramento, sombra/luz, horizonte, pausa, reconexão e cortes.\n- Cada evento mostra timestamp e estado confirmado/não confirmado.\n- Funciona integralmente com eventos mock.\n\n## Notas / risco\n\nA timeline é a ponte visível entre a direção ao vivo e o pós-take descrito no submit.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Construa uma timeline legível com timestamp, tipo de evento e status de correção para enquadramento, luz, horizonte, pausa, reconexão e cortes. Ela deve funcionar totalmente com dados mock e mostrar a ponte entre o que Olivia falou ao vivo e o que a pessoa revisa no fim."
+          "description": "## Objetivo\n\nConstrua uma timeline legível com timestamp, tipo de evento e status de correção para enquadramento, luz, horizonte, pausa, reconexão e cortes. Ela deve funcionar totalmente com dados mock e mostrar a ponte entre o que Olivia falou ao vivo e o que a pessoa revisa no fim.\n\n**Responsável:** Frontend\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, BE-05\n\n## Definição de pronto\n\n- Timeline renderiza eventos de enquadramento, sombra/luz, horizonte, pausa, reconexão e cortes.\n- Cada evento mostra timestamp e estado confirmado/não confirmado.\n- Funciona integralmente com eventos mock.\n\n## Notas / risco\n\nA timeline é a ponte visível entre a direção ao vivo e o pós-take descrito no submit.\n\n## Especificação e testes\n\ndocs/spec-driven-development/06-direcao-audio-e-timeline/spec.md\ndocs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Construa uma timeline legível com timestamp, tipo de evento e status de correção para enquadramento, luz, horizonte, pausa, reconexão e cortes. Ela deve funcionar totalmente com dados mock e mostrar a ponte entre o que Olivia falou ao vivo e o que a pessoa revisa no fim.",
+          "sdd": {
+            "module": "06-direcao-audio-e-timeline",
+            "spec": "docs/spec-driven-development/06-direcao-audio-e-timeline/spec.md",
+            "tasks": "docs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "FE-07",
@@ -568,9 +850,17 @@
             "frontend",
             "post-session"
           ],
-          "description": "## Objetivo\n\nMonte uma tela simples que diga duração, número de correções e pontos de corte, aceitando tanto dados mock quanto do PostProcessor real. O foco é entregar uma lista útil para a pessoa levar ao editor que já usa, não construir um editor de vídeo dentro da Olivia.\n\n**Responsável:** Frontend\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-06, BE-09\n\n## Definição de pronto\n\n- Exibe duração do take, número de correções e pontos de corte sugeridos.\n- Permite revisar a lista sem precisar editar vídeo dentro do app.\n- Aceita resultado mock e resultado real do PostProcessor.\n\n## Notas / risco\n\nNão construir editor de vídeo. Mostrar pontos de corte já prova a proposta sem criar um CapCut clone.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Monte uma tela simples que diga duração, número de correções e pontos de corte, aceitando tanto dados mock quanto do PostProcessor real. O foco é entregar uma lista útil para a pessoa levar ao editor que já usa, não construir um editor de vídeo dentro da Olivia."
+          "description": "## Objetivo\n\nMonte uma tela simples que diga duração, número de correções e pontos de corte, aceitando tanto dados mock quanto do PostProcessor real. O foco é entregar uma lista útil para a pessoa levar ao editor que já usa, não construir um editor de vídeo dentro da Olivia.\n\n**Responsável:** Frontend\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** FE-06, BE-09\n\n## Definição de pronto\n\n- Exibe duração do take, número de correções e pontos de corte sugeridos.\n- Permite revisar a lista sem precisar editar vídeo dentro do app.\n- Aceita resultado mock e resultado real do PostProcessor.\n\n## Notas / risco\n\nNão construir editor de vídeo. Mostrar pontos de corte já prova a proposta sem criar um CapCut clone.\n\n## Especificação e testes\n\ndocs/spec-driven-development/08-pos-processamento-e-exportacao/spec.md\ndocs/spec-driven-development/08-pos-processamento-e-exportacao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Monte uma tela simples que diga duração, número de correções e pontos de corte, aceitando tanto dados mock quanto do PostProcessor real. O foco é entregar uma lista útil para a pessoa levar ao editor que já usa, não construir um editor de vídeo dentro da Olivia.",
+          "sdd": {
+            "module": "08-pos-processamento-e-exportacao",
+            "spec": "docs/spec-driven-development/08-pos-processamento-e-exportacao/spec.md",
+            "tasks": "docs/spec-driven-development/08-pos-processamento-e-exportacao/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-05",
@@ -580,13 +870,16 @@
           "phase": "Pré-hackathon",
           "can_do_before_hackathon": true,
           "dependencies": [
-            "BE-04"
+            "BE-04",
+            "FE-02"
           ],
           "definition_of_done": [
-            "Ao emitir correção, cria evento pendente com timestamp.",
-            "Frame posterior pode marcar o evento como corrigido/recentrou.",
-            "Armazena metadados/eventos, não o frame bruto.",
-            "Exposição para a timeline do front está estável."
+            "Eventos de correção têm ID idempotente, sessionId e tempo monotônico/offset correlacionado.",
+            "Somente frame posterior válido da mesma sessão pode confirmar a mesma classe; baixa confiança, falha ou timeout não significam OBEYED.",
+            "Aplicar janela inicial de confirmação de 8000 ms e estados PENDING/OBEYED/IGNORED/EXPIRED/SUPERSEDED conforme SDD 06.",
+            "Persistir somente metadados locais com escrita atômica/versionada; preservar marcas na queda e leitura após reinício.",
+            "Não criar backend CRUD nem usar tabelas de autenticação para timeline.",
+            "Implementar unitários e integração Docker de direção→confirmação→repositório, incluindo falha de escrita, duplicata e reinício."
           ],
           "notes_and_risks": "Implementa o trecho do walkthrough em que a correção posterior vira marca na timeline.",
           "priority": "High",
@@ -597,9 +890,17 @@
             "timeline",
             "privacy"
           ],
-          "description": "## Objetivo\n\nQuando uma orientação for emitida, crie um evento pendente com timestamp, diagnóstico e ação; quando um frame posterior confirmar a melhora, marque-o como corrigido. Exponha esse histórico em um contrato estável para a timeline, mantendo apenas metadados e reforçando a privacidade.\n\n**Responsável:** Backend/IA\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** BE-04\n\n## Definição de pronto\n\n- Ao emitir correção, cria evento pendente com timestamp.\n- Frame posterior pode marcar o evento como corrigido/recentrou.\n- Armazena metadados/eventos, não o frame bruto.\n- Exposição para a timeline do front está estável.\n\n## Notas / risco\n\nImplementa o trecho do walkthrough em que a correção posterior vira marca na timeline.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Quando uma orientação for emitida, crie um evento pendente com timestamp, diagnóstico e ação; quando um frame posterior confirmar a melhora, marque-o como corrigido. Exponha esse histórico em um contrato estável para a timeline, mantendo apenas metadados e reforçando a privacidade."
+          "description": "## Objetivo\n\nQuando uma orientação for emitida, crie um evento pendente com timestamp, diagnóstico e ação; quando um frame posterior confirmar a melhora, marque-o como corrigido. Exponha esse histórico em um contrato estável para a timeline, mantendo apenas metadados e reforçando a privacidade.\n\n**Responsável:** Backend/IA\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** BE-04, FE-02\n\n## Definição de pronto\n\n- Eventos de correção têm ID idempotente, sessionId e tempo monotônico/offset correlacionado.\n- Somente frame posterior válido da mesma sessão pode confirmar a mesma classe; baixa confiança, falha ou timeout não significam OBEYED.\n- Aplicar janela inicial de confirmação de 8000 ms e estados PENDING/OBEYED/IGNORED/EXPIRED/SUPERSEDED conforme SDD 06.\n- Persistir somente metadados locais com escrita atômica/versionada; preservar marcas na queda e leitura após reinício.\n- Não criar backend CRUD nem usar tabelas de autenticação para timeline.\n- Implementar unitários e integração Docker de direção→confirmação→repositório, incluindo falha de escrita, duplicata e reinício.\n\n## Notas / risco\n\nImplementa o trecho do walkthrough em que a correção posterior vira marca na timeline.\n\n## Especificação e testes\n\ndocs/spec-driven-development/06-direcao-audio-e-timeline/spec.md\ndocs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Quando uma orientação for emitida, crie um evento pendente com timestamp, diagnóstico e ação; quando um frame posterior confirmar a melhora, marque-o como corrigido. Exponha esse histórico em um contrato estável para a timeline, mantendo apenas metadados e reforçando a privacidade.",
+          "sdd": {
+            "module": "06-direcao-audio-e-timeline",
+            "spec": "docs/spec-driven-development/06-direcao-audio-e-timeline/spec.md",
+            "tasks": "docs/spec-driven-development/06-direcao-audio-e-timeline/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-08",
@@ -609,13 +910,16 @@
           "phase": "Pré-hackathon",
           "can_do_before_hackathon": true,
           "dependencies": [
-            "SH-04"
+            "SH-04",
+            "BE-12",
+            "BE-14"
           ],
           "definition_of_done": [
-            "Recebe vídeo/áudio local de fixture e extrai trilha de áudio.",
-            "Provider de transcrição funciona com pelo menos um take de teste.",
-            "Processamento ocorre apenas depois do STOP.",
-            "Resultado contém segmentos com timestamps."
+            "Fixar runtime/modelo multilíngue Whisper local com versão/hash e benchmark planejado no Android.",
+            "Processar somente após STOPPED usando áudio do take nativo/fixture local; não criar upload remoto ou IA sobre microfone ao vivo.",
+            "Validar segmentos com timestamps e lidar com mídia sem áudio/corrompida, modelo ausente, cancelamento e nova sessão prioritária.",
+            "Limpar temporários em todos os caminhos, preservando vídeo original e timeline.",
+            "Implementar unitários e integração Docker com Whisper real, mais integração Android do mesmo pipeline; ~8 s é meta a medir."
           ],
           "notes_and_risks": "A fonte real do vídeo será plugada depois; a lógica de transcrição pode estar pronta 100% antes.",
           "priority": "High",
@@ -626,9 +930,17 @@
             "whisper",
             "post-processing"
           ],
-          "description": "## Objetivo\n\nReceba um vídeo ou áudio de fixture, extraia a faixa e entregue segmentos transcritos com timestamps para o pós-processamento. Mantenha esse trabalho estritamente após STOP: o microfone não vira entrada de IA ao vivo e a transcrição não pode atrasar a direção em tempo real.\n\n**Responsável:** Backend/IA\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-04\n\n## Definição de pronto\n\n- Recebe vídeo/áudio local de fixture e extrai trilha de áudio.\n- Provider de transcrição funciona com pelo menos um take de teste.\n- Processamento ocorre apenas depois do STOP.\n- Resultado contém segmentos com timestamps.\n\n## Notas / risco\n\nA fonte real do vídeo será plugada depois; a lógica de transcrição pode estar pronta 100% antes.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Receba um vídeo ou áudio de fixture, extraia a faixa e entregue segmentos transcritos com timestamps para o pós-processamento. Mantenha esse trabalho estritamente após STOP: o microfone não vira entrada de IA ao vivo e a transcrição não pode atrasar a direção em tempo real."
+          "description": "## Objetivo\n\nReceba um vídeo ou áudio de fixture, extraia a faixa e entregue segmentos transcritos com timestamps para o pós-processamento. Mantenha esse trabalho estritamente após STOP: o microfone não vira entrada de IA ao vivo e a transcrição não pode atrasar a direção em tempo real.\n\n**Responsável:** Backend/IA\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, BE-12, BE-14\n\n## Definição de pronto\n\n- Fixar runtime/modelo multilíngue Whisper local com versão/hash e benchmark planejado no Android.\n- Processar somente após STOPPED usando áudio do take nativo/fixture local; não criar upload remoto ou IA sobre microfone ao vivo.\n- Validar segmentos com timestamps e lidar com mídia sem áudio/corrompida, modelo ausente, cancelamento e nova sessão prioritária.\n- Limpar temporários em todos os caminhos, preservando vídeo original e timeline.\n- Implementar unitários e integração Docker com Whisper real, mais integração Android do mesmo pipeline; ~8 s é meta a medir.\n\n## Notas / risco\n\nA fonte real do vídeo será plugada depois; a lógica de transcrição pode estar pronta 100% antes.\n\n## Especificação e testes\n\ndocs/spec-driven-development/08-pos-processamento-e-exportacao/spec.md\ndocs/spec-driven-development/08-pos-processamento-e-exportacao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Receba um vídeo ou áudio de fixture, extraia a faixa e entregue segmentos transcritos com timestamps para o pós-processamento. Mantenha esse trabalho estritamente após STOP: o microfone não vira entrada de IA ao vivo e a transcrição não pode atrasar a direção em tempo real.",
+          "sdd": {
+            "module": "08-pos-processamento-e-exportacao",
+            "spec": "docs/spec-driven-development/08-pos-processamento-e-exportacao/spec.md",
+            "tasks": "docs/spec-driven-development/08-pos-processamento-e-exportacao/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-09",
@@ -639,12 +951,15 @@
           "can_do_before_hackathon": true,
           "dependencies": [
             "BE-08",
-            "BE-05"
+            "BE-05",
+            "BE-12"
           ],
           "definition_of_done": [
-            "Heurística/IA gera pontos de corte com timestamp a partir da transcrição.",
-            "Cruza pontos de corte com marcas de correção ao vivo.",
-            "Em take de teste, produz saída consumível pela revisão pós-sessão."
+            "Gerar SuggestedCut com semântica de intervalo a excluir em tempo de mídia e CutReason existente.",
+            "Usar mapa sessão→mídia validado; não interpretar offsetMs da sessão automaticamente como posição no vídeo.",
+            "Cruzar fala de refação, silêncio aferido, desvios não corrigidos e intervalos degradados com limites e sobreposições tratados.",
+            "Produzir SessionReview e artefatos JSON/SRT coerentes para consumidores, sem renderizador/editor.",
+            "Implementar unitários e integração Docker vídeo→transcrição→cortes→artefatos; medir posição das marcas."
           ],
           "notes_and_risks": "Mantenham heurística simples e previsível; qualidade cinematográfica não é o checkpoint.",
           "priority": "High",
@@ -655,9 +970,17 @@
             "post-processing",
             "cuts"
           ],
-          "description": "## Objetivo\n\nUse uma heurística simples e previsível para transformar segmentos transcritos em timestamps de corte e possíveis legendas. Cruze esses dados com a timeline de correções para a revisão explicar por que cada marca apareceu, sem prometer edição cinematográfica automática.\n\n**Responsável:** Backend/IA\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** BE-08, BE-05\n\n## Definição de pronto\n\n- Heurística/IA gera pontos de corte com timestamp a partir da transcrição.\n- Cruza pontos de corte com marcas de correção ao vivo.\n- Em take de teste, produz saída consumível pela revisão pós-sessão.\n\n## Notas / risco\n\nMantenham heurística simples e previsível; qualidade cinematográfica não é o checkpoint.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Use uma heurística simples e previsível para transformar segmentos transcritos em timestamps de corte e possíveis legendas. Cruze esses dados com a timeline de correções para a revisão explicar por que cada marca apareceu, sem prometer edição cinematográfica automática."
+          "description": "## Objetivo\n\nUse uma heurística simples e previsível para transformar segmentos transcritos em timestamps de corte e possíveis legendas. Cruze esses dados com a timeline de correções para a revisão explicar por que cada marca apareceu, sem prometer edição cinematográfica automática.\n\n**Responsável:** Backend/IA\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** BE-08, BE-05, BE-12\n\n## Definição de pronto\n\n- Gerar SuggestedCut com semântica de intervalo a excluir em tempo de mídia e CutReason existente.\n- Usar mapa sessão→mídia validado; não interpretar offsetMs da sessão automaticamente como posição no vídeo.\n- Cruzar fala de refação, silêncio aferido, desvios não corrigidos e intervalos degradados com limites e sobreposições tratados.\n- Produzir SessionReview e artefatos JSON/SRT coerentes para consumidores, sem renderizador/editor.\n- Implementar unitários e integração Docker vídeo→transcrição→cortes→artefatos; medir posição das marcas.\n\n## Notas / risco\n\nMantenham heurística simples e previsível; qualidade cinematográfica não é o checkpoint.\n\n## Especificação e testes\n\ndocs/spec-driven-development/08-pos-processamento-e-exportacao/spec.md\ndocs/spec-driven-development/08-pos-processamento-e-exportacao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Use uma heurística simples e previsível para transformar segmentos transcritos em timestamps de corte e possíveis legendas. Cruze esses dados com a timeline de correções para a revisão explicar por que cada marca apareceu, sem prometer edição cinematográfica automática.",
+          "sdd": {
+            "module": "08-pos-processamento-e-exportacao",
+            "spec": "docs/spec-driven-development/08-pos-processamento-e-exportacao/spec.md",
+            "tasks": "docs/spec-driven-development/08-pos-processamento-e-exportacao/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-10",
@@ -667,19 +990,26 @@
           "phase": "Pré-hackathon",
           "can_do_before_hackathon": true,
           "dependencies": [
+            "SH-04",
             "BE-02",
             "BE-03",
             "BE-00",
+            "BE-08",
+            "BE-12",
+            "BE-13",
+            "BE-14",
             "INT-00"
           ],
           "definition_of_done": [
-            "Frames usados na análise não são persistidos pelo app.",
-            "Buffers/arquivos temporários são apagados após uso.",
-            "Logs nunca contêm imagem ou áudio bruto.",
-            "Há um diagrama curto de fluxo de dados para mostrar à banca.",
-            "Manifest do DAT define ANALYTICS_OPT_OUT e CRASH_REPORTING_OPT_OUT como true."
+            "Inventário de dados e ameaças começa no setup: fronteiras Android/Firebase/filesystem/editor e controles por ativo.",
+            "Frames não são persistidos; áudio de comandos e transcrição permanecem locais conforme baseline.",
+            "Limpar buffers/temporários também em erro/cancelamento/crash sem apagar o original do creator; não prometer zeroização física garantida.",
+            "Logs por allowlist não contêm mídia, transcrição, tokens ou credenciais; proteção de backup e compartilhamento local documentada.",
+            "Registrar configuração/política de retenção, treinamento e logs do provedor; descarte local não comprova retenção externa zero.",
+            "Manifest DAT mantém ANALYTICS_OPT_OUT e CRASH_REPORTING_OPT_OUT true.",
+            "Implementar unitários e integração Docker/Android de ausência de vazamento e recuperação; fechar gate de privacidade antes de dados reais."
           ],
-          "notes_and_risks": "A proposta submetida assume descarte dos frames e ausência de IA sobre microfone durante o take.",
+          "notes_and_risks": "A proposta submetida assume descarte dos frames e ausência de IA sobre microfone durante o take. A política inicia no módulo 01; dependências listadas são para fechamento das evidências, não para iniciar desenho de segurança.",
           "priority": "High",
           "estimate": 2,
           "labels": [
@@ -688,9 +1018,17 @@
             "privacy",
             "ethics"
           ],
-          "description": "## Objetivo\n\nGaranta por código que frames de análise não sejam persistidos, buffers temporários sejam limpos e logs não contenham imagem ou áudio bruto. Produza também uma evidência curta do fluxo de dados para que o time prove à banca que a privacidade é uma propriedade do sistema, não só texto de slide.\n\n**Responsável:** Backend/IA\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** BE-02, BE-03, BE-00, INT-00\n\n## Definição de pronto\n\n- Frames usados na análise não são persistidos pelo app.\n- Buffers/arquivos temporários são apagados após uso.\n- Logs nunca contêm imagem ou áudio bruto.\n- Há um diagrama curto de fluxo de dados para mostrar à banca.\n- Manifest do DAT define ANALYTICS_OPT_OUT e CRASH_REPORTING_OPT_OUT como true.\n\n## Notas / risco\n\nA proposta submetida assume descarte dos frames e ausência de IA sobre microfone durante o take.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Garanta por código que frames de análise não sejam persistidos, buffers temporários sejam limpos e logs não contenham imagem ou áudio bruto. Produza também uma evidência curta do fluxo de dados para que o time prove à banca que a privacidade é uma propriedade do sistema, não só texto de slide."
+          "description": "## Objetivo\n\nGaranta por código que frames de análise não sejam persistidos, buffers temporários sejam limpos e logs não contenham imagem ou áudio bruto. Produza também uma evidência curta do fluxo de dados para que o time prove à banca que a privacidade é uma propriedade do sistema, não só texto de slide.\n\n**Responsável:** Backend/IA\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, BE-02, BE-03, BE-00, BE-08, BE-12, BE-13, BE-14, INT-00\n\n## Definição de pronto\n\n- Inventário de dados e ameaças começa no setup: fronteiras Android/Firebase/filesystem/editor e controles por ativo.\n- Frames não são persistidos; áudio de comandos e transcrição permanecem locais conforme baseline.\n- Limpar buffers/temporários também em erro/cancelamento/crash sem apagar o original do creator; não prometer zeroização física garantida.\n- Logs por allowlist não contêm mídia, transcrição, tokens ou credenciais; proteção de backup e compartilhamento local documentada.\n- Registrar configuração/política de retenção, treinamento e logs do provedor; descarte local não comprova retenção externa zero.\n- Manifest DAT mantém ANALYTICS_OPT_OUT e CRASH_REPORTING_OPT_OUT true.\n- Implementar unitários e integração Docker/Android de ausência de vazamento e recuperação; fechar gate de privacidade antes de dados reais.\n\n## Notas / risco\n\nA proposta submetida assume descarte dos frames e ausência de IA sobre microfone durante o take. A política inicia no módulo 01; dependências listadas são para fechamento das evidências, não para iniciar desenho de segurança.\n\n## Especificação e testes\n\ndocs/spec-driven-development/09-privacidade-e-seguranca/spec.md\ndocs/spec-driven-development/09-privacidade-e-seguranca/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Garanta por código que frames de análise não sejam persistidos, buffers temporários sejam limpos e logs não contenham imagem ou áudio bruto. Produza também uma evidência curta do fluxo de dados para que o time prove à banca que a privacidade é uma propriedade do sistema, não só texto de slide.",
+          "sdd": {
+            "module": "09-privacidade-e-seguranca",
+            "spec": "docs/spec-driven-development/09-privacidade-e-seguranca/spec.md",
+            "tasks": "docs/spec-driven-development/09-privacidade-e-seguranca/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         }
       ]
     },
@@ -722,9 +1060,17 @@
             "privacy",
             "ux"
           ],
-          "description": "## Objetivo\n\nPermita escolher entre Modo Voz e Modo Sinal e mostre, em linguagem curta, que frames são efêmeros e o áudio não alimenta IA durante o take. A interface também deve tornar visível a diferença entre sessão ativa e degradada, porque o usuário não pode confundir falha com silêncio seguro.\n\n**Responsável:** Frontend\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-01, FE-04\n\n## Definição de pronto\n\n- Usuário escolhe Voz ou Sinal antes de gravar.\n- Tela explica que frames de análise são efêmeros e que o áudio não alimenta IA durante o take.\n- Há indicação clara de quando a sessão está ativa e quando está degradada.\n\n## Notas / risco\n\nA consideração ética vale 20 pontos; a explicação precisa estar visível e demonstrável.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Permita escolher entre Modo Voz e Modo Sinal e mostre, em linguagem curta, que frames são efêmeros e o áudio não alimenta IA durante o take. A interface também deve tornar visível a diferença entre sessão ativa e degradada, porque o usuário não pode confundir falha com silêncio seguro."
+          "description": "## Objetivo\n\nPermita escolher entre Modo Voz e Modo Sinal e mostre, em linguagem curta, que frames são efêmeros e o áudio não alimenta IA durante o take. A interface também deve tornar visível a diferença entre sessão ativa e degradada, porque o usuário não pode confundir falha com silêncio seguro.\n\n**Responsável:** Frontend\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** FE-01, FE-04\n\n## Definição de pronto\n\n- Usuário escolhe Voz ou Sinal antes de gravar.\n- Tela explica que frames de análise são efêmeros e que o áudio não alimenta IA durante o take.\n- Há indicação clara de quando a sessão está ativa e quando está degradada.\n\n## Notas / risco\n\nA consideração ética vale 20 pontos; a explicação precisa estar visível e demonstrável.\n\n## Especificação e testes\n\ndocs/spec-driven-development/09-privacidade-e-seguranca/spec.md\ndocs/spec-driven-development/09-privacidade-e-seguranca/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Permita escolher entre Modo Voz e Modo Sinal e mostre, em linguagem curta, que frames são efêmeros e o áudio não alimenta IA durante o take. A interface também deve tornar visível a diferença entre sessão ativa e degradada, porque o usuário não pode confundir falha com silêncio seguro.",
+          "sdd": {
+            "module": "09-privacidade-e-seguranca",
+            "spec": "docs/spec-driven-development/09-privacidade-e-seguranca/spec.md",
+            "tasks": "docs/spec-driven-development/09-privacidade-e-seguranca/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "FE-08",
@@ -752,9 +1098,17 @@
             "capcut",
             "risk"
           ],
-          "description": "## Objetivo\n\nFaça um spike do caminho de compartilhamento suportado e implemente o menor handoff demonstrável: vídeo mais SRT, JSON ou outro artefato de marcação. Se uma integração direta não existir, documente o fluxo manual e mantenha-o atrás de adapter para não comprometer o core do MVP.\n\n**Responsável:** Frontend\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** FE-07, BE-12\n\n## Definição de pronto\n\n- Fazer spike curto para validar o caminho suportado no sistema alvo.\n- MVP exporta/compartilha o vídeo e um artefato de marcação (ex.: SRT/JSON) sem bloquear o fluxo.\n- Se houver integração direta disponível, encapsular em adapter; se não houver, documentar o handoff demonstrável.\n\n## Notas / risco\n\nIntegração direta com CapCut é um risco. Não gastar o core do hackathon tentando reproduzir funcionalidades de editor.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Faça um spike do caminho de compartilhamento suportado e implemente o menor handoff demonstrável: vídeo mais SRT, JSON ou outro artefato de marcação. Se uma integração direta não existir, documente o fluxo manual e mantenha-o atrás de adapter para não comprometer o core do MVP."
+          "description": "## Objetivo\n\nFaça um spike do caminho de compartilhamento suportado e implemente o menor handoff demonstrável: vídeo mais SRT, JSON ou outro artefato de marcação. Se uma integração direta não existir, documente o fluxo manual e mantenha-o atrás de adapter para não comprometer o core do MVP.\n\n**Responsável:** Frontend\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** FE-07, BE-12\n\n## Definição de pronto\n\n- Fazer spike curto para validar o caminho suportado no sistema alvo.\n- MVP exporta/compartilha o vídeo e um artefato de marcação (ex.: SRT/JSON) sem bloquear o fluxo.\n- Se houver integração direta disponível, encapsular em adapter; se não houver, documentar o handoff demonstrável.\n\n## Notas / risco\n\nIntegração direta com CapCut é um risco. Não gastar o core do hackathon tentando reproduzir funcionalidades de editor.\n\n## Especificação e testes\n\ndocs/spec-driven-development/08-pos-processamento-e-exportacao/spec.md\ndocs/spec-driven-development/08-pos-processamento-e-exportacao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Faça um spike do caminho de compartilhamento suportado e implemente o menor handoff demonstrável: vídeo mais SRT, JSON ou outro artefato de marcação. Se uma integração direta não existir, documente o fluxo manual e mantenha-o atrás de adapter para não comprometer o core do MVP.",
+          "sdd": {
+            "module": "08-pos-processamento-e-exportacao",
+            "spec": "docs/spec-driven-development/08-pos-processamento-e-exportacao/spec.md",
+            "tasks": "docs/spec-driven-development/08-pos-processamento-e-exportacao/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "FE-09",
@@ -782,9 +1136,17 @@
             "resilience",
             "bluetooth"
           ],
-          "description": "## Objetivo\n\nAo ficar quatro segundos sem frame, leve a sessão para DEGRADED, preserve a timeline e toque um som inequívoco de queda; ao voltar, toque a confirmação de retomada. Esse comportamento é essencial para o usuário entender que a Olivia deixou de observar a câmera, mesmo que a gravação continue.\n\n**Responsável:** Frontend\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-02, FE-04\n\n## Definição de pronto\n\n- Após timeout configurável sem frames, UI entra em DEGRADED.\n- Toca som distinto de queda e de retomada.\n- Marcas já capturadas continuam visíveis.\n- Ao reconectar, sessão volta sem reiniciar a timeline.\n\n## Notas / risco\n\nO submit diz explicitamente que silêncio não pode significar 'está tudo bem' durante falha.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Ao ficar quatro segundos sem frame, leve a sessão para DEGRADED, preserve a timeline e toque um som inequívoco de queda; ao voltar, toque a confirmação de retomada. Esse comportamento é essencial para o usuário entender que a Olivia deixou de observar a câmera, mesmo que a gravação continue."
+          "description": "## Objetivo\n\nAo ficar quatro segundos sem frame, leve a sessão para DEGRADED, preserve a timeline e toque um som inequívoco de queda; ao voltar, toque a confirmação de retomada. Esse comportamento é essencial para o usuário entender que a Olivia deixou de observar a câmera, mesmo que a gravação continue.\n\n**Responsável:** Frontend\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** FE-02, FE-04\n\n## Definição de pronto\n\n- Após timeout configurável sem frames, UI entra em DEGRADED.\n- Toca som distinto de queda e de retomada.\n- Marcas já capturadas continuam visíveis.\n- Ao reconectar, sessão volta sem reiniciar a timeline.\n\n## Notas / risco\n\nO submit diz explicitamente que silêncio não pode significar 'está tudo bem' durante falha.\n\n## Especificação e testes\n\ndocs/spec-driven-development/03-captura-e-sessao/spec.md\ndocs/spec-driven-development/03-captura-e-sessao/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Ao ficar quatro segundos sem frame, leve a sessão para DEGRADED, preserve a timeline e toque um som inequívoco de queda; ao voltar, toque a confirmação de retomada. Esse comportamento é essencial para o usuário entender que a Olivia deixou de observar a câmera, mesmo que a gravação continue.",
+          "sdd": {
+            "module": "03-captura-e-sessao",
+            "spec": "docs/spec-driven-development/03-captura-e-sessao/spec.md",
+            "tasks": "docs/spec-driven-development/03-captura-e-sessao/tasks.md",
+            "runtime": "shared_boundary",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-07",
@@ -795,12 +1157,16 @@
           "can_do_before_hackathon": true,
           "dependencies": [
             "BE-03",
-            "BE-04"
+            "BE-04",
+            "FE-04",
+            "BE-14"
           ],
           "definition_of_done": [
-            "Loga timestamps de captura/amostra, início/fim da inferência e emissão da instrução.",
-            "Mostra p50/p95 ao fim da sessão de teste.",
-            "Conta número de inferências por minuto."
+            "Instrumentar captura, seleção, inferência, validação, pedido de áudio e callback de início com clock monotônico.",
+            "Reportar p50/p95, tamanho de amostra, warm/cold, ambiente e contagem de inferências; não confundir pedido TTS com som nos óculos.",
+            "Separar atraso de amostragem, latência frame→áudio e medição acústica física.",
+            "Meta de ~900 ms permanece meta; dez inferências não justificam afirmação forte de cauda.",
+            "Implementar unitários de agregação e integração Docker de métricas por chamada sem logs de mídia."
           ],
           "notes_and_risks": "O submit promete ~900 ms no Modo Voz; tratar como meta a medir, não como dado garantido.",
           "priority": "High",
@@ -811,9 +1177,17 @@
             "performance",
             "checkpoint"
           ],
-          "description": "## Objetivo\n\nInstrumente captura/amostragem, início e fim da inferência e emissão da instrução para produzir p50, p95 e chamadas por minuto ao final de cada sessão. Trate os ~900 ms do Modo Voz como meta a verificar, pois o pitch deve apresentar números medidos e não promessas.\n\n**Responsável:** Backend/IA\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** BE-03, BE-04\n\n## Definição de pronto\n\n- Loga timestamps de captura/amostra, início/fim da inferência e emissão da instrução.\n- Mostra p50/p95 ao fim da sessão de teste.\n- Conta número de inferências por minuto.\n\n## Notas / risco\n\nO submit promete ~900 ms no Modo Voz; tratar como meta a medir, não como dado garantido.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Instrumente captura/amostragem, início e fim da inferência e emissão da instrução para produzir p50, p95 e chamadas por minuto ao final de cada sessão. Trate os ~900 ms do Modo Voz como meta a verificar, pois o pitch deve apresentar números medidos e não promessas."
+          "description": "## Objetivo\n\nInstrumente captura/amostragem, início e fim da inferência e emissão da instrução para produzir p50, p95 e chamadas por minuto ao final de cada sessão. Trate os ~900 ms do Modo Voz como meta a verificar, pois o pitch deve apresentar números medidos e não promessas.\n\n**Responsável:** Backend/IA\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** BE-03, BE-04, FE-04, BE-14\n\n## Definição de pronto\n\n- Instrumentar captura, seleção, inferência, validação, pedido de áudio e callback de início com clock monotônico.\n- Reportar p50/p95, tamanho de amostra, warm/cold, ambiente e contagem de inferências; não confundir pedido TTS com som nos óculos.\n- Separar atraso de amostragem, latência frame→áudio e medição acústica física.\n- Meta de ~900 ms permanece meta; dez inferências não justificam afirmação forte de cauda.\n- Implementar unitários de agregação e integração Docker de métricas por chamada sem logs de mídia.\n\n## Notas / risco\n\nO submit promete ~900 ms no Modo Voz; tratar como meta a medir, não como dado garantido.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Instrumente captura/amostragem, início e fim da inferência e emissão da instrução para produzir p50, p95 e chamadas por minuto ao final de cada sessão. Trate os ~900 ms do Modo Voz como meta a verificar, pois o pitch deve apresentar números medidos e não promessas.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "BE-11",
@@ -824,13 +1198,15 @@
           "can_do_before_hackathon": true,
           "dependencies": [
             "BE-02",
+            "BE-04",
             "BE-07"
           ],
           "definition_of_done": [
-            "Sampler default permanece em 0,5 fps.",
-            "Sem round-trip de nuvem para tons.",
-            "Há contadores de duração da sessão, chamadas de IA e tempo ativo.",
-            "Config permite reduzir taxa se o hardware aquecer ou a bateria cair rápido."
+            "Preservar default 0,5 fps e cooldown 4 s configuráveis, sem tráfego de nuvem para tons.",
+            "Contar duração, frames recebidos/amostrados/descartados e chamadas sem aumentar inferências por instrumentação.",
+            "Redução de sampling não deve disparar DEGRADED artificial; usar saúde de captura independente.",
+            "Documentar medição de energia em celular/óculos, precisão e condições; contadores e 60× menos inferências não equivalem a 60× de economia de bateria.",
+            "Implementar unitários e integração Docker de limites/configuração; medição física é INT-07."
           ],
           "notes_and_risks": "O edital exige estratégia clara de eficiência; uma estratégia implementada + medida é melhor que texto de slide.",
           "priority": "High",
@@ -841,39 +1217,17 @@
             "battery",
             "checkpoint"
           ],
-          "description": "## Objetivo\n\nMantenha 0,5 fps como padrão, evite chamadas de nuvem para tons e exponha contadores de duração, inferências e tempo ativo. Deixe sampling e cooldown ajustáveis para o time reagir se os óculos ou celular esquentarem ou descarregarem rápido no hardware real.\n\n**Responsável:** Backend/IA\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** BE-02, BE-07\n\n## Definição de pronto\n\n- Sampler default permanece em 0,5 fps.\n- Sem round-trip de nuvem para tons.\n- Há contadores de duração da sessão, chamadas de IA e tempo ativo.\n- Config permite reduzir taxa se o hardware aquecer ou a bateria cair rápido.\n\n## Notas / risco\n\nO edital exige estratégia clara de eficiência; uma estratégia implementada + medida é melhor que texto de slide.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Mantenha 0,5 fps como padrão, evite chamadas de nuvem para tons e exponha contadores de duração, inferências e tempo ativo. Deixe sampling e cooldown ajustáveis para o time reagir se os óculos ou celular esquentarem ou descarregarem rápido no hardware real."
-        },
-        {
-          "code": "BE-12",
-          "title": "Deixar pronto o caminho de vídeo 3K dos óculos para o pós-processamento",
-          "owner": "Backend/IA",
-          "milestone": "M3 • Hardening (14–16/09)",
-          "phase": "Pré-hackathon",
-          "can_do_before_hackathon": false,
-          "dependencies": [
-            "SH-04"
-          ],
-          "definition_of_done": [
-            "Documentar o caminho esperado de gravação nativa → celular → app usando materiais oficiais do programa.",
-            "Implementar interface e fluxo completo usando arquivo local de fixture.",
-            "Deixar somente o conector real ao hardware para o dia.",
-            "Registrar fallback aprovado/possível caso a API real não exponha o download como esperado."
-          ],
-          "notes_and_risks": "É uma das maiores incertezas do submit. Tratem como spike técnico prioritário, não como detalhe.",
-          "priority": "High",
-          "estimate": 3,
-          "labels": [
-            "P0",
-            "backend",
-            "video",
-            "hardware",
-            "risk"
-          ],
-          "description": "## Objetivo\n\nInvestigue e documente a rota esperada de gravação nativa até o celular e o app, mas implemente o contrato completo usando arquivo local antes do evento. Registre um fallback viável caso a API do dispositivo não exponha a importação como previsto; esse risco não pode travar a demo de direção ao vivo.\n\n**Responsável:** Backend/IA\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** SH-04\n\n## Definição de pronto\n\n- Documentar o caminho esperado de gravação nativa → celular → app usando materiais oficiais do programa.\n- Implementar interface e fluxo completo usando arquivo local de fixture.\n- Deixar somente o conector real ao hardware para o dia.\n- Registrar fallback aprovado/possível caso a API real não exponha o download como esperado.\n\n## Notas / risco\n\nÉ uma das maiores incertezas do submit. Tratem como spike técnico prioritário, não como detalhe.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Investigue e documente a rota esperada de gravação nativa até o celular e o app, mas implemente o contrato completo usando arquivo local antes do evento. Registre um fallback viável caso a API do dispositivo não exponha a importação como previsto; esse risco não pode travar a demo de direção ao vivo."
+          "description": "## Objetivo\n\nMantenha 0,5 fps como padrão, evite chamadas de nuvem para tons e exponha contadores de duração, inferências e tempo ativo. Deixe sampling e cooldown ajustáveis para o time reagir se os óculos ou celular esquentarem ou descarregarem rápido no hardware real.\n\n**Responsável:** Backend/IA\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** BE-02, BE-04, BE-07\n\n## Definição de pronto\n\n- Preservar default 0,5 fps e cooldown 4 s configuráveis, sem tráfego de nuvem para tons.\n- Contar duração, frames recebidos/amostrados/descartados e chamadas sem aumentar inferências por instrumentação.\n- Redução de sampling não deve disparar DEGRADED artificial; usar saúde de captura independente.\n- Documentar medição de energia em celular/óculos, precisão e condições; contadores e 60× menos inferências não equivalem a 60× de economia de bateria.\n- Implementar unitários e integração Docker de limites/configuração; medição física é INT-07.\n\n## Notas / risco\n\nO edital exige estratégia clara de eficiência; uma estratégia implementada + medida é melhor que texto de slide.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Mantenha 0,5 fps como padrão, evite chamadas de nuvem para tons e exponha contadores de duração, inferências e tempo ativo. Deixe sampling e cooldown ajustáveis para o time reagir se os óculos ou celular esquentarem ou descarregarem rápido no hardware real.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "android_domain_or_adapter",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "INT-02",
@@ -902,9 +1256,17 @@
             "resilience",
             "demo"
           ],
-          "description": "## Objetivo\n\nExecute o cenário de exceção com o mock interrompendo frames por mais de quatro segundos e confirme DEGRADED, tom de queda, preservação das marcas e retomada sem reiniciar. O take precisa continuar processável no fim, provando que a falha foi comunicada e isolada em vez de quebrar o produto.\n\n**Responsável:** Both\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-09, BE-06, BE-05\n\n## Definição de pronto\n\n- Mock corta frames por >4s.\n- App entra em DEGRADED, toca tom de queda e preserva marcas.\n- Ao retomar, toca tom de retorno e continua a sessão.\n- Take final continua processável.\n\n## Notas / risco\n\nDemonstra maturidade técnica e cobre o walkthrough de exceção submetido.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Execute o cenário de exceção com o mock interrompendo frames por mais de quatro segundos e confirme DEGRADED, tom de queda, preservação das marcas e retomada sem reiniciar. O take precisa continuar processável no fim, provando que a falha foi comunicada e isolada em vez de quebrar o produto."
+          "description": "## Objetivo\n\nExecute o cenário de exceção com o mock interrompendo frames por mais de quatro segundos e confirme DEGRADED, tom de queda, preservação das marcas e retomada sem reiniciar. O take precisa continuar processável no fim, provando que a falha foi comunicada e isolada em vez de quebrar o produto.\n\n**Responsável:** Both\n**Milestone:** M3 • Hardening (14–16/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** FE-09, BE-06, BE-05\n\n## Definição de pronto\n\n- Mock corta frames por >4s.\n- App entra em DEGRADED, toca tom de queda e preserva marcas.\n- Ao retomar, toca tom de retorno e continua a sessão.\n- Take final continua processável.\n\n## Notas / risco\n\nDemonstra maturidade técnica e cobre o walkthrough de exceção submetido.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Execute o cenário de exceção com o mock interrompendo frames por mais de quatro segundos e confirme DEGRADED, tom de queda, preservação das marcas e retomada sem reiniciar. O take precisa continuar processável no fim, provando que a falha foi comunicada e isolada em vez de quebrar o produto.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         }
       ]
     },
@@ -920,6 +1282,8 @@
           "can_do_before_hackathon": true,
           "dependencies": [
             "INT-01",
+            "INT-02",
+            "BE-03",
             "BE-10",
             "BE-11"
           ],
@@ -930,7 +1294,7 @@
             "Privacidade: mostrar data-flow e ausência de frame persistido.",
             "Bateria: mostrar 0,5 fps, número de inferências e medição no hardware."
           ],
-          "notes_and_risks": "Não depender da memória da equipe no checkpoint; ter uma sequência de prova de 2–3 minutos.",
+          "notes_and_risks": "Não depender da memória da equipe no checkpoint; ter uma sequência de prova de 2–3 minutos. Pré-hardware registrar checklist e lacunas; fechar campos físicos somente após INT-04/05/06/07, sem criar dependência circular de freeze.",
           "priority": "High",
           "estimate": 2,
           "labels": [
@@ -939,9 +1303,17 @@
             "demo",
             "shared"
           ],
-          "description": "## Objetivo\n\nConverta os requisitos da banca em um checklist de dois a três minutos que mostre classificação de IA, origem do frame, áudio audível, descarte de dados e estratégia de bateria. O roteiro deve indicar o que abrir e qual evidência mostrar, para que qualquer integrante consiga conduzir o checkpoint.\n\n**Responsável:** Both\n**Milestone:** M4 • Freeze (17/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** INT-01, BE-10, BE-11\n\n## Definição de pronto\n\n- IA: mostrar classificação/resultado estruturado.\n- Câmera/microfone: mostrar contador/origem do frame do adapter.\n- Áudio: mostrar instrução/AudioCue e ouvir nos óculos/headset.\n- Privacidade: mostrar data-flow e ausência de frame persistido.\n- Bateria: mostrar 0,5 fps, número de inferências e medição no hardware.\n\n## Notas / risco\n\nNão depender da memória da equipe no checkpoint; ter uma sequência de prova de 2–3 minutos.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Converta os requisitos da banca em um checklist de dois a três minutos que mostre classificação de IA, origem do frame, áudio audível, descarte de dados e estratégia de bateria. O roteiro deve indicar o que abrir e qual evidência mostrar, para que qualquer integrante consiga conduzir o checkpoint."
+          "description": "## Objetivo\n\nConverta os requisitos da banca em um checklist de dois a três minutos que mostre classificação de IA, origem do frame, áudio audível, descarte de dados e estratégia de bateria. O roteiro deve indicar o que abrir e qual evidência mostrar, para que qualquer integrante consiga conduzir o checkpoint.\n\n**Responsável:** Both\n**Milestone:** M4 • Freeze (17/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** INT-01, INT-02, BE-03, BE-10, BE-11\n\n## Definição de pronto\n\n- IA: mostrar classificação/resultado estruturado.\n- Câmera/microfone: mostrar contador/origem do frame do adapter.\n- Áudio: mostrar instrução/AudioCue e ouvir nos óculos/headset.\n- Privacidade: mostrar data-flow e ausência de frame persistido.\n- Bateria: mostrar 0,5 fps, número de inferências e medição no hardware.\n\n## Notas / risco\n\nNão depender da memória da equipe no checkpoint; ter uma sequência de prova de 2–3 minutos. Pré-hardware registrar checklist e lacunas; fechar campos físicos somente após INT-04/05/06/07, sem criar dependência circular de freeze.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Converta os requisitos da banca em um checklist de dois a três minutos que mostre classificação de IA, origem do frame, áudio audível, descarte de dados e estratégia de bateria. O roteiro deve indicar o que abrir e qual evidência mostrar, para que qualquer integrante consiga conduzir o checkpoint.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "INT-08",
@@ -970,9 +1342,17 @@
             "demo",
             "shared"
           ],
-          "description": "## Objetivo\n\nFeche o roteiro que conecta a dor da Mariana à correção por áudio e ao resultado pós-take, grave uma versão curta de backup e salve uma build estável. O setup do dia deve ser repetível em menos de dez minutos, pois às 17h30 a implementação precisa estar travada para o pitch.\n\n**Responsável:** Both\n**Milestone:** M4 • Freeze (17/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** INT-01, INT-02, INT-03\n\n## Definição de pronto\n\n- Pitch conecta dor da Mariana → correção em tempo real → resultado → por que AI Glasses.\n- Há vídeo curto de backup do demo mock completo.\n- Há branch/tag estável e APK/build local salvo nos notebooks.\n- Checklist de setup do dia leva menos de 10 minutos para seguir.\n\n## Notas / risco\n\nNo dia, 17h30 é o fechamento técnico segundo o edital. O time precisa chegar com narrativa e fallback prontos.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Feche o roteiro que conecta a dor da Mariana à correção por áudio e ao resultado pós-take, grave uma versão curta de backup e salve uma build estável. O setup do dia deve ser repetível em menos de dez minutos, pois às 17h30 a implementação precisa estar travada para o pitch."
+          "description": "## Objetivo\n\nFeche o roteiro que conecta a dor da Mariana à correção por áudio e ao resultado pós-take, grave uma versão curta de backup e salve uma build estável. O setup do dia deve ser repetível em menos de dez minutos, pois às 17h30 a implementação precisa estar travada para o pitch.\n\n**Responsável:** Both\n**Milestone:** M4 • Freeze (17/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** INT-01, INT-02, INT-03\n\n## Definição de pronto\n\n- Pitch conecta dor da Mariana → correção em tempo real → resultado → por que AI Glasses.\n- Há vídeo curto de backup do demo mock completo.\n- Há branch/tag estável e APK/build local salvo nos notebooks.\n- Checklist de setup do dia leva menos de 10 minutos para seguir.\n\n## Notas / risco\n\nNo dia, 17h30 é o fechamento técnico segundo o edital. O time precisa chegar com narrativa e fallback prontos.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Feche o roteiro que conecta a dor da Mariana à correção por áudio e ao resultado pós-take, grave uma versão curta de backup e salve uma build estável. O setup do dia deve ser repetível em menos de dez minutos, pois às 17h30 a implementação precisa estar travada para o pitch.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         }
       ]
     },
@@ -1009,9 +1389,17 @@
             "camera",
             "checkpoint"
           ],
-          "description": "## Objetivo\n\nDepois de parear os dispositivos, conecte start/stop e frames reais ao mesmo contrato usado pelo mock, preservando a máquina de estados e o FrameSource. A meta da manhã é colocar o happy path da câmera dos óculos em funcionamento antes do checkpoint das 15h, sem reescrever o app.\n\n**Responsável:** Both\n**Milestone:** H0 • Hardware integration (18/09)\n**Fase:** Hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** SH-04, FE-02, BE-02, INT-00, BE-00\n\n## Definição de pronto\n\n- Parear os dispositivos fornecidos.\n- startSession/stopSession (ou API equivalente do toolkit vigente) controla a state machine existente.\n- Frames reais entram no mesmo FrameSource usado pelo mock.\n- Happy path roda com câmera dos óculos antes do checkpoint das 15h.\n\n## Notas / risco\n\nMeta: trocar adapter, não reescrever produto. Prioridade absoluta da manhã.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Depois de parear os dispositivos, conecte start/stop e frames reais ao mesmo contrato usado pelo mock, preservando a máquina de estados e o FrameSource. A meta da manhã é colocar o happy path da câmera dos óculos em funcionamento antes do checkpoint das 15h, sem reescrever o app."
+          "description": "## Objetivo\n\nDepois de parear os dispositivos, conecte start/stop e frames reais ao mesmo contrato usado pelo mock, preservando a máquina de estados e o GlassesGateway (fronteira de frames). A meta da manhã é colocar o happy path da câmera dos óculos em funcionamento antes do checkpoint das 15h, sem reescrever o app.\n\n**Responsável:** Both\n**Milestone:** H0 • Hardware integration (18/09)\n**Fase:** Hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** SH-04, FE-02, BE-02, INT-00, BE-00\n\n## Definição de pronto\n\n- Parear os dispositivos fornecidos.\n- startSession/stopSession (ou API equivalente do toolkit vigente) controla a state machine existente.\n- Frames reais entram no mesmo FrameSource usado pelo mock.\n- Happy path roda com câmera dos óculos antes do checkpoint das 15h.\n\n## Notas / risco\n\nMeta: trocar adapter, não reescrever produto. Prioridade absoluta da manhã.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Depois de parear os dispositivos, conecte start/stop e frames reais ao mesmo contrato usado pelo mock, preservando a máquina de estados e o GlassesGateway (fronteira de frames). A meta da manhã é colocar o happy path da câmera dos óculos em funcionamento antes do checkpoint das 15h, sem reescrever o app.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "INT-05",
@@ -1040,9 +1428,17 @@
             "bluetooth",
             "checkpoint"
           ],
-          "description": "## Objetivo\n\nAssim que o pareamento terminar, valide Modo Voz, Modo Sinal e os tons de início, pausa, queda e retomada diretamente nos Ray-Ban Meta. O usuário deve conseguir operar apenas pelo áudio; este teste fecha o checkpoint obrigatório de output sem depender da tela do celular.\n\n**Responsável:** Frontend\n**Milestone:** H0 • Hardware integration (18/09)\n**Fase:** Hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** FE-04, INT-00\n\n## Definição de pronto\n\n- Modo Voz é audível nos óculos.\n- Modo Sinal mantém distinção de lado/evento se o hardware suportar como esperado.\n- Tom de início, pausa, queda e retomada são distinguíveis.\n- Sem output visual necessário para operar a experiência.\n\n## Notas / risco\n\nFazer imediatamente após pareamento; output por áudio é checkpoint obrigatório.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Assim que o pareamento terminar, valide Modo Voz, Modo Sinal e os tons de início, pausa, queda e retomada diretamente nos Ray-Ban Meta. O usuário deve conseguir operar apenas pelo áudio; este teste fecha o checkpoint obrigatório de output sem depender da tela do celular."
+          "description": "## Objetivo\n\nAssim que o pareamento terminar, valide Modo Voz, Modo Sinal e os tons de início, pausa, queda e retomada diretamente nos Ray-Ban Meta. O usuário deve conseguir operar apenas pelo áudio; este teste fecha o checkpoint obrigatório de output sem depender da tela do celular.\n\n**Responsável:** Frontend\n**Milestone:** H0 • Hardware integration (18/09)\n**Fase:** Hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** FE-04, INT-00\n\n## Definição de pronto\n\n- Modo Voz é audível nos óculos.\n- Modo Sinal mantém distinção de lado/evento se o hardware suportar como esperado.\n- Tom de início, pausa, queda e retomada são distinguíveis.\n- Sem output visual necessário para operar a experiência.\n\n## Notas / risco\n\nFazer imediatamente após pareamento; output por áudio é checkpoint obrigatório.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Assim que o pareamento terminar, valide Modo Voz, Modo Sinal e os tons de início, pausa, queda e retomada diretamente nos Ray-Ban Meta. O usuário deve conseguir operar apenas pelo áudio; este teste fecha o checkpoint obrigatório de output sem depender da tela do celular.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "INT-06",
@@ -1054,7 +1450,10 @@
           "dependencies": [
             "BE-08",
             "BE-09",
-            "BE-12"
+            "BE-12",
+            "FE-07",
+            "FE-08",
+            "INT-04"
           ],
           "definition_of_done": [
             "Take real chega ao fluxo de PostProcessor.",
@@ -1071,9 +1470,17 @@
             "video",
             "post-processing"
           ],
-          "description": "## Objetivo\n\nLeve um take nativo dos óculos até o PostProcessor, gere transcrição e alguns cortes, e abra a revisão com dados reais. Caso a importação direta falhe, use imediatamente o fallback definido em BE-12 e preserve o demo principal de direção ao vivo.\n\n**Responsável:** Backend/IA\n**Milestone:** H0 • Hardware integration (18/09)\n**Fase:** Hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** BE-08, BE-09, BE-12\n\n## Definição de pronto\n\n- Take real chega ao fluxo de PostProcessor.\n- Áudio é transcrito e gera ao menos alguns pontos de corte.\n- Review pós-sessão abre com resultado real.\n- Se caminho direto falhar, aplicar fallback previamente definido sem quebrar o demo principal.\n\n## Notas / risco\n\nNão deixar essa integração bloquear o loop principal de direção ao vivo.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Leve um take nativo dos óculos até o PostProcessor, gere transcrição e alguns cortes, e abra a revisão com dados reais. Caso a importação direta falhe, use imediatamente o fallback definido em BE-12 e preserve o demo principal de direção ao vivo."
+          "description": "## Objetivo\n\nLeve um take nativo dos óculos até o PostProcessor, gere transcrição e alguns cortes, e abra a revisão com dados reais. Caso a importação direta falhe, use imediatamente o fallback definido em BE-12 e preserve o demo principal de direção ao vivo.\n\n**Responsável:** Backend/IA\n**Milestone:** H0 • Hardware integration (18/09)\n**Fase:** Hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** BE-08, BE-09, BE-12, FE-07, FE-08, INT-04\n\n## Definição de pronto\n\n- Take real chega ao fluxo de PostProcessor.\n- Áudio é transcrito e gera ao menos alguns pontos de corte.\n- Review pós-sessão abre com resultado real.\n- Se caminho direto falhar, aplicar fallback previamente definido sem quebrar o demo principal.\n\n## Notas / risco\n\nNão deixar essa integração bloquear o loop principal de direção ao vivo.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Leve um take nativo dos óculos até o PostProcessor, gere transcrição e alguns cortes, e abra a revisão com dados reais. Caso a importação direta falhe, use imediatamente o fallback definido em BE-12 e preserve o demo principal de direção ao vivo.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         },
         {
           "code": "INT-07",
@@ -1086,6 +1493,7 @@
             "BE-07",
             "BE-11",
             "INT-04",
+            "INT-05",
             "INT-00"
           ],
           "definition_of_done": [
@@ -1104,12 +1512,43 @@
             "battery",
             "checkpoint"
           ],
-          "description": "## Objetivo\n\nRode pelo menos dez inferências reais, registre a queda de bateria em uma sessão curta e ajuste sampling ou cooldown apenas se os dados justificarem. Guarde os números e as condições da medição para o pitch; o checkpoint de bateria é às 16h.\n\n**Responsável:** Backend/IA\n**Milestone:** H0 • Hardware integration (18/09)\n**Fase:** Hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** BE-07, BE-11, INT-04, INT-00\n\n## Definição de pronto\n\n- Medir latência de pelo menos 10 inferências reais.\n- Registrar consumo/queda de bateria durante sessão de teste curta.\n- Ajustar sampling/cooldown se necessário.\n- Guardar números para o pitch sem prometer o que não foi medido.\n\n## Notas / risco\n\nCheckpoint de bateria é às 16h; terminar esta tarefa antes disso.",
-          "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Rode pelo menos dez inferências reais, registre a queda de bateria em uma sessão curta e ajuste sampling ou cooldown apenas se os dados justificarem. Guarde os números e as condições da medição para o pitch; o checkpoint de bateria é às 16h."
+          "description": "## Objetivo\n\nRode pelo menos dez inferências reais, registre a queda de bateria em uma sessão curta e ajuste sampling ou cooldown apenas se os dados justificarem. Guarde os números e as condições da medição para o pitch; o checkpoint de bateria é às 16h.\n\n**Responsável:** Backend/IA\n**Milestone:** H0 • Hardware integration (18/09)\n**Fase:** Hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** BE-07, BE-11, INT-04, INT-05, INT-00\n\n## Definição de pronto\n\n- Medir latência de pelo menos 10 inferências reais.\n- Registrar consumo/queda de bateria durante sessão de teste curta.\n- Ajustar sampling/cooldown se necessário.\n- Guardar números para o pitch sem prometer o que não foi medido.\n\n## Notas / risco\n\nCheckpoint de bateria é às 16h; terminar esta tarefa antes disso.\n\n## Especificação e testes\n\ndocs/spec-driven-development/10-medicao-e-evidencias/spec.md\ndocs/spec-driven-development/10-medicao-e-evidencias/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "review_status": "reviewed_for_sdd_2026_09_12",
+          "objective": "Rode pelo menos dez inferências reais, registre a queda de bateria em uma sessão curta e ajuste sampling ou cooldown apenas se os dados justificarem. Guarde os números e as condições da medição para o pitch; o checkpoint de bateria é às 16h.",
+          "sdd": {
+            "module": "10-medicao-e-evidencias",
+            "spec": "docs/spec-driven-development/10-medicao-e-evidencias/spec.md",
+            "tasks": "docs/spec-driven-development/10-medicao-e-evidencias/tasks.md",
+            "runtime": "integration_evidence",
+            "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+            "status": "planning_reviewed_not_runtime_validated"
+          }
         }
       ]
     }
   ],
-  "task_count": 36
+  "task_count": 38,
+  "planning_review": {
+    "date": "2026-09-12",
+    "scope": "Arquitetura, infraestrutura, segurança e backend/IA; sem implementação de runtime ou alteração do submit.",
+    "review": "docs/spec-driven-development/REVIEW.md",
+    "execution_order": "docs/spec-driven-development/README.md",
+    "decisions": "docs/spec-driven-development/DECISIONS.md",
+    "testing": "docs/spec-driven-development/TESTING.md",
+    "original_task_count": 36,
+    "added_tasks": [
+      "BE-13",
+      "BE-14"
+    ],
+    "milestone_policy": "Datas originais preservadas como referência histórica. BE-12 antecipada para investigação em M0; execução segue dependências e gates SDD. Nenhuma conclusão inferida de datas passadas.",
+    "scope_classification": "BE-13 e BE-14 são suporte necessário ao fluxo já submetido, sem auth/CRUD/upload novo.",
+    "evaluation_weights": {
+      "technical_feasibility": 30,
+      "toolkit_hardware": 20,
+      "impact": 30,
+      "ethics": 20
+    },
+    "evaluation_source": "Tabela Etapa 6 fornecida pelo usuário nesta revisão; cobertura planejada não garante pontuação.",
+    "execution_performed": false
+  }
 }

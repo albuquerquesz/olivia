@@ -96,7 +96,7 @@
       "ERROR"
     ],
     "invariant": "STARTED, PAUSED, STOPPED e DEGRADED não podem ser removidos ou renomeados.",
-    "note": "A definição de pronto da SH-04 lista nove estados e omite STOPPED, mas AGENTS.md e architecture-diagram.json exigem STOPPED. Mantidos os dez: STOPPING encerra a captura, STOPPED marca o fim do loop ao vivo, PROCESSING é o pós-take e READY é a timeline pronta.",
+    "note": "SH-04 foi alinhada aos dez estados na revisão SDD de 12/09/2026. STOPPING encerra a captura, STOPPED marca o fim do loop ao vivo, PROCESSING é o pós-take e READY é a timeline pronta.",
     "degraded_rule": "Quatro segundos sem frame marcam DEGRADED; a sessão continua viva e pode voltar para STARTED."
   },
   "session_config_defaults": {
@@ -158,5 +158,21 @@
     "claim": "O domínio da Olivia não importa tipos do SDK.",
     "how": "O módulo :core usa apenas o plugin Kotlin JVM. Seu compileClasspath contém somente kotlinx-coroutines-core e kotlin-stdlib.",
     "verified_at": "2026-09-04"
+  },
+  "pending_spec_evolution": {
+    "date": "2026-09-12",
+    "task": "SH-04",
+    "spec": "docs/spec-driven-development/00-contratos-e-fronteiras/spec.md",
+    "status": "planned_not_implemented",
+    "current_code_version_unchanged": "1.0.0",
+    "changes": [
+      "Resolver divergência: comentário Kotlin de GlassesGateway.frames diz amostrados, descrição JSON diz crus. Definir captura antes do sampler e heartbeat independente; não implementar dupla amostragem.",
+      "Clock monotônico para duração, cooldown e watchdog; epoch somente para âncoras externas. Atualizar assinaturas/semântica conforme compatibilidade e versionar.",
+      "Adicionar sinais de pausa/retomada de sessão e indisponibilidade de análise, ausentes da API de SessionSignal atual; distinguir causas e intenção de pausa.",
+      "Definir fonte única da configuração samplingFps/analysisIntervalMs e rever relação do watchdog com redução de sampling.",
+      "Especificar correlação de áudio efetivamente iniciado, correctionId e frame posterior válido, sem aceitar resposta de geração anterior.",
+      "BE-12 define mapa sessão para mídia nativa e incerteza antes que BE-09 use offsets para cortes."
+    ],
+    "rule": "A revisão documental não altera o contrato Kotlin nem sua versão. Implementação deve atualizar código, JSON, consumidores e testes no mesmo trabalho."
   }
 }

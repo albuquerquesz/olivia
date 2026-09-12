@@ -60,6 +60,21 @@
     "Não assumir publicação pública: o toolkit está em developer preview e distribuição é controlada por organização, projeto e release channel.",
     "Não usar display como canal de interação; a experiência Olivia é guiada por áudio."
   ],
+  "sdd_capability_review": {
+    "date": "2026-09-12",
+    "tasks": ["INT-00", "BE-00", "BE-12", "INT-04", "INT-05", "INT-06"],
+    "setup_spec": "docs/spec-driven-development/02-meta-wearables-sdk/spec.md",
+    "native_spec": "docs/spec-driven-development/07-gravacao-nativa-e-importacao/spec.md",
+    "status": "not_hardware_validated",
+    "capabilities_to_prove_independently": [
+      "Controle mãos-livres de início e fim da gravação nativa; sessão DAT de streaming não basta.",
+      "Gravação nativa 3K com áudio simultânea ao streaming DAT.",
+      "Take nativo preservado e íntegro após queda de Bluetooth.",
+      "Transferência e importação do take para o companion app somente após STOPPED."
+    ],
+    "fallback_limit": "Seleção manual de arquivo é fallback de importação/revisão, não prova das outras capacidades; incompatibilidade não autoriza reconstrução de vídeo do stream.",
+    "testing_limit": "Docker testa componentes de domínio e transportes controlados; MockDeviceKit exige camada Android e não comprova Bluetooth/firmware físico."
+  },
   "agent_reference": {
     "static_docs": "https://wearables.developer.meta.com/llms.txt",
     "live_docs_mcp": "https://mcp.developer.meta.com/wearables",

@@ -1,0 +1,9 @@
+flowchart LR
+  Env[Env local e CI protegido] --> Config[Config por allowlist]
+  Config --> Android[Adapter Firebase Android]
+  Android --> Firebase[Firebase dev com App Check]
+  Compose[Docker Compose de testes] --> JVM[Runner JVM]
+  Compose --> Stub[Stub HTTP]
+  JVM --> Stub
+  Compose --> Whisper[Whisper CPU de fixture]
+
