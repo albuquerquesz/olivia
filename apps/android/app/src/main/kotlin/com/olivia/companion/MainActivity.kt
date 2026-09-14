@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         commandController = LocalCommandController(this, sessionRuntime, UnavailablePorcupineRecognizer())
         setContent {
             OliviaTheme {
-                OliviaApp()
+                OliviaApp(sessionRuntime)
             }
         }
     }

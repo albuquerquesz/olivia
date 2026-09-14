@@ -38,6 +38,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +52,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.GlassesBackend
+import com.olivia.companion.session.SessionRuntime
 import com.olivia.core.AudioMode
+import com.olivia.core.SessionState
 
 @Composable
 fun OliviaWelcomeScreen(onContinue: () -> Unit) {
@@ -103,13 +106,19 @@ fun OliviaHomeScreen() {
 }
 
 @Composable
-fun OliviaRecordingScreen(backend: GlassesBackend, onOpenSettings: () -> Unit) {
+fun OliviaRecordingScreen(
+    backend: GlassesBackend,
+    sessionRuntime: SessionRuntime,
+    onOpenSettings: () -> Unit,
+) {
+    val snapshot by sessionRuntime.snapshot.collectAsState()
     OliviaPage {
         OliviaPanel {
             Text("Comando de voz", style = MaterialTheme.typography.bodyLarge)
             Text("Oi, Olivia, Gravar", style = MaterialTheme.typography.headlineMedium)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DeviceStatus(backend)
+                SessionStatus(snapshot?.state)
                 PanelDetail(
                     if (backend.requiresPhysicalGlasses) {
                         "É necessário conectar os óculos para gravar."
@@ -137,6 +146,23 @@ fun OliviaRecordingScreen(backend: GlassesBackend, onOpenSettings: () -> Unit) {
             )
         }
     }
+}
+
+@Composable
+private fun SessionStatus(state: SessionState?) {
+    val label = when (state) {
+        SessionState.STARTING -> "Preparando captura"
+        SessionState.STARTED -> "Gravacao em andamento"
+        SessionState.PAUSED -> "Gravacao pausada"
+        SessionState.DEGRADED -> "Conexao indisponivel"
+        SessionState.STOPPING -> "Encerrando"
+        SessionState.STOPPED -> "Take encerrado"
+        SessionState.PROCESSING -> "Preparando revisao"
+        SessionState.READY -> "Revisao pronta"
+        SessionState.ERROR -> "Sessao indisponivel"
+        SessionState.IDLE, null -> "Aguardando comando de voz"
+    }
+    Text(label, style = MaterialTheme.typography.bodyLarge)
 }
 
 @Composable

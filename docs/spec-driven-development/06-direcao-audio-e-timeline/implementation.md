@@ -35,3 +35,6 @@ AtualizaÃ§Ã£o do runtime mock: o diagnÃ³stico estruturado Ã© registrado;
 O Modo Voz estÃ¡ ligado somente a este caminho mock. IntegraÃ§Ã£o Docker, comandos locais,
 asset WAV e rota Bluetooth/audibilidade real continuam pendentes nas tarefas jÃ¡ abertas;
 nenhuma delas Ã© alegada como concluÃ­da.
+The recording screen now observes `SessionRuntime.snapshot` and presents the session state as
+companion status only. It does not add a touch control for start, pause, resume, or stop; the
+product path remains local voice commands and audio feedback.

@@ -90,7 +90,7 @@ class AndroidAudioFeedback(
     }
 
     override suspend fun announce(correction: Correction): Result<AudioReceipt> = when (mode) {
-        AudioMode.SIGNAL -> playSignal(correction.direction).map {
+        AudioMode.SIGNAL -> playSignal(SignalTone.directionFor(correction.direction)).map {
             AudioReceipt(correction.id, correction.capture, it)
         }
         AudioMode.VOICE -> speak(correction)
@@ -166,13 +166,14 @@ private object SignalTone {
         else -> SignalDirection.CENTER
     }
 
-    fun create(direction: Direction): AudioTrack = create(
+    fun directionFor(direction: Direction): SignalDirection =
         when (direction) {
             Direction.TURN_LEFT, Direction.LEVEL_HORIZON_LEFT -> SignalDirection.LEFT
             Direction.TURN_RIGHT, Direction.LEVEL_HORIZON_RIGHT -> SignalDirection.RIGHT
             else -> SignalDirection.CENTER
-        },
-    )
+        }
+
+    fun create(direction: Direction): AudioTrack = create(directionFor(direction))
 
     fun create(direction: SignalDirection): AudioTrack {
         val samplesPerChannel = (SAMPLE_RATE * DURATION_MS / 1_000).toInt()

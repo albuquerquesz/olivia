@@ -66,7 +66,7 @@ public class CutPlanner(
             // A full-session suggestion is not actionable evidence of unusable material.
             if (end <= start || (start == 0L && end == durationMs)) null else candidate.copy(startMs = start, endMs = end)
         }.sortedBy(CandidateCut::startMs)
-        return clamped.fold(mutableListOf()) { merged, next ->
+        return clamped.fold(mutableListOf<CandidateCut>()) { merged, next ->
             val previous = merged.lastOrNull()
             if (previous != null && next.startMs <= previous.endMs) {
                 val primary = if (priority(next.reason) > priority(previous.reason)) next else previous

@@ -11,3 +11,9 @@ No media bytes, transcript persistence, rendering, or editor integration was add
 
 Whisper, media alignment, import, session PROCESSING/READY lifecycle, Docker, Android execution,
 and CapCut handoff remain pending.
+
+`LocalPostProcessor` now composes an injected on-device transcript provider with an already
+imported recording, the session timeline, verified media alignment, and `CutPlanner`. Missing
+alignment returns a partial review with no automatic cuts rather than an invented offset. The
+actual Whisper provider, import lifecycle, and Android PROCESSING/READY transition remain
+unimplemented.

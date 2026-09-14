@@ -52,6 +52,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.olivia.companion.ActiveBackend
 import com.olivia.companion.WelcomePrefs
+import com.olivia.companion.session.SessionRuntime
 
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
     HOME("home", "Início", Icons.Outlined.Home),
@@ -63,7 +64,7 @@ private const val WELCOME_ROUTE = "welcome"
 private const val SETTINGS_ROUTE = "settings"
 
 @Composable
-fun OliviaApp() {
+fun OliviaApp(sessionRuntime: SessionRuntime) {
     val context = LocalContext.current
     val welcomePrefs = remember { WelcomePrefs(context) }
     val navController = rememberNavController()
@@ -124,6 +125,7 @@ fun OliviaApp() {
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     backend = ActiveBackend.current,
+                    sessionRuntime = sessionRuntime,
                     onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
                 )
             }
