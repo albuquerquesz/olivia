@@ -168,7 +168,10 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
     }
     private val connectionObserver: Job = runtimeScope.launch {
         gateway.connection.collect { connection ->
-            runtimeMutex.withLock { coordinator.onConnectionChanged(connection) }
+            runtimeMutex.withLock {
+                coordinator.onConnectionChanged(connection)
+                expireIfDegraded()
+            }
         }
     }
     private val frameObserver: Job = runtimeScope.launch {
@@ -178,7 +181,10 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
     }
     private val watchdog: Job = runtimeScope.launch {
         while (isActive) {
-            runtimeMutex.withLock { coordinator.checkCaptureHealth() }
+            runtimeMutex.withLock {
+                coordinator.checkCaptureHealth()
+                expireIfDegraded()
+            }
             delay(250)
         }
     }
@@ -231,6 +237,12 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
         correctionTracker.expire()?.let { outcome ->
             guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
             coordinator.recordCorrectionOutcome(outcome)
+        }
+    }
+
+    private fun expireIfDegraded() {
+        if (coordinator.snapshot.value?.state == com.olivia.core.SessionState.DEGRADED) {
+            expirePendingCorrection()
         }
     }
 

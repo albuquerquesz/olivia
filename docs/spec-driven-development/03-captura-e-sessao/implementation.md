@@ -30,3 +30,10 @@ fps), `MockFrameAnalyzer`, `DefaultGuidanceEngine`, Ã¡udio, `CorrectionTracker
 enquadramento fora do centro, confirmaÃ§Ã£o, sombra e confirmaÃ§Ã£o. Somente saÃ­das estruturadas
 chegam Ã  timeline: bytes de frame nÃ£o sÃ£o persistidos nem registrados em log. Esta Ã© uma
 demonstraÃ§Ã£o offline marcada como `MOCK`, sem DAT, Gemini ou gravaÃ§Ã£o nativa.
+
+Command boundary update: `LocalCommandRecognizer` emits only parsed session commands and never
+raw microphone audio or transcripts. `LocalCommandController` owns Android microphone permission
+and lifecycle, then forwards recognized commands to `SessionRuntime`. The current Porcupine
+implementation is explicitly unavailable: it does not request the microphone, record audio, or
+call a network service until an access key and approved pt-BR models are configured outside the
+repository. Therefore FE-03.1 remains open and no local recognition is claimed yet.
