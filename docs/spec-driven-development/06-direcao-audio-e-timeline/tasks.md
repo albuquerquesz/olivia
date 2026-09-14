@@ -2,12 +2,11 @@
 
 Origem: [backlog canônico](../../rules/olivia_backlog.json). BE-04, BE-05, INT-01; FE-04/FE-06 como fronteiras de áudio e consumo. IDs com sufixo são passos da issue original, não novas issues.
 
-- [ ] **BE-04.1** — Implementar política determinística de threshold/cooldown/prioridade e catálogo de instruções.
-- [ ] **BE-05.1** — Implementar correlação, pendência, confirmação, expiração e gravação idempotente local.
+- [x] **BE-04.1** — Implementar política determinística de threshold/cooldown/prioridade e catálogo de instruções.
+- [x] **BE-05.1** — Implementar correlação, pendência, confirmação, expiração e gravação idempotente local.
 - [ ] **FE-04.1** — Integrar TTS/WAV e sinais de sessão atualizados com resultado de emissão.
 - [ ] **BE-05.2** — Entregar unitários e integração Docker de direção/tracker/repositório, com falha de gravação e reinício.
 - [ ] **INT-01.1** — Conectar FE-03, FE-06 e áudio e preparar roteiro offline de cinco takes sem toque.
 - [ ] **INT-01.2** — Registrar separadamente ensaio com headset, integração IA real e hardware, sem misturar evidências.
 
 Aceite: entregar implementação e testes unitários/de integração juntos, usando os cenários da [spec](spec.md) e de [TESTING](../TESTING.md). Registrar artefatos e resultado por modo. Execução não solicitada ou ambiente ausente deixa validação pendente; nunca marcar integração real concluída por teste mock.
-
