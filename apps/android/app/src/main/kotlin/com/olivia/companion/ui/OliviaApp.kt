@@ -47,11 +47,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.olivia.companion.ActiveBackend
+import androidx.navigation.navArgument
 import com.olivia.companion.WelcomePrefs
+import com.olivia.companion.session.OliviaSessionViewModel
+import com.olivia.core.SessionId
 
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
     HOME("home", "Início", Icons.Outlined.Home),
@@ -61,11 +66,19 @@ private enum class OliviaDestination(val route: String, val label: String, val i
 
 private const val WELCOME_ROUTE = "welcome"
 private const val SETTINGS_ROUTE = "settings"
+private const val TAKE_ROUTE = "take/{sessionId}"
 
 @Composable
-fun OliviaApp() {
+fun OliviaApp(
+    viewModel: OliviaSessionViewModel = viewModel(
+        factory = OliviaSessionViewModel.Factory(
+            LocalContext.current.applicationContext as android.app.Application,
+        ),
+    ),
+) {
     val context = LocalContext.current
     val welcomePrefs = remember { WelcomePrefs(context) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -119,17 +132,47 @@ fun OliviaApp() {
                 )
             }
             composable(OliviaDestination.HOME.route) {
-                OliviaHomeScreen()
+                OliviaHomeScreen(uiState)
             }
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
-                    backend = ActiveBackend.current,
+                    state = uiState,
                     onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
+                    onAudioMode = viewModel::setAudioMode,
+                    onStart = viewModel::start,
+                    onPause = viewModel::pause,
+                    onResume = viewModel::resume,
+                    onDegrade = viewModel::degrade,
+                    onRecover = viewModel::recover,
+                    onStop = viewModel::stop,
                 )
             }
-            composable(OliviaDestination.SESSIONS.route) { OliviaSessionsScreen() }
+            composable(OliviaDestination.SESSIONS.route) {
+                OliviaSessionsScreen(uiState.takes) { sessionId ->
+                    navController.navigate("take/${sessionId.value}")
+                }
+            }
+            composable(
+                TAKE_ROUTE,
+                arguments = listOf(navArgument("sessionId") { type = NavType.StringType }),
+            ) { entry ->
+                val sessionId = SessionId(entry.arguments?.getString("sessionId").orEmpty())
+                val take = viewModel.take(sessionId)
+                if (take == null) {
+                    OliviaSessionsScreen(uiState.takes) { id ->
+                        navController.navigate("take/${id.value}")
+                    }
+                } else {
+                    OliviaTakeScreen(take, onNavigateBack = { navController.popBackStack() })
+                }
+            }
             composable(SETTINGS_ROUTE) {
-                OliviaSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                OliviaSettingsScreen(
+                    audioMode = uiState.audioMode,
+                    live = uiState.isLive,
+                    onAudioMode = viewModel::setAudioMode,
+                    onNavigateBack = { navController.popBackStack() },
+                )
             }
         }
     }

@@ -1,57 +1,44 @@
 package com.olivia.companion.ui
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.olivia.companion.GlassesBackend
+import com.olivia.companion.session.OliviaUiState
+import com.olivia.companion.session.TakeSummary
+import com.olivia.companion.session.audioModeLabel
+import com.olivia.companion.session.confirmationLabel
+import com.olivia.companion.session.connectionLabel
+import com.olivia.companion.session.eventTitle
+import com.olivia.companion.session.formatOffset
+import com.olivia.companion.session.isConfirmed
+import com.olivia.companion.session.sessionStateLabel
 import com.olivia.core.AudioMode
+import com.olivia.core.SessionId
+import com.olivia.core.SessionState
+import com.olivia.core.TimelineEvent
+import com.olivia.core.TimelineEventType
+
+private val PrivacyCopy =
+    "Frames de análise são efêmeros. O áudio do celular não alimenta IA durante o take."
 
 @Composable
 fun OliviaWelcomeScreen(onContinue: () -> Unit) {
@@ -83,7 +70,9 @@ fun OliviaWelcomeScreen(onContinue: () -> Unit) {
 }
 
 @Composable
-fun OliviaHomeScreen() {
+fun OliviaHomeScreen(state: OliviaUiState) {
+    val sessions = state.takes.count { !it.isDemo || it.events.isNotEmpty() }
+    val corrections = state.takes.sumOf { it.correctionCount }
     OliviaPage {
         OliviaPanel {
             Text("Dispositivo", style = MaterialTheme.typography.bodyLarge)
@@ -95,35 +84,79 @@ fun OliviaHomeScreen() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                OliviaStat("Sessões", "0", Modifier.weight(1f))
-                OliviaStat("Correções", "0", Modifier.weight(1f))
+                OliviaStat("Sessões", sessions.toString(), Modifier.weight(1f))
+                OliviaStat("Correções", corrections.toString(), Modifier.weight(1f))
             }
         }
     }
 }
 
 @Composable
-fun OliviaRecordingScreen(backend: GlassesBackend, onOpenSettings: () -> Unit) {
+fun OliviaRecordingScreen(
+    state: OliviaUiState,
+    onOpenSettings: () -> Unit,
+    onAudioMode: (AudioMode) -> Unit,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onDegrade: () -> Unit,
+    onRecover: () -> Unit,
+    onStop: () -> Unit,
+) {
+    val session = state.session
+    val sessionState = session?.state ?: SessionState.IDLE
+    val degraded = sessionState == SessionState.DEGRADED
+    val live = state.isLive
     OliviaPage {
-        OliviaPanel {
-            Text("Comando de voz", style = MaterialTheme.typography.bodyLarge)
-            Text("Oi, Olivia, Gravar", style = MaterialTheme.typography.headlineMedium)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                DeviceStatus(backend)
-                PanelDetail(
-                    if (backend.requiresPhysicalGlasses) {
-                        "É necessário conectar os óculos para gravar."
-                    } else {
-                        "Prévia do fluxo por voz, com óculos simulados."
-                    },
-                )
+        OliviaPanel(degraded = degraded, compact = true) {
+            Text("Sessão", style = MaterialTheme.typography.bodyLarge)
+            Text(sessionStateLabel(sessionState), style = MaterialTheme.typography.headlineMedium)
+            Text(formatOffset(state.elapsedMs), style = MaterialTheme.typography.headlineSmall)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                StatusChip(connectionLabel(state.connection), inverted = !degraded)
+                StatusChip(audioModeLabel(state.audioMode), inverted = !degraded)
+            }
+            PanelDetail(
+                text = if (degraded) {
+                    "A Olivia parou de ver a câmera. As marcas ficam; a gravação nativa continua."
+                } else if (state.backend.requiresPhysicalGlasses) {
+                    "É necessário conectar os óculos para gravar."
+                } else {
+                    "Prévia do fluxo, com óculos simulados. Escolha o modo antes de iniciar."
+                },
+                onPanel = !degraded,
+            )
+        }
+        if (!state.backend.requiresPhysicalGlasses) {
+            DebugActions(
+                sessionState = sessionState,
+                onStart = onStart,
+                onPause = onPause,
+                onResume = onResume,
+                onDegrade = onDegrade,
+                onRecover = onRecover,
+                onStop = onStop,
+            )
+        }
+        Text(PrivacyCopy, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionTitle("Modo de feedback")
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AudioModeOption("Voz", state.audioMode == AudioMode.VOICE, enabled = !live) {
+                    onAudioMode(AudioMode.VOICE)
+                }
+                AudioModeOption("Sinal", state.audioMode == AudioMode.SIGNAL, enabled = !live) {
+                    onAudioMode(AudioMode.SIGNAL)
+                }
             }
         }
-        Text(
-            "Os comandos usam o microfone do celular. A orientação chega por áudio.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         OutlinedButton(
             onClick = onOpenSettings,
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
@@ -140,20 +173,76 @@ fun OliviaRecordingScreen(backend: GlassesBackend, onOpenSettings: () -> Unit) {
 }
 
 @Composable
-fun OliviaSessionsScreen() {
+fun OliviaSessionsScreen(takes: List<TakeSummary>, onOpenTake: (SessionId) -> Unit) {
     OliviaPage {
-        OliviaPanel {
-            Text("Seus takes", style = MaterialTheme.typography.bodyLarge)
-            Text("Nenhuma sessão ainda", style = MaterialTheme.typography.headlineMedium)
-            PanelDetail("Depois da gravação, suas timelines e cortes sugeridos aparecerão aqui.")
+        if (takes.isEmpty()) {
+            OliviaPanel {
+                Text("Seus takes", style = MaterialTheme.typography.bodyLarge)
+                Text("Nenhuma sessão ainda", style = MaterialTheme.typography.headlineMedium)
+                PanelDetail("Depois da gravação, suas timelines e cortes sugeridos aparecerão aqui.")
+            }
+        } else {
+            SectionTitle("Seus takes")
+            takes.forEach { take ->
+                OutlinedButton(
+                    onClick = { onOpenTake(take.sessionId) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp),
+                    shape = RoundedCornerShape(20.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(take.title, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "${formatOffset(take.durationMs)} · ${take.correctionCount} correções · ${take.cutCount} cortes",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+                }
+            }
         }
     }
 }
 
 @Composable
-fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
-    var audioMode by rememberSaveable { mutableStateOf(AudioMode.VOICE.name) }
+fun OliviaTakeScreen(take: TakeSummary, onNavigateBack: () -> Unit) {
+    OliviaPage(onNavigateBack = onNavigateBack) {
+        OliviaPanel {
+            Text(if (take.isDemo) "Ensaio mock" else "Revisão", style = MaterialTheme.typography.bodyLarge)
+            Text(formatOffset(take.durationMs), style = MaterialTheme.typography.headlineMedium)
+            PanelDetail("${take.correctionCount} correções · ${take.cutCount} cortes sugeridos")
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionTitle("Cortes sugeridos")
+            if (take.cutCount == 0) {
+                Text(
+                    "Nenhum corte neste take. A lista aceita o ensaio mock e o pós-processamento real.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                take.events.filter { it.type == TimelineEventType.CUT_SUGGESTED }.forEach { event ->
+                    TimelineRow(event)
+                }
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionTitle("Timeline")
+            take.events.forEach { event -> TimelineRow(event) }
+        }
+    }
+}
 
+@Composable
+fun OliviaSettingsScreen(
+    audioMode: AudioMode,
+    live: Boolean,
+    onAudioMode: (AudioMode) -> Unit,
+    onNavigateBack: () -> Unit,
+) {
     OliviaPage(onNavigateBack = onNavigateBack) {
         OliviaPanel {
             SectionTitle("Modo de feedback")
@@ -162,15 +251,15 @@ fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                AudioModeOption("Voz", audioMode == AudioMode.VOICE.name) {
-                    audioMode = AudioMode.VOICE.name
+                AudioModeOption("Voz", audioMode == AudioMode.VOICE, enabled = !live) {
+                    onAudioMode(AudioMode.VOICE)
                 }
-                AudioModeOption("Sinal", audioMode == AudioMode.SIGNAL.name) {
-                    audioMode = AudioMode.SIGNAL.name
+                AudioModeOption("Sinal", audioMode == AudioMode.SIGNAL, enabled = !live) {
+                    onAudioMode(AudioMode.SIGNAL)
                 }
             }
             PanelDetail(
-                if (audioMode == AudioMode.VOICE.name) {
+                if (audioMode == AudioMode.VOICE) {
                     "Instruções curtas, faladas pela Olivia."
                 } else {
                     "Tons locais de 80 ms para orientar a correção."
@@ -190,7 +279,7 @@ fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionTitle("Privacidade")
             Text(
-                "Frames de análise são efêmeros. O áudio só é transcrito depois que a sessão termina.",
+                PrivacyCopy,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -199,134 +288,65 @@ fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
 }
 
 @Composable
-private fun OliviaPage(
-    onNavigateBack: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit,
+private fun DebugActions(
+    sessionState: SessionState,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onDegrade: () -> Unit,
+    onRecover: () -> Unit,
+    onStop: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 600.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp),
-        ) {
-            if (onNavigateBack != null) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
-                }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionTitle("Debug mock")
+        when (sessionState) {
+            SessionState.IDLE, SessionState.STOPPED -> DebugButton("Iniciar sessão", onStart)
+            SessionState.STARTED -> {
+                DebugButton("Pausar", onPause)
+                DebugButton("Simular queda", onDegrade)
+                DebugButton("Terminar", onStop)
             }
-            content()
+            SessionState.PAUSED -> {
+                DebugButton("Retomar", onResume)
+                DebugButton("Terminar", onStop)
+            }
+            SessionState.DEGRADED -> {
+                DebugButton("Pausar", onPause)
+                DebugButton("Simular retorno", onRecover)
+                DebugButton("Terminar", onStop)
+            }
+            else -> DebugButton("Terminar", onStop)
         }
     }
 }
 
 @Composable
-private fun OliviaPanel(content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+private fun DebugButton(label: String, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
         shape = RoundedCornerShape(20.dp),
     ) {
-        Column(
-            modifier = Modifier.heightIn(min = 248.dp).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            content = content,
-        )
+        Text(label)
     }
 }
 
 @Composable
-private fun DeviceStatus(backend: GlassesBackend) {
-    Surface(
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = CircleShape,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.inverseOnSurface),
+private fun TimelineRow(event: TimelineEvent) {
+    val confirmation = confirmationLabel(event)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            if (backend.requiresPhysicalGlasses) "Óculos físicos necessários" else "Modo demonstração",
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelLarge,
-        )
-    }
-}
-
-@Composable
-private fun PanelDetail(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.inverseOnSurface,
-    )
-}
-
-@Composable
-private fun SectionTitle(text: String) {
-    Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-}
-
-@Composable
-private fun OliviaStat(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.semantics(mergeDescendants = true) {},
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(value, style = MaterialTheme.typography.headlineSmall)
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun AudioModeOption(label: String, selected: Boolean, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    val background by animateColorAsState(
-        if (selected) colors.onPrimary else colors.primary,
-        OliviaMotion.selection(),
-        label = "audio option background",
-    )
-    val foreground by animateColorAsState(
-        if (selected) colors.primary else colors.onPrimary,
-        OliviaMotion.selection(),
-        label = "audio option foreground",
-    )
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        if (pressed) 0.97f else 1f,
-        OliviaMotion.press(),
-        label = "audio option press",
-    )
-    Surface(
-        modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale },
-        shape = RoundedCornerShape(16.dp),
-        color = background,
-        contentColor = foreground,
-        border = BorderStroke(1.dp, colors.inverseOnSurface),
-    ) {
-        Row(
-            modifier = Modifier
-                .selectable(
-                    selected = selected,
-                    onClick = onClick,
-                    role = Role.RadioButton,
-                    interactionSource = interactionSource,
-                    indication = null,
+        Text(formatOffset(event.offsetMs), style = MaterialTheme.typography.labelLarge)
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(eventTitle(event), style = MaterialTheme.typography.bodyLarge)
+            if (confirmation != null) {
+                StatusChip(
+                    confirmation,
+                    inverted = isConfirmed(event),
                 )
-                .semantics(mergeDescendants = true) {}
-                .heightIn(min = 48.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (selected) {
-                Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-            } else {
-                Spacer(Modifier.size(18.dp))
             }
-            Text(label, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
