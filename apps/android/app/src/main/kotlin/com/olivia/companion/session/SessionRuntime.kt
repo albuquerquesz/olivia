@@ -21,6 +21,9 @@ import com.olivia.core.MockAnalysisReply
 import com.olivia.core.MockFrameAnalyzer
 import com.olivia.core.MockVisualFixtures
 import com.olivia.core.OliviaClock
+import com.olivia.core.LiveLoopMetrics
+import com.olivia.core.LoopMeasurement
+import com.olivia.core.LoopMeasurementId
 import com.olivia.core.SamplingDecision
 import com.olivia.core.SessionCoordinator
 import com.olivia.core.SessionId
@@ -159,6 +162,7 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
     )
     private val guidance = DefaultGuidanceEngine(AudioMode.VOICE)
     private val correctionTracker = CorrectionTracker()
+    private val metrics = LiveLoopMetrics()
     /** Serializes coordinator, sampler and guidance because all three keep session state. */
     private val runtimeMutex = Mutex()
     private val heartbeatObserver: Job = runtimeScope.launch {
@@ -176,7 +180,10 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
     }
     private val frameObserver: Job = runtimeScope.launch {
         gateway.frames.collect { frame ->
-            runtimeMutex.withLock { process(sampler.offer(frame, coordinator::accepts)) }
+            runtimeMutex.withLock {
+                metrics.onFrameReceived()
+                process(sampler.offer(frame, coordinator::accepts))
+            }
         }
     }
     private val watchdog: Job = runtimeScope.launch {
@@ -206,15 +213,21 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
         decisions.forEach { decision ->
             when (decision) {
                 is SamplingDecision.Analyze -> {
+                    val analysisStarted = clock.now()
+                    var analysisFinished = analysisStarted
+                    var audioRequestedAtMs: Long? = null
+                    var audioStartedAtMs: Long? = null
                     try {
-                        analyzer.analyze(decision.frame).onSuccess { analysis ->
+                        analyzer.analyze(decision.frame).also { analysisFinished = clock.now() }.onSuccess { analysis ->
                             coordinator.recordDiagnosis(analysis)
                             correctionTracker.onAnalysis(analysis, clock.now())?.let { outcome ->
                                 guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
                                 coordinator.recordCorrectionOutcome(outcome)
                             }
                             guidance.onAnalysis(analysis, clock.now())?.let { correction ->
+                                audioRequestedAtMs = clock.now().monotonicMs
                                 audio.announce(correction).onSuccess { receipt ->
+                                    audioStartedAtMs = receipt.startedAt.monotonicMs
                                     if (correctionTracker.begin(correction, receipt)) {
                                         coordinator.recordCorrectionIssued(correction)
                                     }
@@ -224,11 +237,22 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
                             }
                         }
                     } finally {
+                        metrics.finish(
+                            LoopMeasurement(
+                                id = LoopMeasurementId(decision.frame.stamp.capture, decision.frame.stamp.sequence),
+                                frameReceivedAtMs = decision.frame.stamp.receivedAt.monotonicMs,
+                                analysisStartedAtMs = analysisStarted.monotonicMs,
+                                analysisFinishedAtMs = analysisFinished.monotonicMs,
+                                audioRequestedAtMs = audioRequestedAtMs,
+                                audioStartedAtMs = audioStartedAtMs,
+                            ),
+                        )
                         // The Frame reference leaves scope here; nothing in the timeline stores it.
                         process(sampler.completeAnalysis())
                     }
                 }
-                is SamplingDecision.Discard, SamplingDecision.Waiting -> Unit
+                is SamplingDecision.Discard -> metrics.onFrameDiscarded()
+                SamplingDecision.Waiting -> Unit
             }
         }
     }
