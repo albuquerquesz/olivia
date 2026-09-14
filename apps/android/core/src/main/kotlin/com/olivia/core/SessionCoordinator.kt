@@ -1,0 +1,309 @@
+package com.olivia.core
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CancellationException
+
+/** Local timeline implementation for the live loop and offline replay. */
+public class InMemoryTimeline : Timeline {
+    private val eventsBySession: MutableMap<SessionId, MutableList<TimelineEvent>> = mutableMapOf()
+
+    override fun record(event: TimelineEvent) {
+        val events = eventsBySession.getOrPut(event.sessionId) { mutableListOf() }
+        if (events.none { it.id == event.id }) events += event
+    }
+
+    override fun events(sessionId: SessionId): List<TimelineEvent> =
+        eventsBySession[sessionId].orEmpty().toList()
+}
+
+/**
+ * State machine for the live Olivia session.
+ *
+ * Calls must be serialized by the Android lifecycle owner. It owns no DAT type and never starts
+ * or imports a native recording: [GlassesGateway] is only the frame/connection boundary. The
+ * adapter must feed [onCaptureHeartbeat] before it sends a frame to the sampler.
+ */
+public class SessionCoordinator(
+    private val clock: OliviaClock,
+    private val gateway: GlassesGateway,
+    private val audio: AudioFeedback,
+    private val timeline: Timeline,
+) {
+    private val captureFence = CaptureFence()
+    private val _snapshot: MutableStateFlow<SessionSnapshot?> = MutableStateFlow(null)
+    private var startedAt: ClockReading? = null
+    private var capture: CaptureId? = null
+    private var lastFrameMonotonicMs: Long? = null
+    private var resumeRequested: Boolean = false
+    private var eventSequence: Long = 0
+
+    public val snapshot: StateFlow<SessionSnapshot?> = _snapshot
+
+    /** Starts capture only; [onCaptureHeartbeat] is the evidence that makes it STARTED. */
+    public suspend fun start(sessionId: SessionId, config: SessionConfig = SessionConfig()): Result<SessionSnapshot> {
+        val current = _snapshot.value
+        if (current?.id == sessionId && current.state in setOf(SessionState.STARTING, SessionState.STARTED)) {
+            return Result.success(current)
+        }
+        if (current != null && current.state !in setOf(SessionState.IDLE, SessionState.STOPPED, SessionState.READY)) {
+            return Result.failure(IllegalStateException("Outra sessão ainda está ativa"))
+        }
+        val now = clock.now()
+        val newCapture = captureFence.open(sessionId)
+        startedAt = now
+        capture = newCapture
+        lastFrameMonotonicMs = null
+        resumeRequested = false
+        setSnapshot(
+            id = sessionId,
+            state = SessionState.STARTING,
+            config = config,
+            started = now,
+        )
+        return try {
+            gateway.startCapture(newCapture)
+            Result.success(requireNotNull(_snapshot.value))
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            captureFence.invalidate()
+            capture = null
+            fail(sessionId, config, now, FailureCode.GLASSES_UNAVAILABLE)
+            Result.failure(IllegalStateException("Não foi possível iniciar a captura"))
+        }
+    }
+
+    /** Pause is idempotent and intentionally disarms frame health while delivery is suspended. */
+    public suspend fun pause(): Result<SessionSnapshot> {
+        val current = _snapshot.value ?: return Result.failure(IllegalStateException("Não há sessão"))
+        if (current.state == SessionState.PAUSED) return Result.success(current)
+        if (current.state !in setOf(SessionState.STARTED, SessionState.DEGRADED)) {
+            return Result.failure(IllegalStateException("Sessão não pode ser pausada"))
+        }
+        captureFence.invalidate()
+        return try {
+            gateway.pauseCapture()
+            resumeRequested = false
+            setSnapshot(current.id, SessionState.PAUSED, current.config, requireStartedAt())
+            record(TimelineEventType.SESSION_PAUSED, current.id, "pausou")
+            signal(SessionSignal.SESSION_PAUSED)
+            Result.success(requireNotNull(_snapshot.value))
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            Result.failure(IllegalStateException("Não foi possível pausar a captura"))
+        }
+    }
+
+    /** Resume keeps PAUSED until a new-generation heartbeat proves that capture returned. */
+    public suspend fun resume(): Result<SessionSnapshot> {
+        val current = _snapshot.value ?: return Result.failure(IllegalStateException("Não há sessão"))
+        if (current.state == SessionState.STARTED) return Result.success(current)
+        if (current.state != SessionState.PAUSED) return Result.failure(IllegalStateException("Sessão não pode ser retomada"))
+        val nextCapture = captureFence.open(current.id)
+        capture = nextCapture
+        return try {
+            gateway.resumeCapture(nextCapture)
+            resumeRequested = true
+            Result.success(current)
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            captureFence.invalidate()
+            capture = null
+            Result.failure(IllegalStateException("Não foi possível retomar a captura"))
+        }
+    }
+
+    /** Stops the live loop; native-recording control is deliberately outside this coordinator. */
+    public suspend fun stop(): Result<SessionSnapshot> {
+        val current = _snapshot.value ?: return Result.failure(IllegalStateException("Não há sessão"))
+        if (current.state == SessionState.STOPPED) return Result.success(current)
+        if (current.state !in setOf(SessionState.STARTING, SessionState.STARTED, SessionState.PAUSED, SessionState.DEGRADED)) {
+            return Result.failure(IllegalStateException("Sessão não pode ser encerrada"))
+        }
+        captureFence.invalidate()
+        setSnapshot(current.id, SessionState.STOPPING, current.config, requireStartedAt())
+        return try {
+            gateway.stopCapture()
+            signal(SessionSignal.SESSION_STOPPED)
+            audio.stop()
+            capture = null
+            resumeRequested = false
+            setSnapshot(current.id, SessionState.STOPPED, current.config, requireStartedAt())
+            record(TimelineEventType.SESSION_STOPPED, current.id, "encerrou")
+            Result.success(requireNotNull(_snapshot.value))
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            fail(current.id, current.config, requireStartedAt(), FailureCode.CAPTURE_FAILED)
+            Result.failure(IllegalStateException("Não foi possível encerrar a captura"))
+        }
+    }
+
+    /** Called by the capture callback independently of sampler or analyzer progress. */
+    public suspend fun onCaptureHeartbeat(heartbeat: CaptureHeartbeat) {
+        val current = _snapshot.value ?: return
+        if (heartbeat.capture != capture) return
+        lastFrameMonotonicMs = heartbeat.receivedAtMonotonicMs
+        when (current.state) {
+            SessionState.STARTING -> {
+                setSnapshot(current.id, SessionState.STARTED, current.config, requireStartedAt(), heartbeat.receivedAtMonotonicMs)
+                record(TimelineEventType.SESSION_STARTED, current.id, "iniciou")
+                signal(SessionSignal.SESSION_STARTED)
+            }
+            SessionState.PAUSED -> if (resumeRequested) {
+                resumeRequested = false
+                setSnapshot(current.id, SessionState.STARTED, current.config, requireStartedAt(), heartbeat.receivedAtMonotonicMs)
+                record(TimelineEventType.SESSION_RESUMED, current.id, "retomou")
+                signal(SessionSignal.SESSION_RESUMED)
+            }
+            SessionState.STARTED -> setSnapshot(
+                current.id,
+                SessionState.STARTED,
+                current.config,
+                requireStartedAt(),
+                heartbeat.receivedAtMonotonicMs,
+            )
+            SessionState.DEGRADED -> recoverCapture(current, heartbeat)
+            else -> Unit
+        }
+    }
+
+    /** Checks the four-second capture watchdog. It deliberately ignores PAUSED. */
+    public suspend fun checkCaptureHealth() {
+        val current = _snapshot.value ?: return
+        val now = clock.now()
+        if (current.state == SessionState.STARTING && now.elapsedSince(requireStartedAt()) >= current.config.degradedAfterMs) {
+            captureFence.invalidate()
+            fail(current.id, current.config, requireStartedAt(), FailureCode.CAPTURE_FAILED)
+            return
+        }
+        if (current.state != SessionState.STARTED) return
+        val lastFrameAt = gateway.heartbeat.value?.takeIf { it.capture == capture }?.receivedAtMonotonicMs
+            ?: lastFrameMonotonicMs
+        val elapsed = lastFrameAt?.let { now.monotonicMs - it } ?: now.elapsedSince(requireStartedAt())
+        if (elapsed >= current.config.degradedAfterMs) {
+            captureFence.invalidate()
+            degrade(DegradationCause.CAPTURE_UNAVAILABLE, SessionState.STARTED)
+            record(TimelineEventType.SESSION_DEGRADED, current.id, "conexão indisponível")
+            signal(SessionSignal.CONNECTION_LOST)
+        }
+    }
+
+    /** Connection changes can degrade a paused session while preserving its paused intention. */
+    public suspend fun onConnectionChanged(connection: GlassesConnection) {
+        val current = _snapshot.value ?: return
+        when (connection) {
+            GlassesConnection.CONNECTED -> {
+                // A connection callback alone does not prove that frames resumed. The following
+                // heartbeat removes CAPTURE_UNAVAILABLE and emits CONNECTION_RESTORED.
+            }
+            GlassesConnection.DISCONNECTED, GlassesConnection.UNAVAILABLE -> {
+                if (current.state in setOf(SessionState.STARTED, SessionState.PAUSED, SessionState.DEGRADED)) {
+                    captureFence.invalidate()
+                    degrade(
+                        DegradationCause.CAPTURE_UNAVAILABLE,
+                        if (current.state == SessionState.PAUSED) SessionState.PAUSED else SessionState.STARTED,
+                    )
+                    signal(SessionSignal.CONNECTION_LOST)
+                }
+            }
+        }
+    }
+
+    private suspend fun recoverCapture(current: SessionSnapshot, heartbeat: CaptureHeartbeat?) {
+        val remaining = current.degradationCauses - DegradationCause.CAPTURE_UNAVAILABLE
+        val recoveredState = if (remaining.isEmpty()) current.resumeState else SessionState.DEGRADED
+        setSnapshot(
+            current.id,
+            recoveredState,
+            current.config,
+            requireStartedAt(),
+            heartbeat?.receivedAtMonotonicMs ?: lastFrameMonotonicMs,
+            remaining,
+            current.resumeState,
+        )
+        if (remaining.isEmpty()) {
+            record(TimelineEventType.SESSION_RECOVERED, current.id, "conexão retomada")
+            signal(SessionSignal.CONNECTION_RESTORED)
+        }
+    }
+
+    private fun degrade(cause: DegradationCause, resumeState: SessionState) {
+        val current = requireNotNull(_snapshot.value)
+        val causes = current.degradationCauses + cause
+        setSnapshot(
+            current.id,
+            SessionState.DEGRADED,
+            current.config,
+            requireStartedAt(),
+            current.lastFrameAtEpochMs,
+            causes,
+            if (current.state == SessionState.DEGRADED) current.resumeState else resumeState,
+        )
+    }
+
+    private suspend fun signal(intent: SessionSignal) {
+        val result = audio.signal(intent)
+        if (result.isFailure) {
+            val current = _snapshot.value ?: return
+            if (current.state in setOf(SessionState.STARTED, SessionState.PAUSED, SessionState.DEGRADED)) {
+                degrade(DegradationCause.AUDIO_UNAVAILABLE, current.state.takeIf { it == SessionState.PAUSED } ?: SessionState.STARTED)
+                record(TimelineEventType.ERROR, current.id, "áudio indisponível")
+            }
+        }
+    }
+
+    private fun fail(id: SessionId, config: SessionConfig, started: ClockReading, code: FailureCode) {
+        val now = clock.now()
+        _snapshot.value = SessionSnapshot(
+            id = id,
+            state = SessionState.ERROR,
+            startedAtEpochMs = started.epochMs,
+            elapsedMs = now.elapsedSince(started),
+            config = config,
+            lastFrameAtEpochMs = null,
+            failure = OliviaFailure(code, "Falha controlada na sessão"),
+        )
+        record(TimelineEventType.ERROR, id, "falha de sessão")
+    }
+
+    private fun setSnapshot(
+        id: SessionId,
+        state: SessionState,
+        config: SessionConfig,
+        started: ClockReading,
+        lastFrameAtMonotonicMs: Long? = null,
+        causes: Set<DegradationCause> = emptySet(),
+        resumeState: SessionState = SessionState.STARTED,
+    ) {
+        val now = clock.now()
+        _snapshot.value = SessionSnapshot(
+            id = id,
+            state = state,
+            startedAtEpochMs = started.epochMs,
+            elapsedMs = now.elapsedSince(started),
+            config = config,
+            lastFrameAtEpochMs = lastFrameAtMonotonicMs?.let {
+                started.epochMs + (it - started.monotonicMs)
+            },
+            degradationCauses = causes,
+            resumeState = resumeState,
+        )
+    }
+
+    private fun record(type: TimelineEventType, sessionId: SessionId, label: String) {
+        val started = requireStartedAt()
+        val now = clock.now()
+        timeline.record(
+            TimelineEvent(
+                id = "${sessionId.value}:${++eventSequence}",
+                sessionId = sessionId,
+                atEpochMs = now.epochMs,
+                offsetMs = now.elapsedSince(started),
+                type = type,
+                label = label,
+            ),
+        )
+    }
+
+    private fun requireStartedAt(): ClockReading = checkNotNull(startedAt) { "Sessão sem relógio inicial" }
+}
