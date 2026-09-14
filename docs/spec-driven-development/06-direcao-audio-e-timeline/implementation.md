@@ -13,8 +13,14 @@ fecha `OBEYED`. Timeout não confirma: desvio confiável persistente vira `IGNOR
 baixa confiança vira `EXPIRED`; pausa, degradação e STOP usam `expire()`.
 
 O `InMemoryTimeline` já registra IDs de evento de modo idempotente para o replay local. A
-persistência atômica em armazenamento privado, TTS/WAV Android e a integração Docker ainda
-permanecem nas subtasks BE-05.2/FE-04.1.
+integração Docker e a ligação do TTS/WAV ao runtime Android continuam nas subtasks
+BE-05.2/FE-04.1.
+
+`FileTimeline` agora persiste eventos versionados em um diretório que o companion deve fornecer
+como privado. Cada sessão vai para um arquivo cujo nome é o SHA-256 do `SessionId`; o conteúdo
+é regravado em um arquivo temporário irmão e movido atomicamente quando o filesystem suporta.
+O codec rejeita versão ou sessão incompatível. Em falha de escrita, o evento recém-adicionado é
+retirado da memória e a timeline anterior permanece intacta.
 
 `AndroidAudioFeedback` implementa a fronteira de áudio no companion: TTS pt-BR para Modo Voz
 e tom PCM estéreo local de 80 ms para Modo Sinal. O recibo de voz só retorna em `onStart` do
