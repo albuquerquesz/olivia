@@ -28,3 +28,10 @@ TTS; erro de inicialização, voz indisponível ou recusa do engine vira falha c
 gerado e liberado em memória, sem WAV/arquivo persistido, rede ou conteúdo de frame. A rota
 Bluetooth real e audibilidade nos óculos seguem pendentes de INT-05; esse adapter não é prova
 de hardware.
+
+AtualizaÃ§Ã£o do runtime mock: o diagnÃ³stico estruturado Ã© registrado; a correÃ§Ã£o sÃ³ entra como
+`CORRECTION_ISSUED` depois do recibo de inÃ­cio do Ã¡udio; e o frame posterior persiste
+`CORRECTION_RESOLVED`. Pausa e encerramento expiram pendÃªncia antes da transiÃ§Ã£o de sessÃ£o.
+O Modo Voz estÃ¡ ligado somente a este caminho mock. IntegraÃ§Ã£o Docker, comandos locais,
+asset WAV e rota Bluetooth/audibilidade real continuam pendentes nas tarefas jÃ¡ abertas;
+nenhuma delas Ã© alegada como concluÃ­da.

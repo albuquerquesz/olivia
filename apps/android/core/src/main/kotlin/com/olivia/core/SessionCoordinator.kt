@@ -40,6 +40,58 @@ public class SessionCoordinator(
 
     public val snapshot: StateFlow<SessionSnapshot?> = _snapshot
 
+    /**
+     * Allows the runtime sampler to reject callbacks from an old capture generation before
+     * they reach analysis. The lifecycle owner must serialize this with all other calls here.
+     */
+    public fun accepts(frameStamp: FrameStamp): Boolean =
+        captureFence.accepts(frameStamp, _snapshot.value?.state ?: SessionState.IDLE)
+
+    /** Records only structured visual output; frame bytes never cross this boundary. */
+    public fun recordDiagnosis(analysis: FrameAnalysis) {
+        if (!accepts(analysis.frameStamp)) return
+        analysis.diagnoses.forEach { diagnosis ->
+            record(
+                type = TimelineEventType.DIAGNOSIS,
+                sessionId = analysis.frameStamp.capture.sessionId,
+                label = diagnosis.kind.name.lowercase(),
+                diagnosis = diagnosis,
+                direction = diagnosis.direction,
+                confidence = diagnosis.confidence,
+            )
+        }
+    }
+
+    /** A correction enters the timeline only after [AudioFeedback] acknowledged playback start. */
+    public fun recordCorrectionIssued(correction: Correction) {
+        if (!accepts(FrameStamp(correction.capture, 0, correction.issuedAt))) return
+        record(
+            type = TimelineEventType.CORRECTION_ISSUED,
+            sessionId = correction.capture.sessionId,
+            label = correction.spokenText.ifBlank { correction.direction.name.lowercase() },
+            diagnosis = correction.diagnosis,
+            direction = correction.direction,
+            confidence = correction.confidence,
+            correctionStatus = CorrectionStatus.PENDING,
+            correctionId = correction.id,
+        )
+    }
+
+    /** Persists the later outcome that is safe to display in the local review. */
+    public fun recordCorrectionOutcome(outcome: CorrectionOutcome) {
+        val correction = outcome.correction
+        record(
+            type = TimelineEventType.CORRECTION_RESOLVED,
+            sessionId = correction.capture.sessionId,
+            label = outcome.status.name.lowercase(),
+            diagnosis = correction.diagnosis,
+            direction = correction.direction,
+            confidence = correction.confidence,
+            correctionStatus = outcome.status,
+            correctionId = correction.id,
+        )
+    }
+
     /** Starts capture only; [onCaptureHeartbeat] is the evidence that makes it STARTED. */
     public suspend fun start(sessionId: SessionId, config: SessionConfig = SessionConfig()): Result<SessionSnapshot> {
         val current = _snapshot.value
@@ -235,7 +287,7 @@ public class SessionCoordinator(
             SessionState.DEGRADED,
             current.config,
             requireStartedAt(),
-            current.lastFrameAtEpochMs,
+            lastFrameMonotonicMs,
             causes,
             if (current.state == SessionState.DEGRADED) current.resumeState else resumeState,
         )
@@ -290,7 +342,16 @@ public class SessionCoordinator(
         )
     }
 
-    private fun record(type: TimelineEventType, sessionId: SessionId, label: String) {
+    private fun record(
+        type: TimelineEventType,
+        sessionId: SessionId,
+        label: String,
+        diagnosis: VisualDiagnosis? = null,
+        direction: Direction? = null,
+        confidence: Confidence? = null,
+        correctionStatus: CorrectionStatus? = null,
+        correctionId: String? = null,
+    ) {
         val started = requireStartedAt()
         val now = clock.now()
         timeline.record(
@@ -300,6 +361,11 @@ public class SessionCoordinator(
                 atEpochMs = now.epochMs,
                 offsetMs = now.elapsedSince(started),
                 type = type,
+                diagnosis = diagnosis,
+                direction = direction,
+                confidence = confidence,
+                correctionStatus = correctionStatus,
+                correctionId = correctionId,
                 label = label,
             ),
         )

@@ -17,3 +17,16 @@ abre uma nova geração e também aguarda heartbeat.
 privada é trabalho de BE-05. Os testes escritos cobrem a fronteira de 3999/4000 ms, pausa,
 retomada e preservação de eventos. DAT/MockDeviceKit, permissões e wake word continuam em
 BE-00/FE-03 e não foram alegados como implementados.
+
+O companion agora instancia um `SessionRuntime` por flavor. No `mock`, uma fonte sintética de
+frames 720×1280, marcada `FrameOrigin.MOCK`, atualiza o heartbeat antes de emitir cada marcador.
+Ela alimenta `SessionCoordinator`, `FileTimeline` e `AndroidAudioFeedback` locais; não gera
+diagnóstico visual, não usa DAT e não controla gravação nativa. No flavor `glasses`, os comandos
+retornam indisponibilidade controlada até INT-00 fornecer um adapter DAT verificado.
+
+AtualizaÃ§Ã£o do runtime mock: a fonte agora percorre, de ponta a ponta, `FrameSampler` (0,5
+fps), `MockFrameAnalyzer`, `DefaultGuidanceEngine`, Ã¡udio, `CorrectionTracker` e
+`FileTimeline`. O runtime serializa esses componentes; as respostas por sequÃªncia simulam
+enquadramento fora do centro, confirmaÃ§Ã£o, sombra e confirmaÃ§Ã£o. Somente saÃ­das estruturadas
+chegam Ã  timeline: bytes de frame nÃ£o sÃ£o persistidos nem registrados em log. Esta Ã© uma
+demonstraÃ§Ã£o offline marcada como `MOCK`, sem DAT, Gemini ou gravaÃ§Ã£o nativa.
