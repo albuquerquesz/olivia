@@ -16,7 +16,7 @@ Ajudar Mariana a corrigir enquadramento, luz/sombra na peça e horizonte enquant
 grava. Ao terminar, o fluxo previsto entrega marcas e cortes para revisão e CapCut.
 As regras de produto e contratos em docs/rules/ são a fonte de verdade.
 As telas atuais são um esqueleto: aparência não comprova hardware, voz ou IA ativos.
-O app abre na welcome, sem barra, com título, descrição e um botão de Google no rodapé. O Início consulta dispositivo e resumo; não inicia sessão.
+O app abre na welcome, sem barra, com título, descrição e um botão de Google no rodapé. O Início consulta dispositivo e resumo; Ajustes guarda Voz/Sinal. Não inicia sessão.
 
 ## Brand Personality
 

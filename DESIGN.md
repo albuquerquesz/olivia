@@ -36,8 +36,8 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 ## Telas e componentes
 
-- Sem títulos de página (Gravar, Sessões, Configurações). A orientação vem do
-  painel e da barra inferior; Configurações mantém só o botão Voltar.
+- Sem títulos de página (Gravar, Sessões, Ajustes). A orientação vem do
+  painel e da barra inferior.
 - Welcome: tela inicial, sem barra inferior. Título `Bem vindo a OlivIA`,
   descrição curta e botão Continuar com o Google no rodapé (marca G, sem OAuth).
 - Início: painel com Dispositivo e Ray-Ban Meta, resumo com duas colunas abertas.
@@ -46,13 +46,14 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 - Gravar: comando por voz e disponibilidade no painel; configurações abaixo.
   Não alegar que o app está escutando ou que os óculos estão conectados.
 - Sessões: estado vazio no painel, sem dados inventados ou novas telas de revisão.
-- Configurações: seleção Voz/Sinal no painel, perfil e privacidade em seções abertas.
-  A seleção continua local à tela, sem nova integração com o motor de áudio.
-- Menu: cápsula flutuante baixa, Início e Sessões nas laterais. Superfície sólida
-  50% de raio, margem lateral 24dp, 8dp do fundo, contorno, sem sombra. Gravar é
-  um anel navy com disco interno e halo branco, 40dp acima do dock, sem rótulo.
-  Círculo e rótulo formam um único alvo acessível; abrir a tela Gravar não inicia take.
-  Configurações mantém a navegação de retorno sem barra inferior.
+- Ajustes: aba do menu. Seleção Voz/Sinal no painel, perfil e privacidade em
+  seções abertas. A seleção continua local à tela, sem nova integração com o
+  motor de áudio. Sem botão Voltar.
+- Menu: cápsula flutuante baixa. Início e Sessões à esquerda, Ajustes à direita.
+  Superfície sólida 50% de raio, margem lateral 24dp, 8dp do fundo, contorno, sem
+  sombra. Gravar é um anel navy com disco interno e halo branco, encaixado no
+  centro da cápsula e um pouco acima dela, sem rótulo. Círculo e rótulo formam um único alvo acessível; abrir a
+  tela Gravar não inicia take.
 
 ## Movimento
 
