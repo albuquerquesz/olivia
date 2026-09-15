@@ -90,7 +90,7 @@ fun OliviaApp(
                 startDestination = WELCOME_ROUTE,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = if (showBottomBar) 96.dp else 0.dp),
+                    .padding(bottom = if (showBottomBar) 104.dp else 0.dp),
                 enterTransition = {
                 fadeIn(OliviaMotion.navigation()) +
                     slideInVertically(OliviaMotion.navigation()) { travelPx }
@@ -173,7 +173,7 @@ fun OliviaApp(
                     },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(horizontal = 24.dp, vertical = 24.dp)
+                        .padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
                         .widthIn(max = 600.dp)
                         .fillMaxWidth(),
                 )
@@ -193,7 +193,7 @@ private fun OliviaBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .padding(top = 22.dp),
+                .padding(top = 40.dp),
             shape = RoundedCornerShape(percent = 50),
             color = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
