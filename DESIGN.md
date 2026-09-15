@@ -48,9 +48,9 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 - Sessões: estado vazio no painel, sem dados inventados ou novas telas de revisão.
 - Configurações: seleção Voz/Sinal no painel, perfil e privacidade em seções abertas.
   A seleção continua local à tela, sem nova integração com o motor de áudio.
-- Menu: flutuante e baixo, Início, Gravar, Sessões centrados no dock. Superfície
-  sólida com raio 28dp, margem 24dp e contorno, sem sombra; círculo central azul
-  de 56dp com + branco de 30dp, avançando 20dp acima do dock.
+- Menu: cápsula flutuante, Início e Sessões nas laterais. Superfície sólida
+  50% de raio, margem 24dp e contorno, sem sombra. Gravar é um anel navy com
+  disco interno e halo branco, sobreposto ao centro, sem rótulo.
   Círculo e rótulo formam um único alvo acessível; abrir a tela Gravar não inicia take.
   Configurações mantém a navegação de retorno sem barra inferior.
 
