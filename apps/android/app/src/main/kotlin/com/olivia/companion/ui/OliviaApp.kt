@@ -14,9 +14,13 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -97,7 +101,7 @@ fun OliviaApp(
                 startDestination = WELCOME_ROUTE,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = if (showBottomBar) 88.dp else 0.dp),
+                    .padding(bottom = if (showBottomBar) 72.dp else 0.dp),
                 enterTransition = {
                 fadeIn(OliviaMotion.navigation()) +
                     slideInVertically(OliviaMotion.navigation()) { travelPx }
@@ -200,11 +204,13 @@ private fun OliviaBottomBar(
     onDestinationSelected: (OliviaDestination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier) {
+    Row(
+        modifier = modifier.height(IntrinsicSize.Min).selectableGroup(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter),
+            modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(percent = 50),
             color = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -215,45 +221,23 @@ private fun OliviaBottomBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .selectableGroup()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OliviaSideDestinations.take(2).forEach { destination ->
-                        OliviaNavigationItem(
-                            destination = destination,
-                            selected = currentRoute == destination.route,
-                            onClick = { onDestinationSelected(destination) },
-                        )
-                    }
-                }
-                Box(modifier = Modifier.size(64.dp))
-                Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OliviaSideDestinations.drop(2).forEach { destination ->
-                        OliviaNavigationItem(
-                            destination = destination,
-                            selected = currentRoute == destination.route,
-                            onClick = { onDestinationSelected(destination) },
-                        )
-                    }
+                OliviaSideDestinations.forEach { destination ->
+                    OliviaNavigationItem(
+                        destination = destination,
+                        selected = currentRoute == destination.route,
+                        onClick = { onDestinationSelected(destination) },
+                    )
                 }
             }
         }
         OliviaRecordButton(
             selected = currentRoute == OliviaDestination.RECORD.route,
             onClick = { onDestinationSelected(OliviaDestination.RECORD) },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 36.dp),
+            modifier = Modifier.fillMaxHeight().aspectRatio(1f),
         )
     }
 }
@@ -322,9 +306,7 @@ private fun OliviaRecordButton(
     )
     Box(
         modifier = modifier
-            .size(64.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .background(MaterialTheme.colorScheme.surface, CircleShape)
             .selectable(
                 selected = selected,
                 onClick = onClick,
@@ -337,13 +319,14 @@ private fun OliviaRecordButton(
     ) {
         Box(
             modifier = Modifier
-                .size(52.dp)
-                .border(4.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                .fillMaxSize()
+                .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .size(28.dp)
+                    .fillMaxSize()
+                    .padding(8.dp)
                     .background(MaterialTheme.colorScheme.primary, CircleShape),
             )
         }
