@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Olivia</string>
+    <string name="welcome_title">Bem vindo a OlivIA</string>
+    <string name="welcome_description">Eu oriento enquadramento, luz e horizonte por áudio enquanto você trabalha.</string>
+    <string name="continue_with_google">Continuar com o Google</string>
 </resources>
