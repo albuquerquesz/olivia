@@ -72,8 +72,9 @@
       "Take nativo preservado e íntegro após queda de Bluetooth.",
       "Transferência e importação do take para o companion app somente após STOPPED."
     ],
-    "fallback_limit": "Seleção manual de arquivo é fallback de importação/revisão, não prova das outras capacidades; incompatibilidade não autoriza reconstrução de vídeo do stream.",
-    "testing_limit": "Docker testa componentes de domínio e transportes controlados; MockDeviceKit exige camada Android e não comprova Bluetooth/firmware físico."
+    "fallback_limit": "Seleção manual de arquivo é fallback de importação/revisão, não prova das outras capacidades; o adapter Android aceita apenas URI content:// validada e copia somente para cache privado; incompatibilidade não autoriza reconstrução de vídeo do stream.",
+    "testing_limit": "Docker testa componentes de domínio e transportes controlados; MockDeviceKit exige camada Android e não comprova Bluetooth/firmware físico.",
+    "evidence_matrix": "docs/spec-driven-development/07-gravacao-nativa-e-importacao/CAPABILITY_MATRIX.md"
   },
   "agent_reference": {
     "static_docs": "https://wearables.developer.meta.com/llms.txt",

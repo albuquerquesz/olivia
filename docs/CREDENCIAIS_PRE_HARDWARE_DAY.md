@@ -109,9 +109,19 @@ até que a licença e a forma de distribuição estejam definidas.
 
 ## 4. Pós-processamento local
 
-Não há credencial obrigatória para o fluxo offline. Precisamos apenas obter e licenciar
-um modelo Whisper executável localmente para a transcrição após `STOPPED`. Isso não
-entra no loop ao vivo e não deve bloquear o frame → IA → áudio.
+Não há credencial obrigatória para o fluxo offline. A baseline aprovada é `whisper.cpp` com o
+modelo multilíngue `ggml-base.bin`; `ggml-tiny.bin` multilíngue fica como fallback caso o benchmark
+no Android não feche o tempo aceitável. Variantes `.en` não servem à demo pt-BR.
+
+Baixar o modelo para diretório local fora do Git, registrar origem, SHA-256 e licença e configurar:
+
+```text
+OLIVIA_WHISPER_MODEL_PATH=<caminho-local>/ggml-base.bin
+OLIVIA_WHISPER_FALLBACK_MODEL_PATH=<caminho-local>/ggml-tiny.bin
+OLIVIA_WHISPER_LANGUAGE=pt
+```
+
+Isso não entra no loop ao vivo e não deve bloquear o frame → IA → áudio.
 
 ## O que fica para o hardware day
 

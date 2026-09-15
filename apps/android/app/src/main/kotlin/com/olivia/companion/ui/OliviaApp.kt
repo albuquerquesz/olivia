@@ -129,7 +129,7 @@ fun OliviaApp(sessionRuntime: SessionRuntime) {
                     onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
                 )
             }
-            composable(OliviaDestination.SESSIONS.route) { OliviaSessionsScreen() }
+            composable(OliviaDestination.SESSIONS.route) { OliviaSessionsScreen(sessionRuntime) }
             composable(SETTINGS_ROUTE) {
                 OliviaSettingsScreen(onNavigateBack = { navController.popBackStack() })
             }

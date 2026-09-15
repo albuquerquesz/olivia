@@ -5,7 +5,7 @@
   "task": "SH-04",
   "source_of_truth": {
     "code": "apps/android/core/src/main/kotlin/com/olivia/core",
-    "note": "O módulo :core é Kotlin puro, sem AGP e sem DAT. Este JSON descreve o mesmo contrato para quem não está lendo Kotlin; em caso de divergência, o código vale."
+    "note": "O módulo :core é Kotlin puro, sem AGP e sem DAT. Este JSON descreve o mesmo contrato para quem não está lendo Kotlin; em caso de divergência, o código vale. Em DEGRADED por análise ou áudio, a captura ainda pode alimentar o sampler para recuperar a saúde; DEGRADED por captura nunca aceita frames."
   },
   "versioning": {
     "scheme": "semver",
@@ -141,7 +141,7 @@
     "invariant": "STARTED, PAUSED, STOPPED e DEGRADED não podem ser removidos ou renomeados.",
     "note": "SH-04 foi alinhada aos dez estados na revisão SDD de 12/09/2026. STOPPING encerra a captura, STOPPED marca o fim do loop ao vivo, PROCESSING é o pós-take e READY é a timeline pronta.",
     "degraded_rule": "Coordenador aplicará quatro segundos sem heartbeat de captura quando esperado; causas independentes e intenção de retorno STARTED/PAUSED são campos do snapshot. Executor do watchdog permanece FE-02/FE-09.",
-    "transition_policy": "SessionTransitions.allows define grafo; callbacks, idempotência e guardas de causa/intenção são responsabilidade de FE-02. PROCESSING somente vem de STOPPED; cancelamento de PROCESSING retorna a STOPPED.",
+    "transition_policy": "SessionTransitions.allows define grafo; callbacks, idempotência e guardas de causa/intenção são responsabilidade de FE-02. PROCESSING somente vem de STOPPED; cancelamento de PROCESSING retorna a STOPPED. Falha de análise adiciona ANALYSIS_UNAVAILABLE uma vez e só uma análise posterior bem-sucedida remove a causa.",
     "degradation_causes": [
       "CAPTURE_UNAVAILABLE",
       "ANALYSIS_UNAVAILABLE",
@@ -243,7 +243,7 @@
     "timestamp_semantics": "receivedAt é chegada ao app, não timestamp físico de exposição do sensor.",
     "frame": "Frame(stamp, width > 0, height > 0, format, origin, bytes); não serializável.",
     "heartbeat": "CaptureHeartbeat(capture, receivedAtMonotonicMs >= 0); sem bytes.",
-    "fence": "CaptureFence.open cria geração crescente; invalidate cancela aceitação. accepts exige geração ativa e STARTED. Usar no contexto serializado do coordenador.",
+    "fence": "CaptureFence.open cria geração crescente; invalidate cancela aceitação. accepts exige geração ativa e STARTED, ou DEGRADED sem CAPTURE_UNAVAILABLE para permitir recuperação de análise/áudio. Usar no contexto serializado do coordenador.",
     "ownership": "Adapter libera intermediários descartados; consumidor libera os recebidos; não reter bytes. Implementação de buffers/sampler é BE-00/02."
   },
   "analysis_contract": {

@@ -44,8 +44,11 @@ public class SessionCoordinator(
      * Allows the runtime sampler to reject callbacks from an old capture generation before
      * they reach analysis. The lifecycle owner must serialize this with all other calls here.
      */
-    public fun accepts(frameStamp: FrameStamp): Boolean =
-        captureFence.accepts(frameStamp, _snapshot.value?.state ?: SessionState.IDLE)
+    public fun accepts(frameStamp: FrameStamp): Boolean {
+        val current = _snapshot.value ?: return false
+        return captureFence.accepts(frameStamp, current.state) &&
+            DegradationCause.CAPTURE_UNAVAILABLE !in current.degradationCauses
+    }
 
     /** Records only structured visual output; frame bytes never cross this boundary. */
     public fun recordDiagnosis(analysis: FrameAnalysis) {
@@ -258,6 +261,45 @@ public class SessionCoordinator(
                     signal(SessionSignal.CONNECTION_LOST)
                 }
             }
+        }
+    }
+
+    /**
+     * The current frame could not be classified. Capture remains active, but Olivia must make the
+     * loss of live guidance explicit instead of silently treating it as a clean frame.
+     */
+    public suspend fun onAnalysisUnavailable() {
+        val current = _snapshot.value ?: return
+        if (current.state !in setOf(SessionState.STARTED, SessionState.PAUSED, SessionState.DEGRADED)) return
+        if (DegradationCause.ANALYSIS_UNAVAILABLE in current.degradationCauses) return
+        val intendedState = when (current.state) {
+            SessionState.PAUSED -> SessionState.PAUSED
+            SessionState.DEGRADED -> current.resumeState
+            else -> SessionState.STARTED
+        }
+        degrade(DegradationCause.ANALYSIS_UNAVAILABLE, intendedState)
+        record(TimelineEventType.SESSION_DEGRADED, current.id, "análise indisponível")
+        signal(SessionSignal.ANALYSIS_UNAVAILABLE)
+    }
+
+    /** A later successful analysis, never a timer, is the proof that live guidance recovered. */
+    public suspend fun onAnalysisRestored() {
+        val current = _snapshot.value ?: return
+        if (DegradationCause.ANALYSIS_UNAVAILABLE !in current.degradationCauses) return
+        val remaining = current.degradationCauses - DegradationCause.ANALYSIS_UNAVAILABLE
+        val recoveredState = if (remaining.isEmpty()) current.resumeState else SessionState.DEGRADED
+        setSnapshot(
+            current.id,
+            recoveredState,
+            current.config,
+            requireStartedAt(),
+            lastFrameMonotonicMs,
+            remaining,
+            current.resumeState,
+        )
+        if (remaining.isEmpty()) {
+            record(TimelineEventType.SESSION_RECOVERED, current.id, "análise retomada")
+            signal(SessionSignal.ANALYSIS_RESTORED)
         }
     }
 

@@ -59,6 +59,48 @@ class SessionCoordinatorTest {
         assertEquals(SessionState.STARTED, coordinator.snapshot.value?.state)
         assertEquals(2, gateway.resumeCount)
     }
+
+    @Test
+    fun `analysis failure degrades once and a later successful analysis restores the session`() = runBlocking {
+        val clock = MutableSessionClock()
+        val gateway = FakeGateway()
+        val timeline = InMemoryTimeline()
+        val coordinator = SessionCoordinator(clock, gateway, FakeAudio(clock), timeline)
+
+        coordinator.start(SessionId("take"))
+        coordinator.onCaptureHeartbeat(gateway.emitHeartbeat(clock.now().monotonicMs))
+        coordinator.onAnalysisUnavailable()
+        coordinator.onAnalysisUnavailable()
+
+        assertEquals(SessionState.DEGRADED, coordinator.snapshot.value?.state)
+        assertEquals(setOf(DegradationCause.ANALYSIS_UNAVAILABLE), coordinator.snapshot.value?.degradationCauses)
+        assertEquals(true, coordinator.accepts(FrameStamp(gateway.captureId(), 0, clock.now())))
+        coordinator.onAnalysisRestored()
+
+        assertEquals(SessionState.STARTED, coordinator.snapshot.value?.state)
+        assertEquals(
+            listOf(
+                TimelineEventType.SESSION_STARTED,
+                TimelineEventType.SESSION_DEGRADED,
+                TimelineEventType.SESSION_RECOVERED,
+            ),
+            timeline.events(SessionId("take")).map { it.type },
+        )
+    }
+
+    @Test
+    fun `capture degradation still rejects frames even though analysis degradation can recover`() = runBlocking {
+        val clock = MutableSessionClock()
+        val gateway = FakeGateway()
+        val coordinator = SessionCoordinator(clock, gateway, FakeAudio(clock), InMemoryTimeline())
+
+        coordinator.start(SessionId("take"))
+        coordinator.onCaptureHeartbeat(gateway.emitHeartbeat(clock.now().monotonicMs))
+        coordinator.onConnectionChanged(GlassesConnection.DISCONNECTED)
+
+        assertEquals(SessionState.DEGRADED, coordinator.snapshot.value?.state)
+        assertEquals(false, coordinator.accepts(FrameStamp(gateway.captureId(), 0, clock.now())))
+    }
 }
 
 private class MutableSessionClock : OliviaClock {
@@ -98,6 +140,8 @@ private class FakeGateway : GlassesGateway {
         heartbeat.value = value
         return value
     }
+
+    fun captureId(): CaptureId = checkNotNull(active)
 }
 
 private class FakeAudio(private val clock: OliviaClock) : AudioFeedback {

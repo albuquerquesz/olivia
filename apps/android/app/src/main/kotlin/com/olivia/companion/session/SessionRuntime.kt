@@ -219,6 +219,7 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
                     var audioStartedAtMs: Long? = null
                     try {
                         analyzer.analyze(decision.frame).also { analysisFinished = clock.now() }.onSuccess { analysis ->
+                            coordinator.onAnalysisRestored()
                             coordinator.recordDiagnosis(analysis)
                             correctionTracker.onAnalysis(analysis, clock.now())?.let { outcome ->
                                 guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
@@ -235,6 +236,8 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
                                     guidance.onCorrectionOutcome(correction.id, CorrectionStatus.EXPIRED)
                                 }
                             }
+                        }.onFailure {
+                            coordinator.onAnalysisUnavailable()
                         }
                     } finally {
                         metrics.finish(

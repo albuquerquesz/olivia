@@ -74,6 +74,13 @@ kotlin {
 }
 
 dependencies {
+    // DAT remains exclusive to the physical-glasses variant; :core stays SDK-free.
+    "glassesImplementation"(libs.mwdat.core)
+    "glassesImplementation"(libs.mwdat.camera)
+    "glassesImplementation"(libs.mwdat.mockdevice)
+    "glassesImplementation"(platform(libs.firebase.bom))
+    "glassesImplementation"(libs.firebase.ai)
+
     // Test APK only: no Firebase/debug provider shipped in the product APK.
     androidTestImplementation(platform(libs.firebase.bom))
     androidTestImplementation(libs.firebase.ai)

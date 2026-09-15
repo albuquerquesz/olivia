@@ -1,5 +1,7 @@
 package com.olivia.companion.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
@@ -42,19 +44,25 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.GlassesBackend
+import com.olivia.companion.media.AndroidLocalRecordingSource
 import com.olivia.companion.session.SessionRuntime
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionState
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 @Composable
 fun OliviaWelcomeScreen(onContinue: () -> Unit) {
@@ -166,12 +174,63 @@ private fun SessionStatus(state: SessionState?) {
 }
 
 @Composable
-fun OliviaSessionsScreen() {
+fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val importer = remember { AndroidLocalRecordingSource(context.applicationContext) }
+    val snapshot by sessionRuntime.snapshot.collectAsState()
+    var importMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val stoppedSession = snapshot?.takeIf { it.state == SessionState.STOPPED }
+        if (uri == null) {
+            importMessage = "Importação cancelada"
+        } else if (stoppedSession == null) {
+            importMessage = "Encerre o take antes de importar o vídeo"
+        } else {
+            scope.launch {
+                importMessage = "Validando vídeo local…"
+                try {
+                    val asset = importer.registerSelectedTake(stoppedSession, uri).getOrElse {
+                        importMessage = "Não foi possível usar este vídeo"
+                        return@launch
+                    }
+                    importer.fetch(asset).collect { progress ->
+                        importMessage = "Importando vídeo: ${progress.transferredBytes / 1024} KB"
+                    }
+                    importMessage = "Vídeo pronto para revisão local"
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Throwable) {
+                    importMessage = "A importação não foi concluída"
+                }
+            }
+        }
+    }
     OliviaPage {
         OliviaPanel {
             Text("Seus takes", style = MaterialTheme.typography.bodyLarge)
-            Text("Nenhuma sessão ainda", style = MaterialTheme.typography.headlineMedium)
-            PanelDetail("Depois da gravação, suas timelines e cortes sugeridos aparecerão aqui.")
+            Text(
+                if (snapshot?.state == SessionState.STOPPED) "Take encerrado" else "Nenhuma sessão pronta",
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            PanelDetail(
+                if (snapshot?.state == SessionState.STOPPED) {
+                    "Selecione o vídeo final para revisar localmente. A Olivia não altera o original."
+                } else {
+                    "Depois da gravação, suas timelines e cortes sugeridos aparecerão aqui."
+                },
+            )
+        }
+        OutlinedButton(
+            onClick = { picker.launch("video/*") },
+            enabled = snapshot?.state == SessionState.STOPPED,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            shape = RoundedCornerShape(20.dp),
+        ) {
+            Text("Selecionar vídeo para revisão")
+        }
+        importMessage?.let { message ->
+            PanelDetail(message)
         }
     }
 }

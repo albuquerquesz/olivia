@@ -45,7 +45,8 @@ public data class CaptureHeartbeat(val capture: CaptureId, val receivedAtMonoton
 
 /**
  * Fence de resultados tardios. Usar no contexto serializado do coordenador.
- * Pausa, degradação e STOP invalidam; retomada abre outra geração.
+ * Pausa, perda de captura e STOP invalidam; retomada abre outra geração. Degradação apenas de
+ * análise ou áudio mantém a captura ativa para que a saúde possa ser comprovadamente recuperada.
  */
 public class CaptureFence {
     private var generation: Long = 0
@@ -59,7 +60,7 @@ public class CaptureFence {
     public fun invalidate() { active = null }
 
     public fun accepts(stamp: FrameStamp, state: SessionState): Boolean =
-        state == SessionState.STARTED && stamp.capture == active
+        state in setOf(SessionState.STARTED, SessionState.DEGRADED) && stamp.capture == active
 }
 
 /** De onde o frame veio. Vai para a instrumentação e para a timeline. */

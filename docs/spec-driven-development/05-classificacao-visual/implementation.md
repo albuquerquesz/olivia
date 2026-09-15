@@ -1,19 +1,31 @@
-# First delivery - closed visual analysis schema
+# Primeira entrega — transporte Firebase para classificação visual
 
-Status: code written; no build, automated test, live model, or hardware validation was run.
+Status: adapter Android e bootstrap do Firebase no flavor glasses escritos; integração DAT/runtime e validação ao vivo pendentes.
 
-`VisualAnalysisSchema` accepts only version `1.0` and a list of up to one diagnosis for each
-closed class: `FRAMING`, `LIGHT`, and `HORIZON`. It rejects unknown or missing fields, free-form
-text, duplicate classes, invalid confidence, incompatible direction, and every magnitude because
-the MVP has no verified glasses calibration. Model provenance and timestamps remain app-owned and
-will be attached only by a future Firebase adapter when constructing `FrameAnalysis`.
+## Núcleo já entregue
 
-The decoder returns a controlled `Result.failure` for malformed, incomplete, or contradictory
-model output. It neither logs nor persists the raw response. Firebase transport, timeout,
-backoff, cancellation, analysis-health signaling, live credentials, and quality evaluation are
-still pending in BE-03.2 through BE-03.5.
-`GeminiFrameAnalyzer` now provides the one-shot core path behind an injected
-`GeminiVisualTransport`: 2-second timeout, no retry of the same frame, content-free failure
-codes, schema validation, and correct cancellation propagation. Its Firebase-specific transport
-is intentionally not implemented because the Firebase dependency is test-only and no development
-credentials were supplied. The next frame is the only recovery path after a failure.
+`VisualAnalysisSchema` aceita somente a versão `1.0` e até um diagnóstico por classe fechada:
+`FRAMING`, `LIGHT` e `HORIZON`. Ele rejeita campos ausentes ou desconhecidos, texto livre,
+duplicatas, confiança inválida, direção incompatível e qualquer magnitude, pois ainda não há
+calibração verificada dos óculos. `GeminiFrameAnalyzer` acrescenta timeout de 2 s, sem retry do
+mesmo frame, erros sem conteúdo e propagação correta de cancelamento.
+
+## Adapter Android
+
+`FirebaseGeminiVisualTransport` fica exclusivamente em `app/src/glasses`. Ele recebe um
+`FirebaseApp` já configurado pelo ambiente local/CI, cria o cliente Firebase AI Logic e implementa
+`GeminiVisualTransport` sem fazer o domínio `:core` importar Android ou Firebase.
+
+O adapter decodifica JPEG, NV21 ou RGBA apenas em memória, reduz o maior lado para 512 px e envia
+um único bitmap com um prompt limitado a enquadramento, luz/sombra e horizonte. A resposta pede
+JSON; `GeminiFrameAnalyzer` e `VisualAnalysisSchema` ainda são a barreira definitiva para o
+contrato fechado, timeout de 2 s e rejeição de texto/propriedades inesperadas.
+
+Não há cache, arquivo, log ou retry do frame. Cancelamento de coroutine propaga. Demais falhas se
+reduzem a um erro sanitizado, que o núcleo converte em indisponibilidade de análise. O bitmap é
+liberado depois da chamada.
+
+Ainda não há uma instância Firebase configurada no runtime `glasses`, nem frame DAT ligado a esse
+adapter. Isso depende de `google-services.json` local, App Check, quotas/modelo aprovados e
+INT-00. O mock continua deliberadamente sem Firebase. Nenhum teste Android/Firebase foi executado
+nesta entrega.

@@ -12,7 +12,13 @@ Escopo: Dentro. Somente pós-take, marcas/cortes/legendas e entrega ao editor ex
 
 PostProcessor só inicia após STOPPED e recurso de mídia pronto: PROCESSING→READY, erro controlado ou cancelamento. Nova sessão de direção tem prioridade e suspende/cancela trabalho pesado segundo política explícita, sem perder o resultado anterior.
 
-LocalWhisperTranscriber extrai áudio localmente e transcreve por Whisper no telefone. Spike inicial fixa runtime/modelo multilíngue, hash, licença, consumo e instalação offline; whisper.cpp é candidato. Docker usa o mesmo modelo para integração funcional, mas não prova velocidade no Android. Se modelo faltar ou transcrição falhar, preservar timeline e informar revisão parcial, sem texto inventado.
+LocalWhisperTranscriber extrai áudio localmente e transcreve por Whisper no telefone. A decisão
+inicial fixa `whisper.cpp` com `ggml-base.bin` multilíngue; `ggml-tiny.bin` multilíngue é o
+fallback somente se benchmark no aparelho-alvo não fechar o tempo aceitável. Variantes `.en` não
+são permitidas porque a demo é pt-BR. Antes de integrar, registrar versão do runtime, URL/origem,
+SHA-256, licença, consumo e instalação offline. Docker usa o mesmo modelo para integração
+funcional, mas não prova velocidade no Android. Se modelo faltar ou transcrição falhar, preservar
+timeline e informar revisão parcial, sem texto inventado.
 
 Validar TranscriptSegment: início ≥0, fim>início, fim≤duração, ordem, locale e limites de texto. Cortes são intervalos sugeridos para excluir, em tempo de mídia, coerentes com CutReason existente: UNCORRECTED_DEVIATION, DEGRADED_STRETCH, SPEECH_RETAKE e SILENCE. Não afirmar que uma instrução “recentrou” significa descartar tudo após ela.
 
@@ -27,4 +33,3 @@ Unitários: segmentos, limites, offset, sobreposição, texto SRT e heurísticas
 Aceite exige artefatos consumíveis, cortes em posições corretas e resumo calculado do resultado (nunca “quatro cortes, 32 segundos” fixo). Medir separadamente importação, extração, transcrição e geração; ~8 s do submit é meta, não promessa validada.
 
 Veja [subtasks](tasks.md), [diagrama](diagram.mmd), [decisões](../DECISIONS.md) e [contrato de testes](../TESTING.md). Os critérios aqui são obrigatórios para fechar as tasks associadas; nenhum resultado foi medido nesta revisão.
-
