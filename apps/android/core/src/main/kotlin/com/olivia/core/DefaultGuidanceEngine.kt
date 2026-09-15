@@ -5,9 +5,12 @@ public data class GuidancePolicy(
     val minimumConfidence: Confidence = Confidence(0.80f),
     val minimumSeverity: Severity = Severity.MAJOR,
     val cooldownMs: Long = 4_000,
+    /** Consecutive sampled frames that must agree before interrupting the creator. */
+    val requiredConsecutiveMatches: Int = 2,
 ) {
     init {
         require(cooldownMs >= 0)
+        require(requiredConsecutiveMatches > 0)
     }
 }
 
@@ -42,6 +45,7 @@ public class DefaultGuidanceEngine(
 ) : GuidanceEngine {
     private var pendingId: String? = null
     private var lastIssuedAt: ClockReading? = null
+    private var candidate: GuidanceCandidate? = null
     private var nextId: Long = 0
 
     override fun onAnalysis(analysis: FrameAnalysis, now: ClockReading): Correction? {
@@ -59,11 +63,29 @@ public class DefaultGuidanceEngine(
                     .thenBy { priority(it.kind) },
             )
             .firstOrNull()
-            ?: return null
+            ?: run {
+                candidate = null
+                return null
+            }
         val direction = requireNotNull(diagnosis.direction)
+        val prior = candidate
+        val sameDeviation = prior != null && prior.capture == analysis.frameStamp.capture &&
+            prior.kind == diagnosis.kind && prior.direction == direction
+        if (sameDeviation && analysis.frameStamp.sequence <= requireNotNull(prior).lastSequence) return null
+        val matches = if (sameDeviation) requireNotNull(prior).matches + 1 else 1
+        candidate = GuidanceCandidate(
+            capture = analysis.frameStamp.capture,
+            kind = diagnosis.kind,
+            direction = direction,
+            lastSequence = analysis.frameStamp.sequence,
+            matches = matches,
+        )
+        if (matches < policy.requiredConsecutiveMatches) return null
+
         val id = "${analysis.frameStamp.capture.sessionId.value}:${analysis.frameStamp.capture.generation}:${++nextId}"
         pendingId = id
         lastIssuedAt = now
+        candidate = null
         return Correction(
             id = id,
             capture = analysis.frameStamp.capture,
@@ -84,6 +106,14 @@ public class DefaultGuidanceEngine(
         DiagnosisKind.LIGHT -> 1
         DiagnosisKind.HORIZON -> 2
     }
+
+    private data class GuidanceCandidate(
+        val capture: CaptureId,
+        val kind: DiagnosisKind,
+        val direction: Direction,
+        val lastSequence: Long,
+        val matches: Int = 1,
+    )
 }
 
 public data class CorrectionOutcome(

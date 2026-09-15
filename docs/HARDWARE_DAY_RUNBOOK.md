@@ -27,17 +27,28 @@ Bluetooth, Gemini, Porcupine, native recording, Whisper, audio at the glasses, o
 
 ## Venue order
 
-1. Confirm Android device, app registration, DAT credentials, and DAT opt-outs.
-2. Run MockDeviceKit smoke: connect, emit one 720x1280 frame, pause/resume, unavailable/recovered.
-3. Replace only `MockGlassesGateway` with the DAT adapter. Confirm a real frame origin before
+1. Confirm Android device, app registration, DAT credentials, DAT opt-outs, and the selected
+   Bluetooth audio route. Before changing product code, run the documented A/B experiment with
+   real workshop noise: phone microphone + A2DP media versus glasses microphone + HFP. Record
+   recognition success, audible output, route format, and the two-second HFP setup delay. HFP is
+   an Android/Bluetooth experiment, not an assumed DAT capability; the submitted phone-local
+   command route remains the fallback unless the team explicitly approves a product-contract change.
+2. Prove native recording before building refinements: start/stop method, coexistence with DAT
+   streaming, import through Meta AI/gallery, and a sync marker (tone or clap) usable to align
+   the stream clock with native media. Mark 3K as roadmap if any of these steps fails; do not
+   relabel the Bluetooth stream as 3K output.
+3. Run MockDeviceKit smoke: connect, emit one 720x1280 frame, pause/resume, unavailable/recovered.
+4. Replace only `MockGlassesGateway` with the DAT adapter. Confirm a real frame origin before
    continuing; never relabel mock frames as DAT.
-4. Verify one healthy live loop: frame -> visual result -> audio callback -> later-frame outcome ->
-   timeline. Measure it; do not reuse mock latency as a physical number.
-5. Independently verify native start/stop, simultaneous streaming, Bluetooth-loss preservation,
-   and post-STOPPED import. A streaming session does not prove native recording.
-6. Verify the selected Android media route reaches Ray-Ban speakers. TTS callback alone is not an
+5. Configure and compare the lowest DAT stream setting that retains usable framing (360x640,
+   504x896, or the documented minimum) at 2 fps; Olivia still analyzes only one frame every two
+   seconds. Record the actual delivered format rather than assuming a requested value.
+6. Verify one healthy live loop: frame -> visual result -> audio callback -> later-frame outcome ->
+   timeline. The engine now waits for two matching sampled analyses before it speaks. Measure p50
+   and worst case; do not reuse mock latency as a physical number.
+7. Verify the selected Android media route reaches Ray-Ban speakers. TTS callback alone is not an
    acoustic proof.
-7. Record actual device, firmware, model/config, network, battery start/end, failures, and the
+8. Record actual device, firmware, model/config, network, battery start/end, failures, and the
    limits still open. No frame, raw audio, transcript, credential, or full private URI belongs in
    the evidence report.
 

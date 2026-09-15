@@ -17,14 +17,16 @@ class DefaultGuidanceEngineTest {
             ),
         )
 
-        val correction = engine.onAnalysis(analysis, clock.now())
+        assertNull(engine.onAnalysis(analysis(sequence = 1), clock.now()))
+        val correction = engine.onAnalysis(analysis(sequence = 2), clock.now())
         assertEquals(Direction.TURN_RIGHT, correction?.direction)
         assertEquals("Vire para a direita.", correction?.spokenText)
         engine.onCorrectionOutcome(requireNotNull(correction).id, CorrectionStatus.OBEYED)
         clock.advanceBy(3_999)
         assertNull(engine.onAnalysis(analysis, clock.now()))
         clock.advanceBy(1)
-        assertTrue(engine.onAnalysis(analysis, clock.now()) != null)
+        assertNull(engine.onAnalysis(analysis(sequence = 3), clock.now()))
+        assertTrue(engine.onAnalysis(analysis(sequence = 4), clock.now()) != null)
     }
 
     @Test
@@ -40,8 +42,21 @@ class DefaultGuidanceEngineTest {
         )
     }
 
-    private fun analysis(diagnoses: List<VisualDiagnosis>): FrameAnalysis = FrameAnalysis(
-        frameStamp = FrameStamp(CaptureId(SessionId("take"), 1), 1, ClockReading(0, 1_700_000_000_000)),
+    @Test
+    fun `requires two matching actionable frames and resets on a different direction`() {
+        val engine = DefaultGuidanceEngine(AudioMode.VOICE)
+        val clock = GuidanceClock()
+        val right = { sequence: Long -> analysis(listOf(diagnosis(DiagnosisKind.FRAMING, Direction.TURN_RIGHT, 0.9f)), sequence) }
+        val left = { sequence: Long -> analysis(listOf(diagnosis(DiagnosisKind.FRAMING, Direction.TURN_LEFT, 0.9f)), sequence) }
+
+        assertNull(engine.onAnalysis(right(1), clock.now()))
+        assertNull(engine.onAnalysis(left(2), clock.now()))
+        assertNull(engine.onAnalysis(right(3), clock.now()))
+        assertEquals(Direction.TURN_RIGHT, engine.onAnalysis(right(4), clock.now())?.direction)
+    }
+
+    private fun analysis(diagnoses: List<VisualDiagnosis>, sequence: Long = 1): FrameAnalysis = FrameAnalysis(
+        frameStamp = FrameStamp(CaptureId(SessionId("take"), 1), sequence, ClockReading(0, 1_700_000_000_000)),
         analyzedAt = ClockReading(0, 1_700_000_000_000),
         latencyMs = 0,
         source = AnalyzerSource.MOCK,

@@ -2,7 +2,7 @@
 
 Origem: [backlog canônico](../../rules/olivia_backlog.json). BE-04, BE-05, INT-01; FE-04/FE-06 como fronteiras de áudio e consumo. IDs com sufixo são passos da issue original, não novas issues.
 
-- [x] **BE-04.1** — Implementar política determinística de threshold/cooldown/prioridade e catálogo de instruções.
+- [x] **BE-04.1** — Implementar política determinística de threshold/cooldown/prioridade, histerese de duas análises concordantes e catálogo de instruções.
 - [x] **BE-05.1** — Implementar correlação, pendência, confirmação, expiração e gravação idempotente local.
 - [ ] **FE-04.1** — Integrar TTS/WAV e sinais de sessão atualizados com resultado de emissão. (Adapter TTS e tom PCM local escrito; falta asset WAV, ligação ao runtime e validação Android.)
 - [ ] **BE-05.2** — Entregar unitários e integração Docker de direção/tracker/repositório, com falha de gravação e reinício.

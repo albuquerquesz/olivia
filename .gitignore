@@ -8,6 +8,20 @@ dist
 build
 *.tsbuildinfo
 
+# Android / Gradle generated state and artifacts
+.gradle/
+apps/android/core/bin/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.hprof
+*.keystore
+*.jks
+*.keystore.properties
+apps/android/local.properties
+
 # Environment variables
 .env
 .env.*

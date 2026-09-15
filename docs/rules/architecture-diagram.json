@@ -82,9 +82,10 @@
       "name": "Motor de direção",
       "zone": "mobile_app",
       "configuration": {
-        "cooldown_between_corrections_seconds": 4
+        "cooldown_between_corrections_seconds": 4,
+        "required_consecutive_matching_analyses": 2
       },
-      "purpose": "Decide se deve emitir uma correção e evita feedback repetitivo."
+      "purpose": "Decide se deve emitir uma correção, exige duas análises consecutivas concordantes e evita feedback repetitivo ou obsoleto."
     },
     {
       "id": "audio_feedback",
