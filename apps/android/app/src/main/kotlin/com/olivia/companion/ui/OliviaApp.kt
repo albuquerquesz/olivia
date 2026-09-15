@@ -253,7 +253,7 @@ private fun OliviaBottomBar(
             onClick = { onDestinationSelected(OliviaDestination.RECORD) },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 4.dp),
+                .padding(bottom = 36.dp),
         )
     }
 }
