@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -88,7 +90,7 @@ fun OliviaApp(
                 startDestination = WELCOME_ROUTE,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = if (showBottomBar) 88.dp else 0.dp),
+                    .padding(bottom = if (showBottomBar) 96.dp else 0.dp),
                 enterTransition = {
                 fadeIn(OliviaMotion.navigation()) +
                     slideInVertically(OliviaMotion.navigation()) { travelPx }
@@ -191,8 +193,8 @@ private fun OliviaBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .padding(top = 20.dp),
-            shape = RoundedCornerShape(28.dp),
+                .padding(top = 22.dp),
+            shape = RoundedCornerShape(percent = 50),
             color = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
@@ -203,7 +205,7 @@ private fun OliviaBottomBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .selectableGroup()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 OliviaDestination.entries.forEach { destination ->
@@ -240,7 +242,7 @@ private fun OliviaNavigationItem(
         label = "navigation press",
     )
     val color by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         OliviaMotion.selection(),
         label = "navigation selection",
     )
@@ -259,22 +261,24 @@ private fun OliviaNavigationItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(22.dp), contentAlignment = Alignment.Center) {
             if (!isRecord) {
                 Icon(
                     destination.icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.size(24.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+                    modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale; scaleY = scale },
                 )
             }
         }
-        Text(
-            destination.label,
-            color = color,
-            style = MaterialTheme.typography.labelMedium,
-            textAlign = TextAlign.Center,
-        )
+        if (!isRecord) {
+            Text(
+                destination.label,
+                color = color,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
@@ -293,23 +297,30 @@ private fun OliviaRecordButton(
     )
     Box(
         modifier = modifier
-            .size(56.dp)
+            .size(72.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .background(MaterialTheme.colorScheme.primary, CircleShape)
+            .background(MaterialTheme.colorScheme.surface, CircleShape)
             .selectable(
                 selected = selected,
                 onClick = onClick,
                 role = Role.Tab,
                 interactionSource = interactionSource,
                 indication = null,
-            ),
+            )
+            .semantics { contentDescription = OliviaDestination.RECORD.label },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            OliviaDestination.RECORD.icon,
-            contentDescription = OliviaDestination.RECORD.label,
-            tint = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.size(30.dp),
-        )
+        Box(
+            modifier = Modifier
+                .size(58.dp)
+                .border(4.dp, MaterialTheme.colorScheme.primary, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+            )
+        }
     }
 }
