@@ -2,6 +2,6 @@
   "name": "android",
   "private": true,
   "scripts": {
-    "dev": "./with-jdk.sh ./gradlew installMockDebug --continuous"
+    "dev": "./dev.sh"
   }
 }

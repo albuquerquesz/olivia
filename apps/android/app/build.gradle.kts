@@ -17,6 +17,9 @@ android {
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     flavorDimensions += "device"
@@ -78,4 +81,12 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+tasks.register<Exec>("installMockDebugAdb") {
+    group = "install"
+    description = "Installs mock debug with adb, skipping AGP's device ABI matcher."
+    dependsOn("assembleMockDebug")
+    inputs.file(layout.buildDirectory.file("outputs/apk/mock/debug/app-mock-debug.apk"))
+    commandLine(rootProject.layout.projectDirectory.file("install-mock.sh").asFile.absolutePath)
 }
