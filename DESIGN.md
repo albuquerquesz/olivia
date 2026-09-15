@@ -49,11 +49,10 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 - Ajustes: aba do menu. Seleção Voz/Sinal no painel, perfil e privacidade em
   seções abertas. A seleção continua local à tela, sem nova integração com o
   motor de áudio. Sem botão Voltar.
-- Menu: cápsula flutuante baixa. Início e Sessões à esquerda, Ajustes à direita.
+- Menu: cápsula flutuante baixa com Início, Sessões e Ajustes. Gravar fica fora,
+  à direita, na mesma altura, como anel navy com disco interno, sem rótulo.
   Superfície sólida 50% de raio, margem lateral 24dp, 8dp do fundo, contorno, sem
-  sombra. Gravar é um anel navy com disco interno e halo branco, encaixado no
-  centro da cápsula e um pouco acima dela, sem rótulo. Círculo e rótulo formam um único alvo acessível; abrir a
-  tela Gravar não inicia take.
+  sombra. Círculo e abas formam alvos acessíveis; abrir Gravar não inicia take.
 
 ## Movimento
 
