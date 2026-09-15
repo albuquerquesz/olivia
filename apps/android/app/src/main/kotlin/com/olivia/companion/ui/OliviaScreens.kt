@@ -279,9 +279,8 @@ fun OliviaSettingsScreen(
     audioMode: AudioMode,
     live: Boolean,
     onAudioMode: (AudioMode) -> Unit,
-    onNavigateBack: () -> Unit,
 ) {
-    OliviaPage(onNavigateBack = onNavigateBack) {
+    OliviaPage {
         OliviaPanel {
             SectionTitle("Modo de feedback")
             FlowRow(

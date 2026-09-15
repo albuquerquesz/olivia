@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -62,10 +63,16 @@ private enum class OliviaDestination(val route: String, val label: String, val i
     HOME("home", "Início", Icons.Outlined.Home),
     RECORD("record", "Gravar", Icons.Outlined.Add),
     SESSIONS("sessions", "Sessões", Icons.Outlined.History),
+    SETTINGS("settings", "Ajustes", Icons.Outlined.Settings),
 }
 
+private val OliviaSideDestinations = listOf(
+    OliviaDestination.HOME,
+    OliviaDestination.SESSIONS,
+    OliviaDestination.SETTINGS,
+)
+
 private const val WELCOME_ROUTE = "welcome"
-private const val SETTINGS_ROUTE = "settings"
 private const val TAKE_ROUTE = "take/{sessionId}"
 
 @Composable
@@ -90,7 +97,7 @@ fun OliviaApp(
                 startDestination = WELCOME_ROUTE,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = if (showBottomBar) 104.dp else 0.dp),
+                    .padding(bottom = if (showBottomBar) 88.dp else 0.dp),
                 enterTransition = {
                 fadeIn(OliviaMotion.navigation()) +
                     slideInVertically(OliviaMotion.navigation()) { travelPx }
@@ -123,7 +130,13 @@ fun OliviaApp(
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     state = uiState,
-                    onOpenSettings = { navController.navigate(SETTINGS_ROUTE) },
+                    onOpenSettings = {
+                        navController.navigate(OliviaDestination.SETTINGS.route) {
+                            popUpTo(OliviaDestination.HOME.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     onAudioMode = viewModel::setAudioMode,
                     onStart = viewModel::start,
                     onPause = viewModel::pause,
@@ -152,12 +165,11 @@ fun OliviaApp(
                     OliviaTakeScreen(take, onNavigateBack = { navController.popBackStack() })
                 }
             }
-            composable(SETTINGS_ROUTE) {
+            composable(OliviaDestination.SETTINGS.route) {
                 OliviaSettingsScreen(
                     audioMode = uiState.audioMode,
                     live = uiState.isLive,
                     onAudioMode = viewModel::setAudioMode,
-                    onNavigateBack = { navController.popBackStack() },
                 )
             }
             }
@@ -192,8 +204,7 @@ private fun OliviaBottomBar(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(top = 40.dp),
+                .align(Alignment.BottomCenter),
             shape = RoundedCornerShape(percent = 50),
             color = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -205,23 +216,44 @@ private fun OliviaBottomBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .selectableGroup()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OliviaDestination.entries.forEach { destination ->
-                    OliviaNavigationItem(
-                        destination = destination,
-                        selected = currentRoute == destination.route,
-                        onClick = { onDestinationSelected(destination) },
-                        modifier = Modifier.weight(1f),
-                    )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OliviaSideDestinations.take(2).forEach { destination ->
+                        OliviaNavigationItem(
+                            destination = destination,
+                            selected = currentRoute == destination.route,
+                            onClick = { onDestinationSelected(destination) },
+                        )
+                    }
+                }
+                Box(modifier = Modifier.size(64.dp))
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OliviaSideDestinations.drop(2).forEach { destination ->
+                        OliviaNavigationItem(
+                            destination = destination,
+                            selected = currentRoute == destination.route,
+                            onClick = { onDestinationSelected(destination) },
+                        )
+                    }
                 }
             }
         }
         OliviaRecordButton(
             selected = currentRoute == OliviaDestination.RECORD.route,
             onClick = { onDestinationSelected(OliviaDestination.RECORD) },
-            modifier = Modifier.align(Alignment.TopCenter),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 4.dp),
         )
     }
 }
@@ -233,7 +265,6 @@ private fun OliviaNavigationItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isRecord = destination == OliviaDestination.RECORD
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -261,24 +292,18 @@ private fun OliviaNavigationItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Box(modifier = Modifier.size(22.dp), contentAlignment = Alignment.Center) {
-            if (!isRecord) {
-                Icon(
-                    destination.icon,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale; scaleY = scale },
-                )
-            }
-        }
-        if (!isRecord) {
-            Text(
-                destination.label,
-                color = color,
-                style = MaterialTheme.typography.labelSmall,
-                textAlign = TextAlign.Center,
-            )
-        }
+        Icon(
+            destination.icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+        )
+        Text(
+            destination.label,
+            color = color,
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -297,7 +322,7 @@ private fun OliviaRecordButton(
     )
     Box(
         modifier = modifier
-            .size(72.dp)
+            .size(64.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .background(MaterialTheme.colorScheme.surface, CircleShape)
             .selectable(
@@ -312,13 +337,13 @@ private fun OliviaRecordButton(
     ) {
         Box(
             modifier = Modifier
-                .size(58.dp)
+                .size(52.dp)
                 .border(4.dp, MaterialTheme.colorScheme.primary, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(28.dp)
                     .background(MaterialTheme.colorScheme.primary, CircleShape),
             )
         }
