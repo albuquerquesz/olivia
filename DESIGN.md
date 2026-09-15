@@ -38,8 +38,8 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 - Sem títulos de página (Gravar, Sessões, Configurações). A orientação vem do
   painel e da barra inferior; Configurações mantém só o botão Voltar.
-- Welcome: tela inicial, sem barra inferior. Hoje só o texto `welcome` ao centro;
-  o restante será desenhado do zero.
+- Welcome: tela inicial, sem barra inferior. Título `Bem vindo a OlivIA`,
+  descrição curta e botão Continuar com o Google no rodapé (marca G, sem OAuth).
 - Início: painel com Dispositivo e Ray-Ban Meta, resumo com duas colunas abertas.
   Sem selo Modo demonstração ou texto Óculos simulados. A indicação do backend
   continua na tela Gravar. Sem botão Gravar agora ou frase Pronta para.
