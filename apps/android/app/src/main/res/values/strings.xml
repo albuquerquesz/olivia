@@ -3,5 +3,5 @@
     <string name="app_name">Olivia</string>
     <string name="welcome_title">Bem vindo a OlivIA</string>
     <string name="welcome_description">Eu oriento enquadramento, luz e horizonte por áudio enquanto você trabalha.</string>
-    <string name="continue_with_google">Continuar com o Google</string>
+    <string name="welcome_enter">Entrar</string>
 </resources>

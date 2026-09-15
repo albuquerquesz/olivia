@@ -16,6 +16,8 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -24,8 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,7 +49,7 @@ private val PrivacyCopy =
     "Frames de análise são efêmeros. O áudio do celular não alimenta IA durante o take."
 
 @Composable
-fun OliviaWelcomeScreen(onGoogleLogin: () -> Unit) {
+fun OliviaWelcomeScreen(onEnter: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -77,32 +77,17 @@ fun OliviaWelcomeScreen(onGoogleLogin: () -> Unit) {
                     textAlign = TextAlign.Center,
                 )
             }
-            GoogleLoginButton(
-                onClick = onGoogleLogin,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun GoogleLoginButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier.heightIn(min = 56.dp),
-        shape = RoundedCornerShape(20.dp),
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_google),
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = Color.Unspecified,
-            )
-            Text(stringResource(R.string.continue_with_google), style = MaterialTheme.typography.labelLarge)
+            Button(
+                onClick = onEnter,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) {
+                Text(stringResource(R.string.welcome_enter), style = MaterialTheme.typography.labelLarge)
+            }
         }
     }
 }

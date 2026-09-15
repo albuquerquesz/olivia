@@ -117,7 +117,7 @@ fun OliviaApp(
         ) {
             composable(WELCOME_ROUTE) {
                 OliviaWelcomeScreen(
-                    onGoogleLogin = {
+                    onEnter = {
                         navController.navigate(OliviaDestination.HOME.route) {
                             popUpTo(WELCOME_ROUTE) { inclusive = true }
                         }
