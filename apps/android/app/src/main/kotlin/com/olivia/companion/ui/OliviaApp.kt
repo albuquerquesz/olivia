@@ -54,7 +54,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.olivia.companion.WelcomePrefs
 import com.olivia.companion.session.OliviaSessionViewModel
 import com.olivia.core.SessionId
 
@@ -76,16 +75,12 @@ fun OliviaApp(
         ),
     ),
 ) {
-    val context = LocalContext.current
-    val welcomePrefs = remember { WelcomePrefs(context) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
-    val startDestination =
-        if (welcomePrefs.isSeen()) OliviaDestination.HOME.route else WELCOME_ROUTE
 
     Scaffold(
         bottomBar = {
@@ -102,7 +97,7 @@ fun OliviaApp(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = startDestination,
+            startDestination = WELCOME_ROUTE,
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             enterTransition = {
                 fadeIn(OliviaMotion.navigation()) +
@@ -122,14 +117,7 @@ fun OliviaApp(
             },
         ) {
             composable(WELCOME_ROUTE) {
-                OliviaWelcomeScreen(
-                    onContinue = {
-                        welcomePrefs.markSeen()
-                        navController.navigate(OliviaDestination.HOME.route) {
-                            popUpTo(WELCOME_ROUTE) { inclusive = true }
-                        }
-                    },
-                )
+                OliviaWelcomeScreen()
             }
             composable(OliviaDestination.HOME.route) {
                 OliviaHomeScreen(uiState)

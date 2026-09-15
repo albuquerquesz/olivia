@@ -1,9 +1,11 @@
 package com.olivia.companion.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -12,14 +14,13 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.session.OliviaUiState
@@ -41,31 +42,9 @@ private val PrivacyCopy =
     "Frames de análise são efêmeros. O áudio do celular não alimenta IA durante o take."
 
 @Composable
-fun OliviaWelcomeScreen(onContinue: () -> Unit) {
-    OliviaPage {
-        OliviaPanel {
-            Text("Olivia", style = MaterialTheme.typography.bodyLarge)
-            Text("Grava com as mãos livres", style = MaterialTheme.typography.headlineMedium)
-            PanelDetail(
-                "Eu oriento enquadramento, luz e horizonte por áudio enquanto você trabalha.",
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Comando de voz", style = MaterialTheme.typography.bodyLarge)
-                Text("Oi, Olivia, Gravar", style = MaterialTheme.typography.headlineSmall)
-            }
-            PanelDetail("Frames de análise são efêmeros. Sem conta.")
-        }
-        Button(
-            onClick = onContinue,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-        ) {
-            Text("Continuar")
-        }
+fun OliviaWelcomeScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("welcome", style = MaterialTheme.typography.headlineMedium)
     }
 }
 
