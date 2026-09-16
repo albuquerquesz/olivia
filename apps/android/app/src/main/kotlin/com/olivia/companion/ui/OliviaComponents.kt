@@ -91,7 +91,7 @@ internal fun OliviaPage(
                     onClick = onNavigateBack,
                     modifier = Modifier.background(
                         color = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = CircleShape,
                     ),
                 ) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
