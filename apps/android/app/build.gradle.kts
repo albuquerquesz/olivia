@@ -6,9 +6,24 @@ val localProperties = Properties().apply {
     if (localFile.isFile) localFile.inputStream().use(::load)
 }
 
+// Root .env is ignored by Git. It is read only for explicitly allowlisted local test inputs;
+// it is never copied into BuildConfig, resources, the APK, or production configuration.
+val dotEnvProperties = Properties().apply {
+    val dotEnvFile = rootProject.file("../../.env")
+    if (dotEnvFile.isFile) dotEnvFile.inputStream().use(::load)
+}
+
 fun localOrEnvironment(property: String, environment: String): String? =
     providers.environmentVariable(environment).orNull?.takeIf { it.isNotBlank() }
         ?: localProperties.getProperty(property)?.takeIf { it.isNotBlank() }
+
+fun environmentOrDotEnv(environment: String): String? =
+    providers.environmentVariable(environment).orNull?.trim()?.takeIf { it.isNotBlank() }
+        ?: dotEnvProperties.getProperty(environment)
+            ?.trim()
+            ?.removeSurrounding("\"")
+            ?.removeSurrounding("'")
+            ?.takeIf { it.isNotBlank() }
 
 plugins {
     alias(libs.plugins.android.application)
@@ -42,14 +57,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Live tests must be selected explicitly; default instrumentation is offline.
         testInstrumentationRunnerArguments["class"] = "com.olivia.companion.infra.InfraConfigurationIntegrationTest"
-        if (System.getenv("OLIVIA_LIVE_AI_ENABLED") == "true") {
+        // This allowlist is intentionally limited to instrumentation-only live AI inputs.
+        // It never configures the installed app. Keeping all three values together in .env
+        // makes a local, explicitly enabled probe reproducible without exporting secrets in
+        // every PowerShell session.
+        if (environmentOrDotEnv("OLIVIA_LIVE_AI_ENABLED") == "true") {
             mapOf(
                 "oliviaLiveAiEnabled" to "OLIVIA_LIVE_AI_ENABLED",
                 "oliviaAiModel" to "OLIVIA_AI_MODEL",
                 "firebaseAppCheckDebugSecret" to "FIREBASE_APP_CHECK_DEBUG_TOKEN",
             ).forEach { (argument, variable) ->
                 testInstrumentationRunnerArguments[argument] =
-                    requireNotNull(System.getenv(variable)?.takeIf { it.isNotBlank() }) { "Missing infrastructure test configuration: $variable" }
+                    requireNotNull(environmentOrDotEnv(variable)) {
+                        "Missing infrastructure test configuration: $variable"
+                    }
             }
         }
     }

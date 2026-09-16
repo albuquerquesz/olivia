@@ -19,6 +19,8 @@ class LiveLoopMetricsTest {
         assertEquals(5, snapshot.receivedFrames)
         assertEquals(3, snapshot.selectedFrames)
         assertEquals(1, snapshot.discardedFrames)
+        assertEquals(40, snapshot.p50InferenceMs)
+        assertEquals(40, snapshot.p95InferenceMs)
         assertEquals(200, snapshot.p50FrameToAudioCallbackMs)
         assertEquals(400, snapshot.p95FrameToAudioCallbackMs)
     }
@@ -31,6 +33,7 @@ class LiveLoopMetricsTest {
         val snapshot = metrics.snapshot()
 
         assertEquals(0, snapshot.audioCallbacks)
+        assertEquals(40, snapshot.p50InferenceMs)
         assertNull(snapshot.p50FrameToAudioCallbackMs)
         assertNull(snapshot.p95FrameToAudioCallbackMs)
     }

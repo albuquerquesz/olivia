@@ -1,6 +1,6 @@
 # Entrega atual — localização da peça via Firebase e diagnóstico visual local
 
-Status: contrato ROI, adapter Android, visão local e testes JVM implementados; integração DAT/runtime e validação ao vivo pendentes.
+Status: contrato ROI, adapter Android, visão local e testes JVM implementados. O gate Firebase live de schema passou em AVD; integração DAT/runtime e avaliação rotulada de qualidade seguem pendentes.
 
 ## Núcleo já entregue
 
@@ -23,8 +23,9 @@ atribuição de sombra à mão. Em baixa confiança o analisador se abstém.
 `GeminiVisualTransport` sem fazer o domínio `:core` importar Android ou Firebase.
 
 O adapter decodifica JPEG, NV21 ou RGBA apenas em memória, reduz o maior lado para 512 px e envia
-um único bitmap com prompt limitado a localizar a área de trabalho. A resposta pede JSON; o core
-valida a ROI e o Android produz uma cópia grayscale efêmera para o cálculo local. O frame, bitmap
+um único bitmap com prompt limitado a localizar a área de trabalho. Além do prompt, a geração usa
+`responseSchema` nativo do Firebase AI Logic para o envelope `WorkAreaLocalization` 2.0; o core
+continua validando a ROI e o Android produz uma cópia grayscale efêmera para o cálculo local. O frame, bitmap
 e luma são liberados ao final da chamada; nenhuma métrica, ROI ou byte segue para timeline/log.
 
 Não há cache, arquivo, log ou retry do frame. Cancelamento de coroutine propaga. Demais falhas se

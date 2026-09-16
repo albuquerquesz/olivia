@@ -30,6 +30,8 @@ public data class LiveLoopMetricSnapshot(
     val discardedFrames: Long,
     val analysisAttempts: Long,
     val audioCallbacks: Long,
+    val p50InferenceMs: Long?,
+    val p95InferenceMs: Long?,
     val p50FrameToAudioCallbackMs: Long?,
     val p95FrameToAudioCallbackMs: Long?,
 )
@@ -59,6 +61,7 @@ public class LiveLoopMetrics(private val sampleLimit: Int = 200) {
     }
 
     public fun snapshot(): LiveLoopMetricSnapshot {
+        val inference = samples.map(LoopMeasurement::inferenceMs).sorted()
         val frameToAudio = samples.mapNotNull(LoopMeasurement::frameToAudioCallbackMs).sorted()
         return LiveLoopMetricSnapshot(
             receivedFrames = receivedFrames,
@@ -66,6 +69,8 @@ public class LiveLoopMetrics(private val sampleLimit: Int = 200) {
             discardedFrames = discardedFrames,
             analysisAttempts = samples.size.toLong(),
             audioCallbacks = frameToAudio.size.toLong(),
+            p50InferenceMs = percentile(inference, 0.50),
+            p95InferenceMs = percentile(inference, 0.95),
             p50FrameToAudioCallbackMs = percentile(frameToAudio, 0.50),
             p95FrameToAudioCallbackMs = percentile(frameToAudio, 0.95),
         )

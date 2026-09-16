@@ -23,6 +23,7 @@ import com.olivia.core.MockFrameAnalyzer
 import com.olivia.core.MockVisualFixtures
 import com.olivia.core.OliviaClock
 import com.olivia.core.LiveLoopMetrics
+import com.olivia.core.LiveLoopMetricSnapshot
 import com.olivia.core.LoopMeasurement
 import com.olivia.core.LoopMeasurementId
 import com.olivia.core.SamplingDecision
@@ -59,6 +60,8 @@ enum class LocalSessionCommand { START, PAUSE, RESUME, STOP }
 
 interface SessionRuntime : AutoCloseable {
     val snapshot: StateFlow<SessionSnapshot?>
+    /** Aggregate-only, process-local measurements; never contains media, model text or identifiers. */
+    val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot>
     suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot>
     suspend fun setAudioMode(mode: AudioMode): Result<Unit>
     suspend fun timelineFor(sessionId: SessionId): Result<List<TimelineEvent>>
@@ -82,7 +85,9 @@ object SessionRuntimeFactory {
 
 class UnavailableSessionRuntime : SessionRuntime {
     private val state = MutableStateFlow<SessionSnapshot?>(null)
+    private val metrics = MutableStateFlow(LiveLoopMetrics().snapshot())
     override val snapshot: StateFlow<SessionSnapshot?> = state.asStateFlow()
+    override val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot> = metrics.asStateFlow()
     override suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot> =
         Result.failure(IllegalStateException("DAT ainda não está configurado"))
     override suspend fun setAudioMode(mode: AudioMode): Result<Unit> = Result.success(Unit)
@@ -184,6 +189,8 @@ internal class LiveSessionRuntime(
     private var audioMode = AudioMode.VOICE
     private val correctionTracker = CorrectionTracker()
     private val metrics = LiveLoopMetrics()
+    private val _liveLoopMetrics = MutableStateFlow(metrics.snapshot())
+    override val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot> = _liveLoopMetrics.asStateFlow()
     /** Serializes coordinator, sampler and guidance because all three keep session state. */
     private val runtimeMutex = Mutex()
     private val heartbeatObserver: Job = runtimeScope.launch {
@@ -203,6 +210,7 @@ internal class LiveSessionRuntime(
         gateway.frames.collect { frame ->
             runtimeMutex.withLock {
                 metrics.onFrameReceived()
+                publishMetrics()
                 process(sampler.offer(frame, coordinator::accepts))
             }
         }
@@ -316,11 +324,15 @@ internal class LiveSessionRuntime(
                                 audioStartedAtMs = audioStartedAtMs,
                             ),
                         )
+                        publishMetrics()
                         // The Frame reference leaves scope here; nothing in the timeline stores it.
                         process(sampler.completeAnalysis())
                     }
                 }
-                is SamplingDecision.Discard -> metrics.onFrameDiscarded()
+                is SamplingDecision.Discard -> {
+                    metrics.onFrameDiscarded()
+                    publishMetrics()
+                }
                 SamplingDecision.Waiting -> Unit
             }
         }
@@ -331,6 +343,10 @@ internal class LiveSessionRuntime(
             guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
             coordinator.recordCorrectionOutcome(outcome)
         }
+    }
+
+    private fun publishMetrics() {
+        _liveLoopMetrics.value = metrics.snapshot()
     }
 
     private fun expireIfDegraded() {

@@ -30,20 +30,45 @@ envia mídia para outro serviço.
 ## Probe no emulador
 
 Para o probe de instrumentação, crie um token em **App Check → Apps → Olivia → Manage debug
-tokens**, mantenha-o apenas na sessão do PowerShell e rode o comando abaixo. O
+tokens** e salve-o no `.env` ignorado pelo Git como `FIREBASE_APP_CHECK_DEBUG_TOKEN=...`. O
 `DebugAppCheckTestHelper` recebe esse token pelo runner e não depende de um UUID dinâmico do
-logcat. O token não entra no código, `local.properties` ou `.env`.
+logcat. O token não entra no código, `local.properties`, BuildConfig ou APK de produção.
+
+Salve as três configurações abaixo no `.env` da raiz e execute:
+
+```env
+OLIVIA_LIVE_AI_ENABLED=true
+OLIVIA_AI_MODEL=gemini-3.5-flash-lite
+FIREBASE_APP_CHECK_DEBUG_TOKEN=seu-token-de-debug
+```
 
 ```powershell
-$env:OLIVIA_LIVE_AI_ENABLED = "true"
-$env:OLIVIA_AI_MODEL = "gemini-3.5-flash-lite"
-$env:FIREBASE_APP_CHECK_DEBUG_TOKEN = "cole-o-token-criado-no-console-aqui"
 & .\gradlew.bat ':app:connectedGlassesDebugAndroidTest' `
   '-Pandroid.testInstrumentationRunnerArguments.class=com.olivia.companion.infra.FirebaseAccessIntegrationTest'
 ```
 
 O token de debug é um segredo de acesso ao ambiente de desenvolvimento: revogue-o ao concluir o
 teste ou imediatamente se ele for exposto.
+
+### Token local no `.env`
+
+Você pode salvar `OLIVIA_LIVE_AI_ENABLED`, `OLIVIA_AI_MODEL` e
+`FIREBASE_APP_CHECK_DEBUG_TOKEN` no `.env` da raiz, que já é ignorado por Git. O Gradle lê somente
+essas três chaves para o runner de instrumentação; elas não entram em BuildConfig, recursos, APK ou
+release. Variáveis de ambiente ainda têm precedência se você quiser sobrescrever temporariamente um
+valor.
+
+## Gate ROI ao vivo
+
+Após o probe de acesso ficar verde, repita o mesmo comando trocando a classe por
+`com.olivia.companion.ai.FirebaseRoiIntegrationTest`. Ele gera um JPEG sintético somente em
+memória, usa o mesmo `FirebaseGeminiVisualTransport` do APK e passa somente se a resposta obedecer
+ao schema `WorkAreaLocalization` 2.0. O probe aceita até 30 s para uma conexão Firebase fria; o
+loop de gravação permanece com timeout de 2 s. Enquadramento, luz e horizonte são calculados localmente;
+direção, graus ou fala do provedor são rejeitados.
+
+Esse gate comprova acesso e contrato, não qualidade visual. A avaliação rotulada com fixtures
+autorizadas continua como BE-03.5 e deve registrar apenas métricas sanitizadas.
 
 ## Limite de evidência
 
