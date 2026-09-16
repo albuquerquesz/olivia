@@ -862,7 +862,6 @@ private fun SessionTakeCard(
         shadowElevation = 0.dp,
     ) {
         Column(
-            modifier = Modifier.padding(6.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Box(
@@ -1135,8 +1134,8 @@ private fun DebugActions(
 private fun SettingsMetricValue(value: String) {
     Text(
         value,
-        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.primary,
+        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.95f),
         textAlign = TextAlign.End,
     )
 }
