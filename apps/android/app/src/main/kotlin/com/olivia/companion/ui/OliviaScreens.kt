@@ -1054,21 +1054,21 @@ fun OliviaSettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SettingsMetricRow(
                         title = "Amostragem",
-                        description = "1 frame a cada 2 s · economiza bateria",
+                        description = "Um frame a cada 2 s para poupar bateria",
                     ) {
                         SettingsMetricValue("0,5 fps")
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    SettingsDivider()
                     SettingsMetricRow(
                         title = "Cooldown de correção",
-                        description = "Silêncio mínimo entre falas",
+                        description = "Evita orientações muito próximas",
                     ) {
                         SettingsMetricValue("4 s")
                     }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    SettingsDivider()
                     SettingsMetricRow(
                         title = "Watchdog de sessão",
-                        description = "4 s sem frame → estado degradado",
+                        description = "Após 4 s sem frame, a sessão fica em modo reduzido",
                     ) {
                         Switch(checked = true, onCheckedChange = null)
                     }
@@ -1119,8 +1119,8 @@ private fun DebugActions(
 private fun SettingsMetricValue(value: String) {
     Text(
         value,
-        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.95f),
+        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Normal),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
         textAlign = TextAlign.End,
     )
 }
