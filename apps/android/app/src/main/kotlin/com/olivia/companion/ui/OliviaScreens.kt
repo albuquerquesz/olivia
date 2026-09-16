@@ -118,12 +118,18 @@ fun OliviaWelcomeScreen(onEnter: () -> Unit) {
 @Composable
 fun OliviaHomeScreen(
     state: OliviaUiState,
+    voicePermissionGranted: Boolean,
     onSeeAllTakes: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     val recent = state.takes.take(3)
     OliviaPage {
-        DeviceOverview(backend = state.backend, connection = state.connection)
+        DeviceOverview(
+            backend = state.backend,
+            connection = state.connection,
+            voiceState = state.voiceState,
+            voicePermissionGranted = voicePermissionGranted,
+        )
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

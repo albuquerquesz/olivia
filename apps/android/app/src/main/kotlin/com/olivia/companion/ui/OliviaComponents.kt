@@ -58,6 +58,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.GlassesBackend
+import com.olivia.companion.session.VoiceCommandState
 import com.olivia.companion.R
 import com.olivia.core.GlassesConnection
 
@@ -131,6 +132,8 @@ private val OfflineDeviceMetrics = listOf(
 internal fun DeviceOverview(
     backend: GlassesBackend,
     connection: GlassesConnection,
+    voiceState: VoiceCommandState,
+    voicePermissionGranted: Boolean,
 ) {
     val simulated = !backend.requiresPhysicalGlasses
     val status = deviceStatus(simulated, connection)
@@ -160,7 +163,7 @@ internal fun DeviceOverview(
                 }
             }
         }
-        WakeWordNotice()
+        WakeWordNotice(voiceState, voicePermissionGranted)
     }
 }
 
@@ -273,7 +276,28 @@ private fun DeviceMetricInline(metric: DeviceMetric, modifier: Modifier = Modifi
 }
 
 @Composable
-private fun WakeWordNotice() {
+private fun WakeWordNotice(
+    voiceState: VoiceCommandState,
+    voicePermissionGranted: Boolean,
+) {
+    val (title, description) = when {
+        voiceState == VoiceCommandState.UNAVAILABLE ->
+            "Comandos de voz indisponíveis" to "Porcupine ou o reconhecimento offline ainda não foi configurado."
+        !voicePermissionGranted ->
+            "Microfone necessário" to "Permita o microfone do celular para usar os comandos locais."
+        else -> when (voiceState) {
+            VoiceCommandState.LISTENING_FOR_WAKE_WORD ->
+                "Comandos de voz locais" to "Diga “Oi, Olivia” e depois gravar, pausar, retomar ou terminar."
+            VoiceCommandState.LISTENING_FOR_COMMAND ->
+                "Comando de voz" to "Diga gravar, pausar, retomar ou terminar."
+            VoiceCommandState.UNAVAILABLE ->
+                "Comandos de voz indisponíveis" to "Porcupine ou o reconhecimento offline ainda não foi configurado."
+            VoiceCommandState.ERROR ->
+                "Comandos de voz indisponíveis" to "Não foi possível iniciar o reconhecimento local nesta sessão."
+            VoiceCommandState.IDLE ->
+                "Comandos de voz locais" to "Use “Oi, Olivia” e depois diga gravar, pausar, retomar ou terminar."
+        }
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,

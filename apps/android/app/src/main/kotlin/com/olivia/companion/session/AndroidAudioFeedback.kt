@@ -176,6 +176,8 @@ class AndroidAudioFeedback(
         SessionSignal.SESSION_STOPPED -> Tone(frequencyHz = 440.0, pan = 0f)
         SessionSignal.CONNECTION_LOST -> Tone(frequencyHz = 220.0, pan = 0f)
         SessionSignal.CONNECTION_RESTORED -> Tone(frequencyHz = 660.0, pan = 0f)
+        SessionSignal.VOICE_COMMAND_ERROR -> Tone(frequencyHz = 300.0, pan = 0f)
+        SessionSignal.VOICE_INPUT_UNAVAILABLE -> Tone(frequencyHz = 180.0, pan = 0f)
     }
 
     private fun signalText(signal: SessionSignal): String = when (signal) {
@@ -185,6 +187,8 @@ class AndroidAudioFeedback(
         SessionSignal.SESSION_STOPPED -> "Sessão encerrada"
         SessionSignal.CONNECTION_LOST -> "Conexão perdida"
         SessionSignal.CONNECTION_RESTORED -> "Conexão restaurada"
+        SessionSignal.VOICE_COMMAND_ERROR -> "Não entendi o comando"
+        SessionSignal.VOICE_INPUT_UNAVAILABLE -> "Comandos de voz indisponíveis"
     }
 
     private data class Tone(

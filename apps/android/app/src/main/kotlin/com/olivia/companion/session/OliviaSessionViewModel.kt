@@ -41,6 +41,7 @@ data class OliviaUiState(
     val connection: GlassesConnection,
     val elapsedMs: Long,
     val takes: List<TakeSummary>,
+    val voiceState: VoiceCommandState,
 ) {
     val isLive: Boolean
         get() = session?.state in setOf(
@@ -57,6 +58,7 @@ class OliviaSessionViewModel(
     private val frameAnalyzer: FrameAnalyzer?,
     private val postProcessor: PostProcessor,
     private val audioFeedback: AndroidAudioFeedback,
+    private val voiceCommandSource: VoiceCommandSource? = null,
     private val clock: () -> Long = { System.currentTimeMillis() },
 ) : ViewModel() {
     private val timeline = InMemoryTimeline()
@@ -66,6 +68,7 @@ class OliviaSessionViewModel(
     private var gatewayCommand: Job? = null
     private var ticker: Job? = null
     private var watchdog: Job? = null
+    private var voiceCommandJob: Job? = null
     private var pendingCorrection: Correction? = null
     private val reviews = mutableMapOf<String, SessionReview>()
 
@@ -77,6 +80,7 @@ class OliviaSessionViewModel(
             connection = initialConnection(backend, null),
             elapsedMs = 0,
             takes = emptyList(),
+            voiceState = voiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
         ),
     )
     val uiState: StateFlow<OliviaUiState> = _uiState.asStateFlow()
@@ -95,6 +99,30 @@ class OliviaSessionViewModel(
                 }
             }
         }
+        voiceCommandSource?.let { source ->
+            voiceCommandJob = viewModelScope.launch {
+                launch {
+                    source.commands.collect(::handleVoiceCommand)
+                }
+                launch {
+                    source.errors.collect(::handleVoiceCommandError)
+                }
+                source.state.collect {
+                    publish()
+                }
+            }
+        }
+        publish()
+    }
+
+    fun startVoiceCommands() {
+        if (voiceCommandSource?.state?.value == VoiceCommandState.UNAVAILABLE) return
+        voiceCommandSource?.start()
+        publish()
+    }
+
+    fun stopVoiceCommands() {
+        voiceCommandSource?.stop()
         publish()
     }
 
@@ -299,6 +327,27 @@ class OliviaSessionViewModel(
         viewModelScope.launch { audioFeedback.signal(signal) }
     }
 
+    private fun handleVoiceCommand(command: VoiceCommand) {
+        val stateBefore = runtime.snapshot?.state
+        when (command) {
+            VoiceCommand.START -> start()
+            VoiceCommand.PAUSE -> pause()
+            VoiceCommand.RESUME -> resume()
+            VoiceCommand.STOP -> stop()
+        }
+        if (runtime.snapshot?.state == stateBefore) {
+            signalAudio(SessionSignal.VOICE_COMMAND_ERROR)
+        }
+    }
+
+    private fun handleVoiceCommandError(error: VoiceCommandError) {
+        when (error) {
+            VoiceCommandError.COMMAND_NOT_RECOGNIZED,
+            VoiceCommandError.ENGINE_ERROR -> signalAudio(SessionSignal.VOICE_COMMAND_ERROR)
+            VoiceCommandError.INPUT_UNAVAILABLE -> signalAudio(SessionSignal.VOICE_INPUT_UNAVAILABLE)
+        }
+    }
+
     private fun sessionOffset(atEpochMs: Long): Long =
         (atEpochMs - (runtime.snapshot?.startedAtEpochMs ?: atEpochMs)).coerceAtLeast(0)
 
@@ -351,6 +400,7 @@ class OliviaSessionViewModel(
                 connection = initialConnection(it.backend, session),
                 elapsedMs = session?.elapsedMs ?: 0,
                 takes = buildTakes(),
+                voiceState = voiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
             )
         }
     }
@@ -399,6 +449,8 @@ class OliviaSessionViewModel(
         gatewayCommand?.cancel()
         watchdog?.cancel()
         ticker?.cancel()
+        voiceCommandSource?.close()
+        voiceCommandJob?.cancel()
         super.onCleared()
     }
 
@@ -416,6 +468,7 @@ class OliviaSessionViewModel(
                     context = application,
                     modeProvider = audioModeStore::current,
                 ),
+                voiceCommandSource = AndroidVoiceCommandSourceFactory.create(application),
             ) as T
         }
     }

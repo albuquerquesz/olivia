@@ -9,3 +9,8 @@ sdk.dir=
 # Maven do Meta Wearables DAT. Alternativa: variável de ambiente GITHUB_TOKEN.
 # Só é necessário quando o INT-00 ligar os artefatos mwdat; o flavor mock não usa.
 github_token=
+
+# Chave do Picovoice para o wake word local. Nunca versionar a chave.
+picovoice_access_key=
+# Arquivo .ppn customizado para "Oi, Olivia" em app/src/main/assets/.
+picovoice_keyword_path=olivia_android.ppn

@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import com.olivia.companion.BuildConfig
 import java.io.File
 
 /** Adapter Android do wake word Porcupine, com o callback isolado da sessão. */
@@ -135,22 +136,28 @@ object AndroidVoiceCommandSourceFactory {
         }
 
         lateinit var source: LocalVoiceCommandSource
-        return runCatching {
-            val wakeWordDetector = PorcupineWakeWordDetector(
+        var wakeWordDetector: WakeWordDetector? = null
+        var commandRecognizer: LocalCommandRecognizer? = null
+        return try {
+            val detector = PorcupineWakeWordDetector(
                 context = context,
                 accessKey = accessKey,
                 keywordPath = keywordPath,
                 onWakeWord = { source.onWakeWordDetected() },
                 onError = { source.onWakeWordError() },
             )
-            val commandRecognizer = AndroidOnDeviceCommandRecognizer(
+            wakeWordDetector = detector
+            val recognizer = AndroidOnDeviceCommandRecognizer(
                 context = context,
                 onCandidates = { candidates -> source.onCommandCandidates(candidates) },
                 onError = { source.onCommandError() },
             )
-            source = LocalVoiceCommandSource(wakeWordDetector, commandRecognizer)
+            commandRecognizer = recognizer
+            source = LocalVoiceCommandSource(detector, recognizer)
             source
-        }.getOrElse {
+        } catch (_: Throwable) {
+            runCatching { commandRecognizer?.close() }
+            runCatching { wakeWordDetector?.close() }
             UnavailableVoiceCommandSource()
         }
     }

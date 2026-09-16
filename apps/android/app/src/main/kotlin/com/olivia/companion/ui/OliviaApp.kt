@@ -1,5 +1,7 @@
 package com.olivia.companion.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -39,8 +41,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -62,6 +74,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.olivia.companion.session.OliviaSessionViewModel
 import com.olivia.companion.session.TakeSummary
+import com.olivia.companion.session.VoiceCommandState
 import com.olivia.core.SessionId
 
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
@@ -101,12 +114,59 @@ fun OliviaApp(
         ),
     ),
 ) {
+    val context = LocalContext.current
+    var audioPermissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED,
+        )
+    }
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        audioPermissionGranted = granted
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
+
+    LaunchedEffect(currentRoute, audioPermissionGranted) {
+        if (
+            currentRoute != null &&
+            currentRoute != WELCOME_ROUTE &&
+            !audioPermissionGranted &&
+            uiState.voiceState != VoiceCommandState.UNAVAILABLE
+        ) {
+            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    DisposableEffect(lifecycleOwner, audioPermissionGranted) {
+        if (!audioPermissionGranted) {
+            viewModel.stopVoiceCommands()
+            onDispose { }
+        } else {
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> viewModel.startVoiceCommands()
+                    Lifecycle.Event.ON_PAUSE -> viewModel.stopVoiceCommands()
+                    else -> Unit
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                viewModel.startVoiceCommands()
+            }
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+                viewModel.stopVoiceCommands()
+            }
+        }
+    }
 
     Scaffold { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
@@ -145,6 +205,7 @@ fun OliviaApp(
             composable(OliviaDestination.HOME.route) {
                 OliviaHomeScreen(
                     state = uiState,
+                    voicePermissionGranted = audioPermissionGranted,
                     onSeeAllTakes = {
                         navController.navigate(OliviaDestination.SESSIONS.route) {
                             popUpTo(OliviaDestination.HOME.route) { saveState = true }

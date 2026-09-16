@@ -2,17 +2,19 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 val localProperties = Properties().apply {
-    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use(::load)
+    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use { load(it) }
 }
 
 fun buildConfigString(value: String): String =
     "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 val picovoiceAccessKey = localProperties.getProperty("picovoice_access_key")
-    ?: providers.gradleProperty("picovoiceAccessKey").orNull
+    ?.takeIf(String::isNotBlank)
+    ?: providers.gradleProperty("picovoiceAccessKey").orNull?.takeIf(String::isNotBlank)
     ?: System.getenv("PICOVOICE_ACCESS_KEY").orEmpty()
 val picovoiceKeywordPath = localProperties.getProperty("picovoice_keyword_path")
-    ?: providers.gradleProperty("picovoiceKeywordPath").orNull
+    ?.takeIf(String::isNotBlank)
+    ?: providers.gradleProperty("picovoiceKeywordPath").orNull?.takeIf(String::isNotBlank)
     ?: "olivia_android.ppn"
 
 plugins {

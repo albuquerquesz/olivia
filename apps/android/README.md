@@ -19,6 +19,12 @@ cp local.properties.example local.properties
 Preencha `sdk.dir`. Se `ANDROID_HOME` já estiver definido no ambiente, o Gradle
 encontra o SDK sozinho e `local.properties` fica opcional.
 
+Para habilitar o comando de voz no dispositivo, preencha `picovoice_access_key` e
+coloque o modelo `.ppn` customizado para “Oi, Olivia” em `app/src/main/assets/`
+(ou informe um caminho absoluto em `picovoice_keyword_path`). O reconhecimento do
+comando usa o serviço on-device do Android; sem chave, modelo ou serviço local o
+adapter fica indisponível e o fallback de debug continua disponível.
+
 ## Build
 
 ```sh
@@ -49,3 +55,5 @@ declarados mas ainda não aplicados: a autenticação no GitHub Packages, o
 
 `local.properties`, tokens, keystores e APKs são ignorados pelo Git. O token do DAT
 entra por `GITHUB_TOKEN` no ambiente ou por `github_token` em `local.properties`.
+O `picovoice_access_key` também fica somente em `local.properties` ou no ambiente
+`PICOVOICE_ACCESS_KEY`; áudio do microfone não é enviado à nuvem pela integração.
