@@ -464,9 +464,6 @@ fun OliviaRecordingScreen(
                 }
             }
         }
-        if (!state.backend.requiresPhysicalGlasses) {
-            BackendModeNotice()
-        }
         AudioAvailabilityNotice(
             mode = state.audioMode,
             status = state.audioStatus,
@@ -510,17 +507,6 @@ fun OliviaRecordingScreen(
                 modifier = Modifier.padding(start = 8.dp).size(20.dp),
             )
         }
-    }
-}
-
-@Composable
-private fun BackendModeNotice() {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        StatusChip("MODO MOCK", inverted = false)
-        PanelDetail(
-            "Fluxo offline determinístico. A disponibilidade dos óculos reais ainda não é afirmada.",
-            onPanel = false,
-        )
     }
 }
 
