@@ -3,6 +3,11 @@
 Status: métricas agregadas e testes unitários implementados; execução de medição física e bateria
 permanecem pendentes.
 
+O ensaio Android de 16/09/2026 no Moto G60 executou dez ciclos Gemini + TTS e está registrado em
+[BE07_MOTO_G60_2026-09-16.md](BE07_MOTO_G60_2026-09-16.md). A amostra não atingiu a meta de 900 ms
+(p50 frame→áudio 2257 ms; p95 5957 ms); portanto BE-07 permanece aberto para otimização e para
+validação posterior com frame DAT e saída nos óculos.
+
 `LiveLoopMetrics` stores a bounded, in-memory collection of monotonic timing pairs plus sampling
 counters. It computes nearest-rank p50/p95 de inferência e do par frame→callback Android de áudio.
 Audio request is deliberately different from callback, and neither is evidence of the

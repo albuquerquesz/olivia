@@ -13,6 +13,12 @@ public interface GeminiVisualTransport {
     public suspend fun classify(frame: Frame): Result<String>
 }
 
+public enum class AnalysisTimingStage { SCHEMA_PARSE, LOCAL_ANALYSIS }
+
+public fun interface AnalysisTimingSink {
+    public fun onStage(stage: AnalysisTimingStage, durationMs: Long)
+}
+
 public enum class AnalysisFailureCode { TRANSPORT, TIMEOUT, SCHEMA }
 
 /** Deliberately content-free: it is safe to surface without model output or frame metadata. */
@@ -30,6 +36,7 @@ public class GeminiFrameAnalyzer(
     private val localVisualAnalyzer: LocalVisualAnalyzer,
     private val lumaDecoder: FrameLumaDecoder = LumaFrameDecoder,
     private val timeoutMs: Long = 2_000,
+    private val timingSink: AnalysisTimingSink = AnalysisTimingSink { _, _ -> },
 ) : FrameAnalyzer {
     init {
         require(timeoutMs > 0) { "Analysis timeout must be positive" }
@@ -39,11 +46,15 @@ public class GeminiFrameAnalyzer(
         val response = withTimeout(timeoutMs) {
             transport.classify(frame).getOrElse { throw AnalysisFailure(AnalysisFailureCode.TRANSPORT) }
         }
+        val parseStarted = System.nanoTime()
         val localization = WorkAreaLocalizationSchema.decode(response)
             .getOrElse { throw AnalysisFailure(AnalysisFailureCode.SCHEMA) }
+        timingSink.onStage(AnalysisTimingStage.SCHEMA_PARSE, elapsedMs(parseStarted))
         val luma = lumaDecoder.decode(frame)
             ?: throw AnalysisFailure(AnalysisFailureCode.SCHEMA)
+        val localStarted = System.nanoTime()
         val diagnoses = localVisualAnalyzer.analyze(luma, localization)
+        timingSink.onStage(AnalysisTimingStage.LOCAL_ANALYSIS, elapsedMs(localStarted))
         val now = clock.now()
         Result.success(
             FrameAnalysis(
@@ -63,4 +74,7 @@ public class GeminiFrameAnalyzer(
     } catch (_: Throwable) {
         Result.failure(AnalysisFailure(AnalysisFailureCode.TRANSPORT))
     }
+
+    private fun elapsedMs(startedNanos: Long): Long =
+        ((System.nanoTime() - startedNanos) / 1_000_000).coerceAtLeast(0)
 }

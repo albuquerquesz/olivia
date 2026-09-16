@@ -18,6 +18,14 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import kotlinx.coroutines.CancellationException
 
+public enum class FirebaseTimingStage {
+    FRAME_DECODE, RESIZE, JPEG_ENCODE, SDK_ROUND_TRIP,
+}
+
+public fun interface FirebaseTimingSink {
+    public fun onStage(stage: FirebaseTimingStage, durationMs: Long)
+}
+
 /**
  * Firebase boundary for a single ephemeral visual frame. The model never receives timeline,
  * identity, audio, credentials, or an instruction taken from the frame. The core decoder remains
@@ -27,6 +35,7 @@ class FirebaseGeminiVisualTransport(
     firebaseAI: FirebaseAI,
     modelName: String = DEFAULT_MODEL,
     private val maxEdgePx: Int = DEFAULT_MAX_EDGE_PX,
+    private val timingSink: FirebaseTimingSink = FirebaseTimingSink { _, _ -> },
 ) : GeminiVisualTransport {
     private val model = firebaseAI.generativeModel(
         modelName = modelName,
@@ -47,15 +56,24 @@ class FirebaseGeminiVisualTransport(
         var decoded: Bitmap? = null
         var prepared: Bitmap? = null
         return try {
+            val decodeStarted = System.nanoTime()
             decoded = decode(frame)
+            timingSink.onStage(FirebaseTimingStage.FRAME_DECODE, elapsedMs(decodeStarted))
+            val resizeStarted = System.nanoTime()
             val uploadBitmap = downscale(requireNotNull(decoded))
             prepared = uploadBitmap
+            timingSink.onStage(FirebaseTimingStage.RESIZE, elapsedMs(resizeStarted))
+            val jpegStarted = System.nanoTime()
+            val jpeg = encodeJpeg(uploadBitmap)
+            timingSink.onStage(FirebaseTimingStage.JPEG_ENCODE, elapsedMs(jpegStarted))
+            val requestStarted = System.nanoTime()
             val response = model.generateContent(
                 content {
-                    image(uploadBitmap)
+                    inlineData(jpeg, "image/jpeg")
                     text(PROMPT)
                 },
             )
+            timingSink.onStage(FirebaseTimingStage.SDK_ROUND_TRIP, elapsedMs(requestStarted))
             Result.success(requireNotNull(response.text) { "Missing visual response" })
         } catch (error: CancellationException) {
             throw error
@@ -100,6 +118,14 @@ class FirebaseGeminiVisualTransport(
         )
     }
 
+    private fun encodeJpeg(bitmap: Bitmap): ByteArray = ByteArrayOutputStream().use { stream ->
+        check(bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, stream))
+        stream.toByteArray()
+    }
+
+    private fun elapsedMs(startedNanos: Long): Long =
+        ((System.nanoTime() - startedNanos) / 1_000_000).coerceAtLeast(0)
+
     companion object {
         const val DEFAULT_MODEL = "gemini-3.5-flash-lite"
         const val DEFAULT_MAX_EDGE_PX = 512
@@ -142,10 +168,15 @@ class FirebaseGeminiVisualTransport(
         """.trimIndent()
 
         /** Firebase configuration is supplied by the app's local/CI setup, never hard-coded. */
-        fun forFirebaseApp(app: FirebaseApp, modelName: String = DEFAULT_MODEL): FirebaseGeminiVisualTransport =
+        fun forFirebaseApp(
+            app: FirebaseApp,
+            modelName: String = DEFAULT_MODEL,
+            timingSink: FirebaseTimingSink = FirebaseTimingSink { _, _ -> },
+        ): FirebaseGeminiVisualTransport =
             FirebaseGeminiVisualTransport(
                 firebaseAI = FirebaseAI.getInstance(app, GenerativeBackend.googleAI()),
                 modelName = modelName,
+                timingSink = timingSink,
             )
     }
 }
