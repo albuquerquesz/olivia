@@ -7,6 +7,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.debug.testing.DebugAppCheckTestHelper
 import com.olivia.companion.audio.AndroidAudioFeedback
+import com.olivia.companion.audio.AudioTimingSink
 import com.olivia.core.AnalyzerSource
 import com.olivia.core.AnalysisFailure
 import com.olivia.core.AnalysisTimingSink
@@ -30,7 +31,6 @@ import java.io.ByteArrayOutputStream
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -75,22 +75,33 @@ class FirebaseLiveLoopMeasurementTest {
                             recordStage("core_${stage.name.lowercase()}", durationMs)
                         },
                     )
-                    val audio = AndroidAudioFeedback(audioContext, clock, AudioMode.VOICE)
+                    val audio = AndroidAudioFeedback(
+                        context = audioContext,
+                        clock = clock,
+                        initialMode = AudioMode.VOICE,
+                        timingSink = AudioTimingSink { stage, durationMs ->
+                            recordStage("audio_${stage.name.lowercase()}", durationMs)
+                        },
+                    )
                     try {
                         val inference = mutableListOf<Long>()
+                        val attempts = mutableListOf<Long>()
                         val frameToAudio = mutableListOf<Long>()
+                        var successCount = 0
+                        val failureCodes = linkedMapOf<String, Int>()
                         repeat(SAMPLE_COUNT) { index ->
                             val frame = syntheticFrame(clock, index.toLong())
                             val receivedAt = clock.now().monotonicMs
                             val started = receivedAt
                             val result = analyzer.analyze(frame)
                             val finished = clock.now().monotonicMs
-                            assertTrue(
-                                "GEMINI_SAMPLE_${index + 1}_FAILED_${failureCode(result)}",
-                                result.isSuccess,
-                            )
-                            val analysis = result.getOrThrow()
-                            assertEquals(AnalyzerSource.GEMINI_ROI_LOCAL, analysis.source)
+                            attempts += finished - started
+                            val analysis = result.getOrNull()
+                            if (analysis == null || analysis.source != AnalyzerSource.GEMINI_ROI_LOCAL) {
+                                val code = if (analysis == null) failureCode(result) else "SOURCE"
+                                failureCodes[code] = (failureCodes[code] ?: 0) + 1
+                                return@repeat
+                            }
                             val correction = Correction(
                                 id = "measurement-$index",
                                 capture = frame.stamp.capture,
@@ -105,17 +116,27 @@ class FirebaseLiveLoopMeasurementTest {
                                 confidence = Confidence(0.9f),
                                 spokenText = "Vire para a direita.",
                             )
-                            val receipt = audio.announce(correction).getOrThrow()
+                            val receiptResult = audio.announce(correction)
+                            if (receiptResult.isFailure) {
+                                failureCodes["AUDIO"] = (failureCodes["AUDIO"] ?: 0) + 1
+                                return@repeat
+                            }
+                            val receipt = receiptResult.getOrThrow()
+                            successCount++
                             inference += finished - started
                             frameToAudio += receipt.startedAt.monotonicMs - receivedAt
                         }
+                        val failureReport = failureCodes.entries.joinToString(",") { "${it.key}:${it.value}" }
                         val stageReport = stageSamples.entries.joinToString(" ") { (stage, samples) ->
                             "${stage}_p50_ms=${percentile(samples, .5)} ${stage}_p95_ms=${percentile(samples, .95)}"
                         }
-                        Log.i("OliviaBE07", "samples=$SAMPLE_COUNT inference_p50_ms=${percentile(inference, .5)} " +
+                        Log.i("OliviaBE07", "samples=$SAMPLE_COUNT successes=$successCount failures=${SAMPLE_COUNT - successCount} " +
+                            "failure_codes=$failureReport attempts_p50_ms=${percentile(attempts, .5)} " +
+                            "attempts_p95_ms=${percentile(attempts, .95)} inference_p50_ms=${percentile(inference, .5)} " +
                             "inference_p95_ms=${percentile(inference, .95)} " +
                             "frame_to_audio_p50_ms=${percentile(frameToAudio, .5)} " +
                             "frame_to_audio_p95_ms=${percentile(frameToAudio, .95)} $stageReport")
+                        assertEquals("GEMINI_SAMPLES_FAILED_$failureReport", SAMPLE_COUNT, successCount)
                     } finally {
                         audio.close()
                     }
@@ -133,6 +154,7 @@ class FirebaseLiveLoopMeasurementTest {
         (result.exceptionOrNull() as? AnalysisFailure)?.code?.name ?: "UNKNOWN"
 
     private fun percentile(values: List<Long>, p: Double): Long {
+        if (values.isEmpty()) return 0
         val sorted = values.sorted()
         return sorted[(kotlin.math.ceil(sorted.size * p).toInt() - 1).coerceAtLeast(0)]
     }

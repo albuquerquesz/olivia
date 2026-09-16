@@ -7,10 +7,13 @@ public data class GuidancePolicy(
     val cooldownMs: Long = 4_000,
     /** Consecutive sampled frames that must agree before interrupting the creator. */
     val requiredConsecutiveMatches: Int = 2,
+    /** Optional dwell time for a deviation before it can produce audio. */
+    val persistenceMs: Long = 0,
 ) {
     init {
         require(cooldownMs >= 0)
         require(requiredConsecutiveMatches > 0)
+        require(persistenceMs >= 0)
     }
 }
 
@@ -81,9 +84,11 @@ public class DefaultGuidanceEngine(
             kind = diagnosis.kind,
             direction = direction,
             lastSequence = analysis.frameStamp.sequence,
+            firstObservedAtMs = if (sameDeviation) requireNotNull(prior).firstObservedAtMs else now.monotonicMs,
             matches = matches,
         )
         if (matches < policy.requiredConsecutiveMatches) return null
+        if (now.monotonicMs - requireNotNull(candidate).firstObservedAtMs < policy.persistenceMs) return null
 
         val id = "${analysis.frameStamp.capture.sessionId.value}:${analysis.frameStamp.capture.generation}:${++nextId}"
         pendingId = id
@@ -115,6 +120,7 @@ public class DefaultGuidanceEngine(
         val kind: DiagnosisKind,
         val direction: Direction,
         val lastSequence: Long,
+        val firstObservedAtMs: Long,
         val matches: Int = 1,
     )
 }

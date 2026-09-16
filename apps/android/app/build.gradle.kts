@@ -106,6 +106,34 @@ android {
         compose = true
         buildConfig = true
     }
+
+    packaging {
+        // OpenCV and Facebook native dependencies ship the same filename, but only the
+        // Facebook/DAT runtime is ABI-compatible with libfbjni. A generated jniLibs source below
+        // supplies that copy deterministically instead of letting pickFirst select OpenCV's one.
+        jniLibs.pickFirsts += "lib/*/libc++_shared.so"
+    }
+}
+
+// OpenCV's AAR bundles a libc++ runtime built with a different NDK. Keep the DAT/fbjni copy for
+// all ABIs; this is generated under build/ and never becomes a repository binary.
+val fbjniCppDir = layout.buildDirectory.dir("generated/fbjni-cpp")
+val copyFbjniCpp = tasks.register<Copy>("copyFbjniCppRuntime") {
+    val runtime = configurations.named("glassesDebugRuntimeClasspath")
+    from(runtime.map { files ->
+        files.files
+            .filter { it.name.startsWith("fbjni-") && it.extension == "aar" }
+            .map(::zipTree)
+    }) {
+        include("jni/**/libc++_shared.so")
+        eachFile { path = path.substringAfter("jni/") }
+        includeEmptyDirs = false
+    }
+    into(fbjniCppDir)
+}
+android.sourceSets.named("glasses") { jniLibs.srcDir(fbjniCppDir) }
+tasks.matching { it.name in setOf("mergeGlassesDebugJniLibFolders", "mergeGlassesDebugNativeLibs") }.configureEach {
+    dependsOn(copyFbjniCpp)
 }
 
 kotlin {
@@ -116,6 +144,8 @@ kotlin {
 
 dependencies {
     // DAT remains exclusive to the physical-glasses variant; :core stays SDK-free.
+    // Keep DAT's libc++ runtime first when the OpenCV AAR contributes its own copy.
+    "glassesImplementation"(libs.opencv)
     "glassesImplementation"(libs.mwdat.core)
     "glassesImplementation"(libs.mwdat.camera)
     "glassesImplementation"(libs.mwdat.mockdevice)

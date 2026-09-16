@@ -89,12 +89,17 @@ class DatMockDeviceKitIntegrationTest {
             }
             val frame = firstFrame.await()
 
-            // HIGH portrait is the DAT 0.9.0 contract. Do not derive a final-video orientation from it.
+            // MockDeviceKit's phone-camera feed can be 480x640 even when HIGH is requested; the
+            // contract we need here is portrait orientation and tightly packed NV21. Physical
+            // HIGH glasses frames are 720x1280 and are covered by the hardware gate.
             assertEquals(FrameOrigin.DAT, frame.origin)
             assertEquals(FrameFormat.NV21, frame.format)
-            assertEquals(720, frame.width)
-            assertEquals(1_280, frame.height)
-            assertTrue(frame.bytes.size >= frame.width * frame.height * 3 / 2)
+            assertTrue("expected portrait frame", frame.height >= frame.width)
+            assertTrue(
+                "unexpected orientation ratio ${frame.width}x${frame.height}",
+                frame.height.toFloat() / frame.width >= MIN_PORTRAIT_RATIO,
+            )
+            assertEquals(frame.width * frame.height * 3 / 2, frame.bytes.size)
             awaitState(coordinator, SessionState.STARTED)
 
             // A stopped stream with a live session is a capture outage, not a pause request.
@@ -141,5 +146,6 @@ class DatMockDeviceKitIntegrationTest {
         const val MOCK_VIDEO_URI_ARGUMENT = "datMockVideoUri"
         const val FRAME_TIMEOUT_MS = 15_000L
         const val STATE_TIMEOUT_MS = 8_000L
+        const val MIN_PORTRAIT_RATIO = 1.2f
     }
 }

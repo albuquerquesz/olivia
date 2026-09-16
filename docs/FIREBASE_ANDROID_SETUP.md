@@ -70,6 +70,41 @@ direção, graus ou fala do provedor são rejeitados.
 Esse gate comprova acesso e contrato, não qualidade visual. A avaliação rotulada com fixtures
 autorizadas continua como BE-03.5 e deve registrar apenas métricas sanitizadas.
 
+### Decomposição pré-TTFT
+
+Para separar primeira chamada fria, texto sem imagem, custo visual por resolução e chamadas
+quentes, execute o probe de doze requisições:
+
+```powershell
+adb logcat -c
+& .\gradlew.bat ':app:connectedGlassesDebugAndroidTest' `
+  '-Pandroid.testInstrumentationRunnerArguments.class=com.olivia.companion.ai.FirebasePreTtftBreakdownTest' `
+  --console=plain --no-daemon --no-configuration-cache
+adb logcat -d -v brief 'OliviaBE07Breakdown:I' '*:S'
+```
+
+O teste exige `gemini-3.5-flash-lite` e imprime apenas durações agregadas, bytes dos JPEGs,
+contagem de tokens e códigos de falha. A primeira chamada é marcada como `cold` no nível da
+sessão; as demais reutilizam o mesmo modelo e são `hot`. A comparação direta com a Gemini
+Developer API e a região Agent Platform ficam explicitamente como `SKIPPED` até haver provider
+habilitado e credencial descartável fora do repositório. O resultado observado está em
+[`BE07_PRE_TTFT_BREAKDOWN_2026-09-16.md`](spec-driven-development/10-medicao-e-evidencias/BE07_PRE_TTFT_BREAKDOWN_2026-09-16.md).
+
+### Probe de streaming/TTFT
+
+Para medir o tempo até o primeiro chunk e até a conclusão sem alterar o loop de produção,
+execute no mesmo aparelho físico:
+
+```powershell
+$env:OLIVIA_AI_MODEL = 'gemini-3.5-flash-lite'
+& .\gradlew.bat ':app:connectedGlassesDebugAndroidTest' `
+  '-Pandroid.testInstrumentationRunnerArguments.class=com.olivia.companion.ai.FirebaseStreamTimingMeasurementTest'
+```
+
+O log `OliviaBE07Stream` publica somente p50/p95 de TTFT, conclusão, quantidade de chunks e
+falhas. Chunks parciais nunca são usados para falar ou orientar; a validação completa do JSON
+continua obrigatória.
+
 ## Limite de evidência
 
 Compilar ou declarar dependências não prova acesso ao Gemini, retenção do provedor, qualidade,

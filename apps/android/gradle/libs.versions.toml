@@ -13,6 +13,7 @@ navigationCompose = "2.9.8"
 dataStore = "1.2.1"
 googleServices = "4.5.0"
 firebaseBom = "34.19.0"
+opencv = "4.10.0"
 androidxTestRunner = "1.6.2"
 androidxTestJunit = "1.2.1"
 # Confira as versões publicadas no Maven Central antes de mudar: o DAT está em
@@ -25,6 +26,7 @@ firebase-ai = { group = "com.google.firebase", name = "firebase-ai" }
 firebase-appcheck-debug-testing = { group = "com.google.firebase", name = "firebase-appcheck-debug-testing" }
 firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug" }
 firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity" }
+opencv = { group = "org.opencv", name = "opencv", version.ref = "opencv" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestJunit" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }

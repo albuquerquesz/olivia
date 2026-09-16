@@ -68,3 +68,5 @@ coverage
 .cache
 tmp
 temp
+tmp-opencv2/
+tmp-apk-check/

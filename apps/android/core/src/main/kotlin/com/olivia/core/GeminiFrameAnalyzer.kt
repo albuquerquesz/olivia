@@ -15,6 +15,11 @@ public interface GeminiVisualTransport {
 
 public enum class AnalysisTimingStage { SCHEMA_PARSE, LOCAL_ANALYSIS }
 
+/** Receives a validated cloud ROI while its capture stamp is still available. */
+public fun interface LocalizationSink {
+    public fun onLocalization(frameStamp: FrameStamp, localization: WorkAreaLocalization)
+}
+
 public fun interface AnalysisTimingSink {
     public fun onStage(stage: AnalysisTimingStage, durationMs: Long)
 }
@@ -37,6 +42,7 @@ public class GeminiFrameAnalyzer(
     private val lumaDecoder: FrameLumaDecoder = LumaFrameDecoder,
     private val timeoutMs: Long = 2_000,
     private val timingSink: AnalysisTimingSink = AnalysisTimingSink { _, _ -> },
+    private val localizationSink: LocalizationSink = LocalizationSink { _, _ -> },
 ) : FrameAnalyzer {
     init {
         require(timeoutMs > 0) { "Analysis timeout must be positive" }
@@ -49,12 +55,13 @@ public class GeminiFrameAnalyzer(
         val parseStarted = System.nanoTime()
         val localization = WorkAreaLocalizationSchema.decode(response)
             .getOrElse { throw AnalysisFailure(AnalysisFailureCode.SCHEMA) }
-        timingSink.onStage(AnalysisTimingStage.SCHEMA_PARSE, elapsedMs(parseStarted))
+        runCatching { localizationSink.onLocalization(frame.stamp, localization) }
+        emitTiming(AnalysisTimingStage.SCHEMA_PARSE, elapsedMs(parseStarted))
         val luma = lumaDecoder.decode(frame)
             ?: throw AnalysisFailure(AnalysisFailureCode.SCHEMA)
         val localStarted = System.nanoTime()
         val diagnoses = localVisualAnalyzer.analyze(luma, localization)
-        timingSink.onStage(AnalysisTimingStage.LOCAL_ANALYSIS, elapsedMs(localStarted))
+        emitTiming(AnalysisTimingStage.LOCAL_ANALYSIS, elapsedMs(localStarted))
         val now = clock.now()
         Result.success(
             FrameAnalysis(
@@ -77,4 +84,8 @@ public class GeminiFrameAnalyzer(
 
     private fun elapsedMs(startedNanos: Long): Long =
         ((System.nanoTime() - startedNanos) / 1_000_000).coerceAtLeast(0)
+
+    private fun emitTiming(stage: AnalysisTimingStage, durationMs: Long) {
+        runCatching { timingSink.onStage(stage, durationMs) }
+    }
 }

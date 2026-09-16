@@ -249,7 +249,7 @@
     "ownership": "Adapter libera intermediários descartados; consumidor libera os recebidos; não reter bytes. Implementação de buffers/sampler é BE-00/02."
   },
   "analysis_contract": {
-    "frame_analysis": "FrameAnalysis(frameStamp, analyzedAt: ClockReading, latencyMs >= 0, source, diagnoses)",
+    "frame_analysis": "FrameAnalysis(frameStamp, analyzedAt: ClockReading, latencyMs >= 0, source in {MOCK,GEMINI_ROI_LOCAL,TRACKER_LOCAL}, diagnoses)",
     "validation": "Diagnósticos são produzidos localmente a partir de uma ROI validada: confidence 0..1, tipos e direções compatíveis, OK sem direção/magnitude, magnitude finita/não negativa e sem categorias duplicadas. O parse externo aceita somente WorkAreaLocalization; política de abstenção é BE-03."
   },
   "planned_analysis_contract_v3": {
@@ -257,7 +257,7 @@
     "reason": "Orientação recebida da organização em 16/09/2026: não pedir geometria ou graus ao modelo de visão. O refactor está no código e em testes JVM; acesso Firebase, frame DAT e campanha de qualidade continuam pendentes de validação ao vivo.",
     "cloud_response": "WorkAreaLocalization(schemaVersion, targetPresent, confidence 0..1, roiNormalized{x,y,width,height}) ou abstenção. Coordenadas são normalizadas em [0,1]; x+width e y+height não ultrapassam 1. O provedor não devolve direção, magnitude, severity, luminância, horizonte, texto de fala ou graus.",
     "local_pipeline": "LocalVisualAnalyzer recebe frame efêmero e ROI válida, calcula FrameAnalysis fechado. Framing usa o centro da ROI contra o centro do frame; LIGHT usa luminância na ROI e referência local; HORIZON usa estimador clássico com confiança. Qualquer métrica sem confiança suficiente produz abstenção, não correção.",
-    "initial_guidance_policy": "Offset normalizado até 0.10 fica silencioso; >0.10 e <=0.25 produz variante curta 'um pouco' no lado/eixo necessário; >0.25 produz variante 'para [lado/eixo]'. Valores são configuração local versionada, não graus e não calibração física. Histerese de duas análises, threshold de confiança, cooldown de 4000 ms e confirmação posterior continuam obrigatórios.",
+    "initial_guidance_policy": "Offset normalizado até 0.10 fica silencioso; >0.10 e <=0.25 produz variante curta 'um pouco' no lado/eixo necessário; >0.25 produz variante 'para [lado/eixo]'. Valores são configuração local versionada, não graus e não calibração física. O fast-path usa zona morta com entrada 0.12/saída 0.08, persistência de 180 ms, supressão enquanto o ROI se move para o centro, cooldown de 4000 ms e confirmação posterior.",
     "light_policy": "Nunca atribuir sombra à mão sem evidência local específica. A fala segura é sobre iluminação na peça; a formulação de causa exige detector separado, rotulado e validado.",
     "privacy_and_lifetime": "O frame e derivados locais permanecem somente em memória e são descartados ao final do pipeline. Blur on-device de rosto antes do envio é gate separado: não pode ser declarado ativo até adapter e avaliação serem implementados.",
     "required_tests": [
@@ -265,7 +265,8 @@
       "Fixtures rotuladas para offset central/pequeno/grande nos quatro eixos, ROI ausente e ROI ambígua.",
       "Fixtures de luminância na ROI contra referência e ausência de atribuição causal de sombra.",
       "Fixtures de horizonte nivelado/inclinado, baixa confiança e frame sem linha confiável.",
-      "Integração Android: frame reduzido -> Gemini ROI -> análise local -> duas observações concordantes -> áudio/timeline, com descarte verificável."
+      "Integração Android: frame reduzido -> Gemini ROI -> tracker local por fluxo óptico -> análise local -> persistência/histerese -> áudio/timeline, com descarte verificável.",
+      "Replay offline compara Gemini-em-todo-frame com fast-path: concordância, falsos avisos, oscilações, perdas/reaquisição e IoU."
     ]
   },
   "audio_signals": [

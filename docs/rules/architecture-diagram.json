@@ -320,6 +320,6 @@
     "privacy_gate": "Descarte local não comprova retenção zero no provedor; BE-10/13 exigem configuração e evidências externas antes de mídia real.",
     "metrics": "900 ms no loop e aproximadamente 8 s no pós-processamento permanecem metas; callback Android de áudio não comprova instante acústico nos óculos."
     ,
-    "local_vision_refactor": "Implementado a partir das orientações da organização em 16/09/2026: Gemini retorna somente ROI normalizada/confiança; Android calcula offset de enquadramento, luminância na ROI e horizonte. Há testes JVM para schema, fixtures e pipeline ROI→guidance. Acesso Firebase, frame DAT e campanha Android de qualidade continuam pendências explícitas, não capacidade já comprovada."
+    "local_vision_refactor": "Implementado a partir das orientações da organização em 16/09/2026: Gemini retorna somente ROI normalizada/confiança; Android calcula offset de enquadramento, luminância na ROI e horizonte. O caminho híbrido adiciona fluxo óptico esparso OpenCV em escala limitada, histórico de transformadas para compensar respostas tardias, reconciliação por IoU, histerese/persistência/supressão de movimento e métricas fast-path. Há testes JVM de tracking/replay e compilação Android; evidência de frame DAT/hardware, acústica Bluetooth e campanha Android de qualidade continuam pendências explícitas."
   }
 }

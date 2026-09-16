@@ -55,6 +55,21 @@ class DefaultGuidanceEngineTest {
         assertEquals(Direction.TURN_RIGHT, engine.onAnalysis(right(4), clock.now())?.direction)
     }
 
+    @Test
+    fun `persistence dwell prevents a one-frame transient warning`() {
+        val engine = DefaultGuidanceEngine(
+            AudioMode.VOICE,
+            GuidancePolicy(requiredConsecutiveMatches = 1, persistenceMs = 180),
+        )
+        val clock = GuidanceClock()
+        val deviation = analysis(listOf(diagnosis(DiagnosisKind.FRAMING, Direction.TURN_RIGHT, 0.9f)))
+        assertNull(engine.onAnalysis(deviation, clock.now()))
+        clock.advanceBy(179)
+        assertNull(engine.onAnalysis(analysis(deviation.diagnoses, sequence = 2), clock.now()))
+        clock.advanceBy(1)
+        assertTrue(engine.onAnalysis(analysis(deviation.diagnoses, sequence = 3), clock.now()) != null)
+    }
+
     private fun analysis(diagnoses: List<VisualDiagnosis>, sequence: Long = 1): FrameAnalysis = FrameAnalysis(
         frameStamp = FrameStamp(CaptureId(SessionId("take"), 1), sequence, ClockReading(0, 1_700_000_000_000)),
         analyzedAt = ClockReading(0, 1_700_000_000_000),

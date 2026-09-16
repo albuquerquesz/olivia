@@ -34,6 +34,9 @@ public data class LiveLoopMetricSnapshot(
     val p95InferenceMs: Long?,
     val p50FrameToAudioCallbackMs: Long?,
     val p95FrameToAudioCallbackMs: Long?,
+    val fastPathSamples: Long = 0,
+    val p50FastFrameToAudioCallbackMs: Long? = null,
+    val p95FastFrameToAudioCallbackMs: Long? = null,
 )
 
 /**
@@ -42,6 +45,7 @@ public data class LiveLoopMetricSnapshot(
  */
 public class LiveLoopMetrics(private val sampleLimit: Int = 200) {
     private val samples: ArrayDeque<LoopMeasurement> = ArrayDeque()
+    private val fastSamples: ArrayDeque<LoopMeasurement> = ArrayDeque()
     private var receivedFrames: Long = 0
     private var selectedFrames: Long = 0
     private var discardedFrames: Long = 0
@@ -60,9 +64,16 @@ public class LiveLoopMetrics(private val sampleLimit: Int = 200) {
         samples.addLast(measurement)
     }
 
+    /** Records a local tracker result separately from the slow Gemini sample population. */
+    public fun finishFast(measurement: LoopMeasurement) {
+        if (fastSamples.size == sampleLimit) fastSamples.removeFirst()
+        fastSamples.addLast(measurement)
+    }
+
     public fun snapshot(): LiveLoopMetricSnapshot {
         val inference = samples.map(LoopMeasurement::inferenceMs).sorted()
         val frameToAudio = samples.mapNotNull(LoopMeasurement::frameToAudioCallbackMs).sorted()
+        val fastFrameToAudio = fastSamples.mapNotNull(LoopMeasurement::frameToAudioCallbackMs).sorted()
         return LiveLoopMetricSnapshot(
             receivedFrames = receivedFrames,
             selectedFrames = selectedFrames,
@@ -73,6 +84,9 @@ public class LiveLoopMetrics(private val sampleLimit: Int = 200) {
             p95InferenceMs = percentile(inference, 0.95),
             p50FrameToAudioCallbackMs = percentile(frameToAudio, 0.50),
             p95FrameToAudioCallbackMs = percentile(frameToAudio, 0.95),
+            fastPathSamples = fastSamples.size.toLong(),
+            p50FastFrameToAudioCallbackMs = percentile(fastFrameToAudio, 0.50),
+            p95FastFrameToAudioCallbackMs = percentile(fastFrameToAudio, 0.95),
         )
     }
 

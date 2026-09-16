@@ -9,8 +9,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.FirebaseAI
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
+import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.ai.type.thinkingConfig
 import com.olivia.core.Frame
 import com.olivia.core.FrameFormat
 import com.olivia.core.GeminiVisualTransport
@@ -44,6 +46,9 @@ class FirebaseGeminiVisualTransport(
             maxOutputTokens = 128
             responseMimeType = "application/json"
             responseSchema = WORK_AREA_RESPONSE_SCHEMA
+            thinkingConfig = thinkingConfig {
+                thinkingLevel = ThinkingLevel.MINIMAL
+            }
         },
     )
 
@@ -58,14 +63,14 @@ class FirebaseGeminiVisualTransport(
         return try {
             val decodeStarted = System.nanoTime()
             decoded = decode(frame)
-            timingSink.onStage(FirebaseTimingStage.FRAME_DECODE, elapsedMs(decodeStarted))
+            emitTiming(FirebaseTimingStage.FRAME_DECODE, elapsedMs(decodeStarted))
             val resizeStarted = System.nanoTime()
             val uploadBitmap = downscale(requireNotNull(decoded))
             prepared = uploadBitmap
-            timingSink.onStage(FirebaseTimingStage.RESIZE, elapsedMs(resizeStarted))
+            emitTiming(FirebaseTimingStage.RESIZE, elapsedMs(resizeStarted))
             val jpegStarted = System.nanoTime()
             val jpeg = encodeJpeg(uploadBitmap)
-            timingSink.onStage(FirebaseTimingStage.JPEG_ENCODE, elapsedMs(jpegStarted))
+            emitTiming(FirebaseTimingStage.JPEG_ENCODE, elapsedMs(jpegStarted))
             val requestStarted = System.nanoTime()
             val response = model.generateContent(
                 content {
@@ -73,7 +78,7 @@ class FirebaseGeminiVisualTransport(
                     text(PROMPT)
                 },
             )
-            timingSink.onStage(FirebaseTimingStage.SDK_ROUND_TRIP, elapsedMs(requestStarted))
+            emitTiming(FirebaseTimingStage.SDK_ROUND_TRIP, elapsedMs(requestStarted))
             Result.success(requireNotNull(response.text) { "Missing visual response" })
         } catch (error: CancellationException) {
             throw error
@@ -125,6 +130,10 @@ class FirebaseGeminiVisualTransport(
 
     private fun elapsedMs(startedNanos: Long): Long =
         ((System.nanoTime() - startedNanos) / 1_000_000).coerceAtLeast(0)
+
+    private fun emitTiming(stage: FirebaseTimingStage, durationMs: Long) {
+        runCatching { timingSink.onStage(stage, durationMs) }
+    }
 
     companion object {
         const val DEFAULT_MODEL = "gemini-3.5-flash-lite"

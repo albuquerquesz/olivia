@@ -21,7 +21,7 @@ public value class Confidence(public val value: Float) {
 
 /** De onde veio o diagnóstico, para a demo conseguir provar o que é IA e o que é mock. */
 /** GEMINI_ROI_LOCAL distinguishes cloud localization from local visual diagnostics. */
-public enum class AnalyzerSource { MOCK, GEMINI_ROI_LOCAL }
+public enum class AnalyzerSource { MOCK, GEMINI_ROI_LOCAL, TRACKER_LOCAL }
 
 @Serializable
 public data class VisualDiagnosis(
@@ -103,6 +103,40 @@ public data class LumaFrame(
     }
 
     public fun at(x: Int, y: Int): Int = pixels[y * width + x].toInt() and 0xff
+
+    /**
+     * Returns a bounded grayscale view for the fast loop. The resize is area-averaged rather
+     * than nearest-neighbour so small edges do not alias into the framing/light metrics. The
+     * returned buffer is independent and can be discarded with the frame immediately after
+     * analysis.
+     */
+    public fun downsampled(maxEdge: Int): LumaFrame {
+        require(maxEdge > 0)
+        val sourceEdge = maxOf(width, height)
+        if (sourceEdge <= maxEdge) return this
+        val scale = maxEdge.toFloat() / sourceEdge
+        val targetWidth = (width * scale).toInt().coerceAtLeast(1)
+        val targetHeight = (height * scale).toInt().coerceAtLeast(1)
+        val output = ByteArray(targetWidth * targetHeight)
+        for (targetY in 0 until targetHeight) {
+            val sourceTop = (targetY * height / targetHeight).coerceIn(0, height - 1)
+            val sourceBottom = (((targetY + 1) * height + targetHeight - 1) / targetHeight)
+                .coerceIn(sourceTop + 1, height)
+            for (targetX in 0 until targetWidth) {
+                val sourceLeft = (targetX * width / targetWidth).coerceIn(0, width - 1)
+                val sourceRight = (((targetX + 1) * width + targetWidth - 1) / targetWidth)
+                    .coerceIn(sourceLeft + 1, width)
+                var sum = 0
+                var count = 0
+                for (y in sourceTop until sourceBottom) for (x in sourceLeft until sourceRight) {
+                    sum += at(x, y)
+                    count++
+                }
+                output[targetY * targetWidth + targetX] = (sum / count).toByte()
+            }
+        }
+        return LumaFrame(targetWidth, targetHeight, output)
+    }
 }
 
 /** Android supplies decoded luma; core keeps all policy and math platform-independent. */

@@ -21,6 +21,39 @@ class GeminiFrameAnalyzerTest {
     }
 
     @Test
+    fun `emits stage timings without changing a successful result`() = runBlocking {
+        val clock = AnalyzerTestClock(2_000)
+        val stages = mutableListOf<AnalysisTimingStage>()
+        val analyzer = GeminiFrameAnalyzer(
+            clock,
+            replyTransport(validReply),
+            DeterministicLocalVisualAnalyzer(),
+            timingSink = AnalysisTimingSink { stage, durationMs ->
+                assertTrue(durationMs >= 0)
+                stages += stage
+            },
+        )
+
+        val result = analyzer.analyze(frame(clock))
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf(AnalysisTimingStage.SCHEMA_PARSE, AnalysisTimingStage.LOCAL_ANALYSIS), stages)
+    }
+
+    @Test
+    fun `a failing metrics sink cannot turn analysis into a provider failure`() = runBlocking {
+        val clock = AnalyzerTestClock(2_000)
+        val analyzer = GeminiFrameAnalyzer(
+            clock,
+            replyTransport(validReply),
+            DeterministicLocalVisualAnalyzer(),
+            timingSink = AnalysisTimingSink { _, _ -> error("metrics sink") },
+        )
+
+        assertTrue(analyzer.analyze(frame(clock)).isSuccess)
+    }
+
+    @Test
     fun `classifies transport and schema failures without exposing content`() = runBlocking {
         val clock = AnalyzerTestClock(2_000)
         val transportFailure = GeminiFrameAnalyzer(clock, object : GeminiVisualTransport {

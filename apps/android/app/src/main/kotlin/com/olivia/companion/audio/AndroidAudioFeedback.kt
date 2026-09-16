@@ -22,6 +22,16 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
+public enum class AudioTimingStage {
+    TTS_INIT,
+    TTS_REQUEST_TO_START,
+    SIGNAL_REQUEST_TO_START,
+}
+
+public fun interface AudioTimingSink {
+    public fun onStage(stage: AudioTimingStage, durationMs: Long)
+}
+
 /**
  * Android boundary for Olivia's only live output channel.
  *
@@ -34,6 +44,7 @@ class AndroidAudioFeedback(
     context: Context,
     private val clock: OliviaClock,
     initialMode: AudioMode,
+    private val timingSink: AudioTimingSink = AudioTimingSink { _, _ -> },
 ) : AudioFeedback, AutoCloseable {
     @Volatile
     private var activeMode: AudioMode = initialMode
@@ -44,14 +55,18 @@ class AndroidAudioFeedback(
     private data class PendingUtterance(
         val capture: com.olivia.core.CaptureId,
         val continuation: kotlinx.coroutines.CancellableContinuation<Result<AudioReceipt>>,
+        val requestedAtNanos: Long,
     )
 
     private val pending: ConcurrentHashMap<String, PendingUtterance> = ConcurrentHashMap()
+    private val signalTracks: ConcurrentHashMap<SignalDirection, AudioTrack> = ConcurrentHashMap()
     private lateinit var textToSpeech: TextToSpeech
+    private val ttsInitStartedNanos = System.nanoTime()
 
     init {
         textToSpeech = TextToSpeech(context.applicationContext) { status ->
             if (status != TextToSpeech.SUCCESS) {
+                emitTiming(AudioTimingStage.TTS_INIT, elapsedMs(ttsInitStartedNanos))
                 initialized.complete(Result.failure(IllegalStateException("TTS indisponível")))
             } else {
                 // The init callback can theoretically arrive while the property assignment is
@@ -59,8 +74,10 @@ class AndroidAudioFeedback(
                 mainHandler.post {
                     val availability = textToSpeech.setLanguage(Locale("pt", "BR"))
                     if (availability < TextToSpeech.LANG_AVAILABLE) {
+                        emitTiming(AudioTimingStage.TTS_INIT, elapsedMs(ttsInitStartedNanos))
                         initialized.complete(Result.failure(IllegalStateException("Voz pt-BR indisponível")))
                     } else {
+                        emitTiming(AudioTimingStage.TTS_INIT, elapsedMs(ttsInitStartedNanos))
                         initialized.complete(Result.success(Unit))
                     }
                 }
@@ -69,6 +86,10 @@ class AndroidAudioFeedback(
         textToSpeech.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String) {
                 val utterance = pending.remove(utteranceId) ?: return
+                emitTiming(
+                    AudioTimingStage.TTS_REQUEST_TO_START,
+                    elapsedMs(utterance.requestedAtNanos),
+                )
                 utterance.continuation.resume(
                     Result.success(
                         AudioReceipt(
@@ -121,6 +142,8 @@ class AndroidAudioFeedback(
         mainHandler.post {
             textToSpeech.stop()
             textToSpeech.shutdown()
+            signalTracks.values.forEach { track -> runCatching { track.stop(); track.release() } }
+            signalTracks.clear()
         }
     }
 
@@ -130,7 +153,7 @@ class AndroidAudioFeedback(
         if (correction.spokenText.isBlank()) return Result.failure(IllegalArgumentException("Correção sem frase"))
         return suspendCancellableCoroutine { continuation ->
             val id = correction.id
-            pending[id] = PendingUtterance(correction.capture, continuation)
+            pending[id] = PendingUtterance(correction.capture, continuation, System.nanoTime())
             mainHandler.post {
                 val status = textToSpeech.speak(correction.spokenText, TextToSpeech.QUEUE_FLUSH, null, id)
                 if (status == TextToSpeech.ERROR) {
@@ -144,17 +167,25 @@ class AndroidAudioFeedback(
         }
     }
 
+    private fun elapsedMs(startedNanos: Long): Long =
+        ((System.nanoTime() - startedNanos) / 1_000_000).coerceAtLeast(0)
+
+    private fun emitTiming(stage: AudioTimingStage, durationMs: Long) {
+        runCatching { timingSink.onStage(stage, durationMs) }
+    }
+
     private suspend fun playSignal(direction: SignalDirection): Result<ClockReading> =
         suspendCancellableCoroutine { continuation ->
+            val requestedAt = System.nanoTime()
             mainHandler.post {
                 try {
-                    val track = SignalTone.create(direction)
+                    val track = signalTracks.getOrPut(direction) { SignalTone.create(direction) }
+                    if (track.playState == AudioTrack.PLAYSTATE_PLAYING) track.stop()
+                    track.reloadStaticData()
                     track.play()
                     val startedAt = clock.now()
-                    mainHandler.postDelayed({
-                        runCatching { track.stop() }
-                        track.release()
-                    }, SignalTone.DURATION_MS)
+                    emitTiming(AudioTimingStage.SIGNAL_REQUEST_TO_START, elapsedMs(requestedAt))
+                    mainHandler.postDelayed({ runCatching { if (track.playState == AudioTrack.PLAYSTATE_PLAYING) track.stop() } }, SignalTone.DURATION_MS)
                     continuation.resume(Result.success(startedAt))
                 } catch (_: IllegalStateException) {
                     continuation.resume(Result.failure(IllegalStateException("Tom local indisponível")))

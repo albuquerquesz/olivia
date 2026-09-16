@@ -59,6 +59,7 @@ internal class DatGlassesGateway(
     private var decoder: HevcFrameDecoder? = null
     private var streamJob: Job? = null
     private var sequence = 0L
+    private var wearablesInitialized = false
     internal var lastStartError: Throwable? = null
         private set
 
@@ -75,7 +76,10 @@ internal class DatGlassesGateway(
         try {
             // MockDeviceKit replaces device transport, not the SDK singleton. Initialize the same
             // Wearables runtime in both paths so session state and AutoDeviceSelector can update.
-            Wearables.initialize(context).getOrElse { throw IllegalStateException("DAT initialization unavailable") }
+            if (!wearablesInitialized) {
+                Wearables.initialize(context).getOrElse { throw IllegalStateException("DAT initialization unavailable") }
+                wearablesInitialized = true
+            }
             if (forceMockDeviceKit || BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) {
                 DatMockDeviceBootstrap.enable(context, mockVideoUri)
             }
@@ -94,8 +98,15 @@ internal class DatGlassesGateway(
                 deviceSession.state.filter { it == DeviceSessionState.STARTED }.first()
             }
             if (keepAliveInForeground) DatStreamingService.start(context)
+            val useRawMockFrames = forceMockDeviceKit || BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT
             val attachedCamera = deviceSession.addCamera(
-                StreamConfiguration(videoQuality = VideoQuality.HIGH, frameRate = DAT_FRAME_RATE, compressVideo = true),
+                StreamConfiguration(
+                    videoQuality = VideoQuality.HIGH,
+                    frameRate = DAT_FRAME_RATE,
+                    // MockDeviceKit's raw I420 path avoids the device-specific HEVC/ImageReader
+                    // crash seen on Moto G60. Physical DAT keeps the production HEVC path.
+                    compressVideo = !useRawMockFrames,
+                ),
             ).getOrElse { throw IllegalStateException("DAT camera unavailable") }
             camera = attachedCamera
             val activeStream = attachedCamera.stream
@@ -121,17 +132,9 @@ internal class DatGlassesGateway(
     }
 
     override suspend fun resumeCapture(capture: CaptureId) {
-        this.capture = capture
-        sequence = 0
-        _heartbeat.value = null
-        val activeStream = stream ?: run { startCapture(capture); return }
-        try {
-            activeStream.start().getOrElse { throw IllegalStateException("DAT stream unavailable") }
-            _connection.value = GlassesConnection.CONNECTED
-            observeFrames(activeStream, capture)
-        } catch (_: Throwable) {
-            _connection.value = GlassesConnection.UNAVAILABLE
-        }
+        // DAT transitions a stopped Stream to CLOSED; it cannot be started again. Recreate the
+        // session/camera so PAUSED -> STARTED gets a fresh stream and capture generation.
+        startCapture(capture)
     }
 
     override suspend fun stopCapture() {
@@ -148,7 +151,10 @@ internal class DatGlassesGateway(
         streamJob = scope.launch {
             activeStream.videoStream.collect { videoFrame ->
                 if (capture != activeCapture) return@collect
-                if (!videoFrame.isCompressed) return@collect
+                if (!videoFrame.isCompressed) {
+                    emitRawFrame(activeCapture, videoFrame.width, videoFrame.height, videoFrame.buffer)
+                    return@collect
+                }
                 val activeDecoder = decoder ?: HevcFrameDecoder(
                     videoFrame.width,
                     videoFrame.height,
@@ -188,6 +194,31 @@ internal class DatGlassesGateway(
                 bytes = nv21,
             ),
         )
+    }
+
+    /** DAT raw Android frames are tightly packed I420 (Y, U, V); domain frames use NV21. */
+    private fun emitRawFrame(capture: CaptureId, width: Int, height: Int, buffer: ByteBuffer) {
+        if (width <= 0 || height <= 0 || width % 2 != 0 || height % 2 != 0) return
+        val ySize = width * height
+        val chromaSize = ySize / 4
+        val expected = ySize + chromaSize * 2
+        val i420 = buffer.duplicate().let { source ->
+            if (source.remaining() < expected) return
+            ByteArray(expected).also(source::get)
+        }
+        try {
+            val nv21 = ByteArray(expected)
+            i420.copyInto(nv21, endIndex = ySize)
+            var destination = ySize
+            var v = ySize + chromaSize
+            repeat(chromaSize) {
+                nv21[destination++] = i420[v++]
+                nv21[destination++] = i420[ySize + it]
+            }
+            emitDecodedFrame(capture, width, height, nv21)
+        } finally {
+            i420.fill(0)
+        }
     }
 
     private companion object {

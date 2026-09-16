@@ -6,12 +6,15 @@ import com.olivia.companion.audio.AndroidAudioFeedback
 import com.olivia.core.AudioMode
 import com.olivia.core.CaptureHeartbeat
 import com.olivia.core.CaptureId
+import com.olivia.core.Correction
 import com.olivia.core.CorrectionStatus
 import com.olivia.core.CorrectionTracker
 import com.olivia.core.DefaultGuidanceEngine
 import com.olivia.core.FileTimeline
 import com.olivia.core.Frame
 import com.olivia.core.FrameAnalyzer
+import com.olivia.core.FastFrameProcessor
+import com.olivia.core.HybridVisualAnalyzer
 import com.olivia.core.FrameSampler
 import com.olivia.core.FrameFormat
 import com.olivia.core.FrameOrigin
@@ -24,6 +27,7 @@ import com.olivia.core.MockVisualFixtures
 import com.olivia.core.OliviaClock
 import com.olivia.core.LiveLoopMetrics
 import com.olivia.core.LiveLoopMetricSnapshot
+import com.olivia.core.GuidancePolicy
 import com.olivia.core.LoopMeasurement
 import com.olivia.core.LoopMeasurementId
 import com.olivia.core.SamplingDecision
@@ -37,10 +41,12 @@ import com.olivia.core.SystemOliviaClock
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -52,6 +58,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -180,19 +187,38 @@ internal class LiveSessionRuntime(
     private val audio = AndroidAudioFeedback(context, clock, AudioMode.VOICE)
     private val timeline = FileTimeline(context.filesDir.toPath().resolve("olivia-timeline"))
     private val coordinator = SessionCoordinator(clock, gateway, audio, timeline)
-    private val sampler = FrameSampler(clock)
+    private val fastProcessor = analyzer as? FastFrameProcessor
+    // Hybrid tracking carries the live loop locally; Gemini is a validation/reaquisition path
+    // every five seconds instead of being on the 0.5 fps critical path.
+    private val sampler = FrameSampler(
+        clock = clock,
+        analysisIntervalMs = if (fastProcessor != null) 5_000 else 2_000,
+    )
     /**
      * The engine owns the local phrase catalogue. Recreate it only while idle so its mode always
      * matches the output adapter and no pending correction can be lost mid-take.
      */
-    private var guidance = DefaultGuidanceEngine(AudioMode.VOICE)
+    private var guidance = createGuidance(AudioMode.VOICE)
     private var audioMode = AudioMode.VOICE
     private val correctionTracker = CorrectionTracker()
     private val metrics = LiveLoopMetrics()
     private val _liveLoopMetrics = MutableStateFlow(metrics.snapshot())
     override val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot> = _liveLoopMetrics.asStateFlow()
-    /** Serializes coordinator, sampler and guidance because all three keep session state. */
+    /** Serializes short state transitions; provider, TTS and frame I/O never run under this lock. */
     private val runtimeMutex = Mutex()
+    private val analysisFrames = Channel<Frame>(capacity = 1)
+    private var activeAnalysisJob: Job? = null
+    private val analysisWorker: Job = runtimeScope.launch {
+        for (frame in analysisFrames) {
+            val job = launch(start = CoroutineStart.LAZY) { processAnalyze(frame) }
+            runtimeMutex.withLock { activeAnalysisJob = job }
+            job.start()
+            job.join()
+            runtimeMutex.withLock {
+                if (activeAnalysisJob === job) activeAnalysisJob = null
+            }
+        }
+    }
     private val heartbeatObserver: Job = runtimeScope.launch {
         gateway.heartbeat.filterNotNull().collect { heartbeat ->
             runtimeMutex.withLock { coordinator.onCaptureHeartbeat(heartbeat) }
@@ -208,11 +234,19 @@ internal class LiveSessionRuntime(
     }
     private val frameObserver: Job = runtimeScope.launch {
         gateway.frames.collect { frame ->
-            runtimeMutex.withLock {
+            val fastStartedAt = clock.now()
+            val fastResult = fastProcessor?.processFast(frame)
+            val decisions = runtimeMutex.withLock {
                 metrics.onFrameReceived()
                 publishMetrics()
-                process(sampler.offer(frame, coordinator::accepts))
+                sampler.offer(frame, coordinator::accepts)
             }
+            if (fastResult != null) {
+                runtimeScope.launch {
+                    processFastAnalysis(frame.stamp, fastResult, fastStartedAt)
+                }
+            }
+            dispatchDecisions(decisions)
         }
     }
     private val watchdog: Job = runtimeScope.launch {
@@ -227,17 +261,42 @@ internal class LiveSessionRuntime(
 
     override val snapshot: StateFlow<SessionSnapshot?> = coordinator.snapshot
 
-    override suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot> = runtimeMutex.withLock {
-        if (command in setOf(LocalSessionCommand.PAUSE, LocalSessionCommand.STOP)) expirePendingCorrection()
-        if (command in setOf(LocalSessionCommand.START, LocalSessionCommand.STOP)) sampler.cancel()
-        when (command) {
-            LocalSessionCommand.START -> coordinator.start(
-                sessionId = SessionId(UUID.randomUUID().toString()),
-                config = SessionConfig(audioMode = audioMode),
-            )
-            LocalSessionCommand.PAUSE -> coordinator.pause()
-            LocalSessionCommand.RESUME -> coordinator.resume()
-            LocalSessionCommand.STOP -> coordinator.stop()
+    override suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot> {
+        // A pause/stop must cancel an in-flight provider or TTS call before invalidating the
+        // capture generation. This prevents an old result from speaking after the transition.
+        val cancellable = if (command in setOf(LocalSessionCommand.PAUSE, LocalSessionCommand.STOP)) {
+            runtimeMutex.withLock {
+                expirePendingCorrection()
+                discard(sampler.cancel())
+                activeAnalysisJob
+            }
+        } else {
+            null
+        }
+        cancellable?.cancelAndJoin()
+        return runtimeMutex.withLock {
+            if (command == LocalSessionCommand.START) discard(sampler.cancel())
+            when (command) {
+                LocalSessionCommand.START -> {
+                    (analyzer as? HybridVisualAnalyzer)?.reset()
+                    coordinator.start(
+                        sessionId = SessionId(UUID.randomUUID().toString()),
+                        config = SessionConfig(audioMode = audioMode),
+                    )
+                }
+                LocalSessionCommand.PAUSE -> {
+                    (analyzer as? HybridVisualAnalyzer)?.reset()
+                    coordinator.pause()
+                }
+                LocalSessionCommand.RESUME -> {
+                    (analyzer as? HybridVisualAnalyzer)?.reset()
+                    coordinator.resume()
+                }
+                LocalSessionCommand.STOP -> {
+                    (analyzer as? HybridVisualAnalyzer)?.reset()
+                    coordinator.stop()
+                }
+            }
         }
     }
 
@@ -254,7 +313,7 @@ internal class LiveSessionRuntime(
             return@withLock Result.failure(IllegalStateException("Altere o modo antes do take"))
         }
         audio.setMode(mode)
-        guidance = DefaultGuidanceEngine(mode)
+        guidance = createGuidance(mode)
         audioMode = mode
         Result.success(Unit)
     }
@@ -283,59 +342,159 @@ internal class LiveSessionRuntime(
         }
     }
 
-    private suspend fun process(decisions: List<SamplingDecision>) {
+    /** Hands decisions to the single analysis worker without holding the state lock. */
+    private suspend fun dispatchDecisions(decisions: List<SamplingDecision>) {
         decisions.forEach { decision ->
             when (decision) {
-                is SamplingDecision.Analyze -> {
-                    val analysisStarted = clock.now()
-                    var analysisFinished = analysisStarted
-                    var audioRequestedAtMs: Long? = null
-                    var audioStartedAtMs: Long? = null
-                    try {
-                        analyzer.analyze(decision.frame).also { analysisFinished = clock.now() }.onSuccess { analysis ->
-                            coordinator.onAnalysisRestored()
-                            coordinator.recordDiagnosis(analysis)
-                            correctionTracker.onAnalysis(analysis, clock.now())?.let { outcome ->
-                                guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
-                                coordinator.recordCorrectionOutcome(outcome)
-                            }
-                            guidance.onAnalysis(analysis, clock.now())?.let { correction ->
-                                audioRequestedAtMs = clock.now().monotonicMs
-                                audio.announce(correction).onSuccess { receipt ->
-                                    audioStartedAtMs = receipt.startedAt.monotonicMs
-                                    if (correctionTracker.begin(correction, receipt)) {
-                                        coordinator.recordCorrectionIssued(correction)
-                                    }
-                                }.onFailure {
-                                    guidance.onCorrectionOutcome(correction.id, CorrectionStatus.EXPIRED)
-                                }
-                            }
-                        }.onFailure {
-                            coordinator.onAnalysisUnavailable()
-                        }
-                    } finally {
-                        metrics.finish(
-                            LoopMeasurement(
-                                id = LoopMeasurementId(decision.frame.stamp.capture, decision.frame.stamp.sequence),
-                                frameReceivedAtMs = decision.frame.stamp.receivedAt.monotonicMs,
-                                analysisStartedAtMs = analysisStarted.monotonicMs,
-                                analysisFinishedAtMs = analysisFinished.monotonicMs,
-                                audioRequestedAtMs = audioRequestedAtMs,
-                                audioStartedAtMs = audioStartedAtMs,
-                            ),
-                        )
-                        publishMetrics()
-                        // The Frame reference leaves scope here; nothing in the timeline stores it.
-                        process(sampler.completeAnalysis())
-                    }
-                }
-                is SamplingDecision.Discard -> {
-                    metrics.onFrameDiscarded()
-                    publishMetrics()
-                }
+                is SamplingDecision.Analyze -> analysisFrames.send(decision.frame)
+                is SamplingDecision.Discard -> runtimeMutex.withLock { discard(decision) }
                 SamplingDecision.Waiting -> Unit
             }
         }
+    }
+
+    /** Runs provider and TTS work outside [runtimeMutex], then commits only current results. */
+    private suspend fun processAnalyze(frame: Frame) {
+        val analysisStarted = clock.now()
+        var analysisFinished: com.olivia.core.ClockReading? = null
+        var audioRequestedAtMs: Long? = null
+        var audioStartedAtMs: Long? = null
+        try {
+            val accepted = runtimeMutex.withLock { coordinator.accepts(frame.stamp) }
+            if (!accepted) {
+                runtimeMutex.withLock {
+                    metrics.onFrameDiscarded()
+                    publishMetrics()
+                }
+                return
+            }
+            val result = analyzer.analyze(frame).also { analysisFinished = clock.now() }
+            if (result.isFailure) {
+                runtimeMutex.withLock { coordinator.onAnalysisUnavailable() }
+                return
+            }
+            val analysis = result.getOrThrow()
+            var correction: Correction? = null
+            val stillAccepted = runtimeMutex.withLock {
+                if (!coordinator.accepts(analysis.frameStamp)) {
+                    false
+                } else {
+                    coordinator.onAnalysisRestored()
+                    coordinator.recordDiagnosis(analysis)
+                    correctionTracker.onAnalysis(analysis, clock.now())?.let { outcome ->
+                        guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
+                        coordinator.recordCorrectionOutcome(outcome)
+                    }
+                    correction = guidance.onAnalysis(analysis, clock.now())
+                    true
+                }
+            }
+            if (stillAccepted && correction != null) {
+                val issuedCorrection = requireNotNull(correction)
+                audioRequestedAtMs = clock.now().monotonicMs
+                val audioResult = audio.announce(issuedCorrection)
+                if (audioResult.isSuccess) {
+                    val receipt = audioResult.getOrThrow()
+                    audioStartedAtMs = receipt.startedAt.monotonicMs
+                    runtimeMutex.withLock {
+                        // A stop/pause may have invalidated the generation while TTS was running.
+                        if (coordinator.accepts(FrameStamp(issuedCorrection.capture, 0, issuedCorrection.issuedAt)) &&
+                            correctionTracker.begin(issuedCorrection, receipt)
+                        ) {
+                            coordinator.recordCorrectionIssued(issuedCorrection)
+                        } else {
+                            guidance.onCorrectionOutcome(issuedCorrection.id, CorrectionStatus.EXPIRED)
+                        }
+                    }
+                } else {
+                    runtimeMutex.withLock {
+                        guidance.onCorrectionOutcome(issuedCorrection.id, CorrectionStatus.EXPIRED)
+                    }
+                }
+            }
+        } finally {
+            val next = runtimeMutex.withLock {
+                metrics.finish(
+                    LoopMeasurement(
+                        id = LoopMeasurementId(frame.stamp.capture, frame.stamp.sequence),
+                        frameReceivedAtMs = frame.stamp.receivedAt.monotonicMs,
+                        analysisStartedAtMs = analysisStarted.monotonicMs,
+                        analysisFinishedAtMs = (analysisFinished ?: clock.now()).monotonicMs,
+                        audioRequestedAtMs = audioRequestedAtMs,
+                        audioStartedAtMs = audioStartedAtMs,
+                    ),
+                )
+                publishMetrics()
+                sampler.completeAnalysis()
+            }
+            // The Frame reference leaves scope here; nothing in the timeline stores it.
+            dispatchDecisions(next)
+        }
+    }
+
+    /** Commits a tracker result without touching the slow sampler or retaining the frame bytes. */
+    private suspend fun processFastAnalysis(
+        stamp: FrameStamp,
+        result: Result<com.olivia.core.FrameAnalysis>,
+        startedAt: com.olivia.core.ClockReading,
+    ) {
+        var audioRequestedAtMs: Long? = null
+        var audioStartedAtMs: Long? = null
+        val analysis = result.getOrNull() ?: return
+        var correction: Correction? = null
+        val accepted = runtimeMutex.withLock {
+            if (!coordinator.accepts(analysis.frameStamp)) false
+            else {
+                coordinator.onAnalysisRestored()
+                coordinator.recordDiagnosis(analysis)
+                correctionTracker.onAnalysis(analysis, clock.now())?.let { outcome ->
+                    guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
+                    coordinator.recordCorrectionOutcome(outcome)
+                }
+                correction = guidance.onAnalysis(analysis, clock.now())
+                true
+            }
+        }
+        if (accepted && correction != null) {
+            val issued = requireNotNull(correction)
+            audioRequestedAtMs = clock.now().monotonicMs
+            val audioResult = audio.announce(issued)
+            if (audioResult.isSuccess) {
+                val receipt = audioResult.getOrThrow()
+                audioStartedAtMs = receipt.startedAt.monotonicMs
+                runtimeMutex.withLock {
+                    if (coordinator.accepts(FrameStamp(issued.capture, 0, issued.issuedAt)) &&
+                        correctionTracker.begin(issued, receipt)
+                    ) coordinator.recordCorrectionIssued(issued)
+                    else guidance.onCorrectionOutcome(issued.id, CorrectionStatus.EXPIRED)
+                }
+            } else {
+                runtimeMutex.withLock { guidance.onCorrectionOutcome(issued.id, CorrectionStatus.EXPIRED) }
+            }
+        }
+        runtimeMutex.withLock {
+            val finished = clock.now()
+            metrics.finishFast(
+                LoopMeasurement(
+                    id = LoopMeasurementId(stamp.capture, stamp.sequence),
+                    frameReceivedAtMs = stamp.receivedAt.monotonicMs,
+                    analysisStartedAtMs = startedAt.monotonicMs.coerceAtLeast(stamp.receivedAt.monotonicMs),
+                    analysisFinishedAtMs = finished.monotonicMs.coerceAtLeast(startedAt.monotonicMs),
+                    audioRequestedAtMs = audioRequestedAtMs,
+                    audioStartedAtMs = audioStartedAtMs,
+                ),
+            )
+            publishMetrics()
+        }
+    }
+
+    private fun discard(decision: SamplingDecision.Discard) {
+        metrics.onFrameDiscarded()
+        publishMetrics()
+    }
+
+    private fun discard(decisions: List<SamplingDecision>) {
+        decisions.filterIsInstance<SamplingDecision.Discard>().forEach(::discard)
     }
 
     private fun expirePendingCorrection() {
@@ -349,6 +508,14 @@ internal class LiveSessionRuntime(
         _liveLoopMetrics.value = metrics.snapshot()
     }
 
+    private fun createGuidance(mode: AudioMode): DefaultGuidanceEngine =
+        if (fastProcessor != null) {
+            DefaultGuidanceEngine(
+                mode,
+                GuidancePolicy(requiredConsecutiveMatches = 1, persistenceMs = 180),
+            )
+        } else DefaultGuidanceEngine(mode)
+
     private fun expireIfDegraded() {
         if (coordinator.snapshot.value?.state == com.olivia.core.SessionState.DEGRADED) {
             expirePendingCorrection()
@@ -360,6 +527,8 @@ internal class LiveSessionRuntime(
         connectionObserver.cancel()
         frameObserver.cancel()
         watchdog.cancel()
+        analysisFrames.close()
+        analysisWorker.cancel()
         (gateway as? AutoCloseable)?.close()
         audio.close()
         runtimeScope.cancel()

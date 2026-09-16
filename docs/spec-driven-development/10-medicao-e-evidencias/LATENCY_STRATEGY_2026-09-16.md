@@ -124,9 +124,9 @@ Nenhuma linha declara os checkpoints aprovados. Ela indica compatibilidade arqui
 
 **4. O que Firebase/Android realmente permitem afirmar**
 
-- O código fixa Firebase BoM `34.19.0`, DAT `0.9.0` e `gemini-3.5-flash-lite`. A documentação atual lista esse modelo e `gemini-3.1-flash-lite`; este último é candidato a A/B, não uma recomendação automática de downgrade. Não basear uma nova solução em Gemini 2.5 sem considerar a descontinuação documentada. [Modelos Firebase](https://firebase.google.com/docs/ai-logic/models).
+- O código fixa Firebase BoM `34.19.0`, DAT `0.9.0` e `gemini-3.5-flash-lite`. A documentação atual lista esse modelo e `gemini-3.1-flash-lite`; este último foi testado em A/B no Moto e ficou mais lento nesta sessão (p50 do SDK 4.542 ms contra 3.277 ms, 9/10 contra 10/10). Portanto, 3.5 permanece o controle e não há justificativa para trocar o padrão sem uma campanha maior e avaliação rotulada de qualidade. Não basear uma nova solução em Gemini 2.5 sem considerar a descontinuação documentada. [Modelos Firebase](https://firebase.google.com/docs/ai-logic/models).
 - O POM disponível no cache Gradle resolve esse BoM para **`firebase-ai:17.17.0`**. Inspeção somente leitura do AAR confirmou: `image(bitmap)` codifica JPEG qualidade 80 + Base64; `content { inlineData(jpegBytes, "image/jpeg") }` aceita bytes preparados; `ThinkingLevel.MINIMAL` existe; `GenerationConfig` não expõe `mediaResolution`. Portanto, já há suporte local para comparar uma codificação explícita única em 512/384/320 e qualidade 80/65. O ganho e a qualidade continuam pendentes de medição. Essa inspeção não compilou nem executou o SDK.
-- `gemini-3.5-flash-lite` já usa thinking `MINIMAL` por padrão segundo a documentação atual. Não esperar grande ganho de “desligar reasoning”: Gemini 3.x não permite desativá-lo como nos modelos 2.5. Qualquer configuração explícita depende da API realmente disponível no artefato resolvido. [Thinking no Firebase](https://firebase.google.com/docs/ai-logic/thinking).
+- `gemini-3.5-flash-lite` já usa thinking `MINIMAL` por padrão segundo a documentação atual; o adapter agora também o declara explicitamente. Não esperar grande ganho de “desligar reasoning”: Gemini 3.x não permite desativá-lo como nos modelos 2.5. O probe de streaming no Moto mediu TTFT p50 de 1.714 ms e conclusão p50 de 1.852 ms, com seis chunks; a diferença curta entre primeiro e último chunk confirma que o atraso principal está antes da geração útil. [Thinking no Firebase](https://firebase.google.com/docs/ai-logic/thinking).
 - Há streaming de saída multimodal no SDK Kotlin. Porém, para Olivia, presença/confiança/ROI completas e validadas precedem qualquer direção. TTFT não substitui tempo até resultado utilizável. A documentação também informa que configurar `media_resolution` ainda não é suportado pelo Firebase AI Logic: reduzir o Bitmap no app é diferente de configurar esse parâmetro do modelo. [Entrada de imagens e streaming](https://firebase.google.com/docs/ai-logic/analyze-images).
 - `responseSchema`/JSON são suportados, mas não substituem a validação local de limites, finitude, área e campos proibidos. Não reduzir `maxOutputTokens=128` às cegas: uma saída truncada perde todo o resultado. [Saída estruturada](https://firebase.google.com/docs/ai-logic/generate-structured-output).
 - Reutilizar as instâncias existentes ajuda; o transporte já guarda `model` em uma propriedade. Instanciar o objeto não garante conexão nem modelo remoto “quentes”. Uma chamada sintética opcional pode aquecer o caminho cliente/serviço, mas não reserva capacidade nem garante afinidade no servidor. Não há `warmUpModel()` demonstrado no código ou nas referências consultadas.
@@ -230,8 +230,9 @@ JPEG preparado uma única vez e usa `inlineData`, preservando qualidade 80, dime
 prompt e schema. `GeminiFrameAnalyzer` e o teste BE-07 expõem spans agregados de decode, resize,
 JPEG, round-trip do SDK, parse e análise local. A rodada no Moto confirmou que o round-trip remoto é
 o gargalo dominante; não foram alterados thresholds, cadência, cooldown, histerese ou origem das
-diagnoses. Scheduler/último frame, remoção de IO do mutex, áudio WAV e modelo local exigem lotes
-separados com testes de regressão e não devem ser aplicados implicitamente nesta medição.
+diagnoses. O runtime agora executa análise/TTS fora do mutex, usa um worker single-flight e cancela
+o trabalho ativo em PAUSE/STOP, mantendo o commit protegido por geração. O tratamento de buffers
+DAT, áudio WAV e modelo local exigem lotes separados com testes de regressão.
 
 **8. Experimentos controlados no Moto G60**
 
