@@ -22,9 +22,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.ContentCut
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -168,46 +166,36 @@ private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
         contentColor = MaterialTheme.colorScheme.onSurface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(
+        Row(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            TakeThumbnail()
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                TakeThumbnail()
                 Text(
                     take.title,
-                    modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Icon(
-                    Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                val recorded = formatRelativeDay(take.recordedAtEpochMs)
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TakeMetaBadge(Icons.Outlined.Schedule, formatOffset(take.durationMs))
+                    TakeMetaBadge(Icons.Outlined.CalendarToday, recorded)
+                }
             }
-            val recorded = formatRelativeDay(take.recordedAtEpochMs)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TakeMetaBadge(Icons.Outlined.Schedule, formatOffset(take.durationMs))
-                TakeMetaBadge(Icons.Outlined.CalendarToday, recorded)
-                TakeMetaBadge(
-                    Icons.Outlined.BookmarkBorder,
-                    if (take.correctionCount == 1) "1 marca" else "${take.correctionCount} marcas",
-                )
-                TakeMetaBadge(
-                    Icons.Outlined.ContentCut,
-                    if (take.cutCount == 1) "1 corte" else "${take.cutCount} cortes",
-                )
-            }
+            Icon(
+                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
