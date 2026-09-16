@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Ray-Ban Meta Wayfarer Gen 2 em perspectiva de 45 graus">
+  <path d="M42 61c1-12 9-20 21-19l31 4c8 1 12 8 9 20l-5 40c-2 12-8 19-19 20l-19-3c-11-2-17-10-17-22z" fill="#8ca0b3" fill-opacity=".62" stroke="#d7dde1" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M118 55c-1-13 7-21 21-21l108 2c16 1 27 11 28 27l-7 42c-2 16-12 25-28 26l-85-3c-15-1-24-10-26-24z" fill="#8ca0b3" fill-opacity=".62" stroke="#d7dde1" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M96 58c8-7 15-8 24-3l3 11c-9-4-16-3-24 3z" fill="#6d747a" stroke="#d7dde1" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M45 57 20 41M274 51l31-18" fill="none" stroke="#d7dde1" stroke-width="4" stroke-linecap="round"/>
+  <path d="M37 59c2-12 10-19 21-18l10 3-3 24-20 7c-6-3-9-8-8-16z" fill="#7e858a" stroke="#d7dde1" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M280 48c-1-12 7-20 18-20l10 3-3 24-19 7c-5-4-7-8-6-14z" fill="#7e858a" stroke="#d7dde1" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="55" cy="58" r="6.5" fill="#1e2832" stroke="#eef1f2" stroke-width="2"/>
+  <circle cx="295" cy="47" r="7" fill="#1e2832" stroke="#eef1f2" stroke-width="2"/>
+  <circle cx="55" cy="58" r="2.3" fill="#8da4b8"/>
+  <circle cx="295" cy="47" r="2.5" fill="#8da4b8"/>
+  <path d="M63 54c10 2 20 3 30 3M143 44c35 2 70 2 104 2" fill="none" stroke="#f2f4f4" stroke-opacity=".75" stroke-width="2" stroke-linecap="round"/>
+</svg>
