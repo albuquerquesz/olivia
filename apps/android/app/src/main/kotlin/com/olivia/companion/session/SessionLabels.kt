@@ -1,5 +1,9 @@
 package com.olivia.companion.session
 
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import com.olivia.core.AudioMode
 import com.olivia.core.CorrectionStatus
 import com.olivia.core.DiagnosisKind
@@ -13,6 +17,23 @@ fun formatOffset(offsetMs: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%02d:%02d".format(minutes, seconds)
+}
+
+private val DayMonthFormatter = DateTimeFormatter.ofPattern("dd/MM")
+
+fun formatRelativeDay(
+    epochMs: Long,
+    nowMs: Long = System.currentTimeMillis(),
+    zone: ZoneId = ZoneId.systemDefault(),
+): String {
+    if (epochMs <= 0) return ""
+    val day = Instant.ofEpochMilli(epochMs).atZone(zone).toLocalDate()
+    val today = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
+    return when (day) {
+        today -> "Hoje"
+        today.minusDays(1) -> "Ontem"
+        else -> day.format(DayMonthFormatter)
+    }
 }
 
 fun sessionStateLabel(state: SessionState): String = when (state) {

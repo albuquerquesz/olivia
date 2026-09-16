@@ -9,6 +9,7 @@ data class TakeSummary(
     val sessionId: SessionId,
     val title: String,
     val durationMs: Long,
+    val recordedAtEpochMs: Long,
     val correctionCount: Int,
     val cutCount: Int,
     val isDemo: Boolean,
@@ -25,12 +26,14 @@ fun takeFromEvents(
 ): TakeSummary {
     val ordered = events.sortedBy { it.offsetMs }
     val durationMs = ordered.maxOfOrNull { it.offsetMs } ?: 0
+    val recordedAtEpochMs = ordered.minOfOrNull { it.atEpochMs } ?: 0
     val correctionCount = ordered.count { it.type == TimelineEventType.CORRECTION_ISSUED }
     val cutCount = ordered.count { it.type == TimelineEventType.CUT_SUGGESTED }
     return TakeSummary(
         sessionId = sessionId,
         title = title,
         durationMs = durationMs,
+        recordedAtEpochMs = recordedAtEpochMs,
         correctionCount = correctionCount,
         cutCount = cutCount,
         isDemo = isDemo,
