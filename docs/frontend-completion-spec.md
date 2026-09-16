@@ -8,13 +8,18 @@
 
 **Estado no Linear em 16/09/2026:** as cinco issues estão `In Progress`.
 
+**Atualização após a implementação local:** os commits `0c561a9`, `3ebdeb2` e
+`e558475` entregaram a maior parte do código do vertical slice. Esta versão da
+spec separa o que já está no repositório do que ainda precisa ser executado,
+medido ou desbloqueado antes de mover qualquer issue para `Done`.
+
 | Issue | Dependências | Situação para fechamento |
 | --- | --- | --- |
-| FE-02 / `OLI-10` | FE-00 concluída | Implementação mock presente; faltam cobertura e evidência de ensaio. |
-| FE-03 / `OLI-11` | FE-02, FE-00 | Implementação presente; faltam `.ppn`, aparelho configurado e validação offline. |
-| FE-04 / `OLI-12` | SH-04, FE-00 | Implementação presente; falta adequar cue local ao DoD e validar headset. |
-| FE-08 / `OLI-16` | FE-07 concluída, BE-12 em andamento | Bloqueada pelo vídeo nativo e ainda sem exportação no app. |
-| FE-09 / `OLI-17` | FE-02, FE-04 | Mock presente; faltam testes de limiar e evidência de recuperação. |
+| FE-02 / `OLI-10` | FE-00 concluída | Máquina, mock e cobertura determinística ampliados; falta o teste de orquestração completo, o ensaio e a evidência. |
+| FE-03 / `OLI-11` | FE-02, FE-00 | Fluxo local, estados e fallback presentes; faltam o `.ppn`, aparelho configurado, validação offline e ensaio de alcance. |
+| FE-04 / `OLI-12` | SH-04, FE-00 | WAVs locais, mapeamentos e fallback de TTS presentes; falta validar headset e registrar evidência de áudio. |
+| FE-08 / `OLI-16` | FE-07 concluída, BE-12 em andamento | JSON, `FileProvider` e chooser presentes; falta o `RecordingAsset`, vídeo + JSON e o handoff reproduzível. |
+| FE-09 / `OLI-17` | FE-02, FE-04 | Watchdog e proteção contra frames atrasados presentes; faltam cobertura de cenário, ensaio e reconexão DAT. |
 
 ## Decisão de conclusão
 
@@ -35,83 +40,132 @@ Há dois níveis de aceite:
 
 ### FE-02 — máquina de estados (`OLI-10`)
 
-**Já existe:** `SessionRuntime`, `ScenarioGlassesGateway`, watchdog no `OliviaSessionViewModel`, timeline de eventos, cenário determinístico e testes básicos em `apps/android/app/src/test`.
+**Já existe:** `SessionRuntime`, `ScenarioGlassesGateway`, watchdog no
+`OliviaSessionViewModel`, timeline de eventos, cenário determinístico e
+testes de transições inválidas, limiar de quatro segundos, sessão/frame
+estrangeiro e frame atrasado em `apps/android/app/src/test`.
 
 **Falta para fechar:**
 
-- cobrir em teste as transições inválidas de `pause`, `resume`, `degrade`, `recover` e `stop`, além do `start` já coberto;
-- adicionar um teste de orquestração que prove `STARTED → PAUSED → STARTED → STOPPED` e `STARTED → DEGRADED → STARTED` sem perder eventos da timeline;
-- provar que o mock emite frames a cada 2 s, cria o gap de 4 s e recupera sem reiniciar a sessão;
-- impedir que um frame atrasado seja analisado depois de a sessão ter sido pausada ou encerrada;
-- conferir no Android que `STARTED`, `PAUSED`, `DEGRADED` e `STOPPED` aparecem com texto e contraste corretos.
+- adicionar um teste de orquestração que prove
+  `STARTED → PAUSED → STARTED → STOPPED` e
+  `STARTED → DEGRADED → STARTED` sem perder eventos da timeline;
+- provar no mesmo cenário que o mock emite frames a cada 2 s, cria o gap de
+  4 s, recupera sem reiniciar a sessão e mantém as marcas anteriores;
+- validar no Android que `STARTED`, `PAUSED`, `DEGRADED` e `STOPPED` aparecem
+  com texto, contraste e ação disponível coerentes;
+- executar a suíte unitária e registrar o resultado; ela ainda não foi
+  executada neste ciclo.
 
 **Aceite:** testes verdes + ensaio mock com início, pausa, retomada, queda, recuperação e término; a timeline precisa manter os eventos anteriores à queda.
 
 ### FE-03 — comandos de voz locais (`OLI-11`)
 
-**Já existe:** contrato fechado para `gravar`, `pausar`, `retomar` e `terminar`; Porcupine; reconhecimento on-device; permissão de microfone; ciclo de vida; fallback de debug no mock; estados de disponibilidade e erro.
+**Já existe:** contrato fechado para `gravar`, `pausar`, `retomar` e
+`terminar`; integração preparada para Porcupine e reconhecimento on-device;
+permissão de microfone; ciclo de vida; fallback de debug no mock; estados de
+disponibilidade e erro; aviso de disponibilidade também na tela `Gravar`.
 
 **Falta para fechar:**
 
-- colocar o modelo customizado Android `.ppn` de “Oi, Olivia” em `apps/android/app/src/main/assets/olivia_android.ppn` e manter a chave somente em `local.properties`/ambiente;
-- validar em aparelho Android API 31+ com reconhecimento on-device disponível e permissão `RECORD_AUDIO` concedida;
-- confirmar em modo avião que wake word e comandos continuam funcionando sem rede;
-- mostrar disponibilidade do comando de voz também na tela `Gravar`; hoje o aviso está concentrado no fluxo da Home;
-- testar os quatro comandos, comando fora da lista, comando em estado inválido e retorno ao wake word após cada tentativa;
-- testar o celular distante na bancada e confirmar retorno audível para sucesso, erro e entrada indisponível;
-- garantir que o fallback de debug só apareça no backend mock e não seja apresentado como fluxo principal.
+- obter o modelo customizado Android `.ppn` de “Oi, Olivia” e colocá-lo em
+  `apps/android/app/src/main/assets/olivia_android.ppn`; não criar placeholder
+  nem commitar a chave, que deve permanecer em `local.properties`/ambiente;
+- validar em aparelho Android API 31+ com reconhecimento on-device disponível
+  e permissão `RECORD_AUDIO` concedida;
+- confirmar em modo avião que wake word e comandos continuam funcionando sem
+  rede;
+- testar os quatro comandos, comando fora da lista, comando em estado inválido
+  e retorno ao wake word após cada tentativa;
+- testar o celular distante na bancada e confirmar retorno audível para
+  sucesso, erro e entrada indisponível;
+- garantir, por inspeção do APK/flavor e ensaio, que o fallback de debug só
+  aparece no backend mock e não é apresentado como fluxo principal;
+- registrar aparelho/API, estado da permissão, conectividade e resultado de
+  cada comando no comentário da issue.
 
 **Aceite:** os quatro comandos controlam a sessão sem toque, cada comando produz feedback curto, nenhuma fala é enviada à nuvem e o app informa honestamente quando o recurso não está configurado.
 
 ### FE-04 — feedback de áudio (`OLI-12`)
 
-**Já existe:** API de core sem conhecimento de hardware; modo Voz com TTS do Android; modo Sinal com distinção estéreo esquerda/direita; sinais de início, pausa, retomada, término, queda e recuperação.
+**Já existe:** API de core sem conhecimento de hardware; modo Voz com TTS do
+Android; modo Sinal com WAVs locais de aproximadamente 80 ms e distinção
+estéreo esquerda/direita; mapeamento determinístico de cada `Direction` e
+`SessionSignal`; fallback observável quando TTS falha; fila que não corta um
+aviso crítico de conexão; sinais de início, pausa, retomada, término, queda e
+recuperação.
 
 **Falta para fechar:**
 
-- trocar o tom PCM sintetizado em runtime por cues WAV locais de aproximadamente 80 ms, conforme o DoD e o contrato do modo Sinal;
-- cobrir a tradução de cada `Direction` e `SessionSignal` para cue/texto em testes determinísticos;
-- tratar falha ou indisponibilidade do TTS sem silêncio enganoso: emitir erro observável e manter o modo Sinal utilizável;
-- confirmar que uma fala nova não corta indevidamente um aviso crítico de queda/retomada;
-- validar saída em headset Bluetooth comum nos modos Voz e Sinal antes de testar os alto-falantes dos óculos.
+- executar os testes determinísticos e confirmar que os WAVs versionados são
+  PCM, estéreo, 16 kHz e aproximadamente 80 ms;
+- validar saída em headset Bluetooth comum nos modos Voz e Sinal;
+- simular TTS indisponível e confirmar no aparelho que há erro observável,
+  fallback audível e nenhum silêncio enganoso;
+- confirmar no ensaio que uma fala nova não corta aviso crítico de queda ou
+  retomada;
+- registrar modelo do headset, modo de áudio, rota de saída e resultado; não
+  declarar roteamento para os óculos antes do teste de hardware.
 
 **Aceite:** correções e sinais chegam ao headset, o sinal tem duração curta e distingue esquerda/direita, e a API continua recebendo apenas `Correction`/`SessionSignal`, nunca um tipo de óculos.
 
 ### FE-08 — handoff para CapCut (`OLI-16`)
 
-**Estado:** não implementado no frontend atual. A revisão mostra timeline e cortes, mas não há exportação, `ACTION_SEND`, artefato de marcação ou adapter de compartilhamento. O ViewModel ainda chama o pós-processador com `recording = null`.
+**Estado atual:** o frontend agora possui `OliviaMarkersJson`, contrato
+`olivia-markers.json`, `SessionExportAdapter`, `AndroidSessionExportAdapter`,
+`FileProvider`, chooser Android, estados de sucesso/falha/indisponibilidade e
+um botão de exportação na revisão. O `ViewModel` tenta obter a gravação pelo
+adapter depois de `STOPPED`, mas os flavors atuais ainda retornam
+`RecordingSource = null`; portanto o vídeo + JSON ainda não foi demonstrado.
 
 **Falta para fechar:**
 
-- concluir com BE-12 o recebimento do `RecordingAsset` e seu caminho local depois de `STOPPED`;
-- definir um artefato canônico `olivia-markers.json` contendo versão do contrato, `sessionId`, duração e marcas com `offsetMs`, tipo, rótulo, direção, status e cortes sugeridos;
-- gerar o artefato sem incluir frames, áudio bruto, credenciais ou dados de terceiros;
-- encapsular o handoff em um adapter de exportação, usando URI `content://`/chooser do Android e sem criar editor próprio;
-- compartilhar vídeo e JSON juntos sem bloquear o loop ao vivo;
-- fazer o spike do caminho suportado no sistema alvo; se CapCut não aceitar integração direta, documentar o fluxo manual demonstrável;
-- exibir estados de exportação, falha e sucesso sem afirmar que o CapCut importou algo quando isso não tiver sido comprovado;
-- testar conteúdo do JSON, URI compartilhada, ausência de dados privados e comportamento sem vídeo disponível.
+- concluir com BE-12 o recebimento de um `RecordingAsset` por arquivo local de
+  fixture e, depois, pelo caminho nativo dos óculos; o frontend deve apenas
+  consumir o contrato, sem reescrever o loop ao vivo;
+- conectar o `RecordingSource` do flavor mock a uma fixture reproduzível para
+  validar vídeo + `olivia-markers.json` antes do hardware;
+- compartilhar vídeo e JSON juntos depois de `STOPPED`, sem bloquear análise,
+  áudio ou watchdog durante o take;
+- fazer o spike do caminho suportado no sistema alvo; se CapCut não aceitar
+  integração direta, documentar o fluxo manual demonstrável;
+- testar conteúdo do JSON, versão do contrato, URI `content://`, ausência de
+  frames/áudio bruto/credenciais e comportamento sem vídeo disponível;
+- confirmar que a UI não afirma que o CapCut importou algo: ela só deve
+  informar que os arquivos foram preparados/compartilhados.
 
 **Aceite:** após o take, a pessoa consegue compartilhar o vídeo nativo e o artefato de marcação; a integração direta não é requisito, mas o handoff manual precisa ser reproduzível e documentado.
 
 ### FE-09 — queda e retorno (`OLI-17`)
 
-**Já existe:** timeout configurável de 4 s, transição para `DEGRADED`, overlay na UI, preservação da timeline, tom de queda/retomada e recuperação quando chega um frame posterior no cenário mock.
+**Já existe:** timeout configurável de 4 s, transição para `DEGRADED`, overlay
+na UI, preservação da timeline, tom de queda/retomada e recuperação quando
+chega um frame posterior no cenário mock; há testes para o limiar, pausa,
+frames atrasados e frames fora da sessão.
 
 **Falta para fechar:**
 
-- testar que nunca degrada antes de 4 s e que entra em `DEGRADED` na primeira janela do watchdog depois do limiar (o polling atual é de 250 ms);
-- testar que pausa não dispara watchdog, que a queda não apaga marcas e que a recuperação não cria nova timeline;
-- testar que os sinais de queda e retomada são distintos do sinal de pausa;
-- testar um frame atrasado/fora de sessão para não analisar dados depois de `STOPPED`;
-- explicitar no adapter real a tentativa de reconexão e o retorno a `STARTED`; o mock não substitui a validação DAT;
-- fazer dois ensaios manuais: caminho saudável sem falso alerta e caminho com gap de frames.
+- adicionar o teste de orquestração que confirme que o polling de 250 ms não
+  degrada antes de 4 s e degrada na primeira janela após o limiar;
+- confirmar em teste que pausa não dispara watchdog, a queda não apaga marcas e
+  a recuperação não cria uma nova timeline;
+- adicionar uma asserção explícita de que os sinais de queda/retomada são
+  distintos do sinal de pausa;
+- explicitar no adapter real a tentativa de reconexão e o retorno a `STARTED`;
+  o mock não substitui a validação DAT;
+- fazer dois ensaios manuais: caminho saudável sem falso alerta e caminho com
+  gap de frames, guardando os eventos observados;
+- não marcar a integração de hardware como concluída antes de BE-00/INT-04.
 
 **Aceite:** a ausência de frame nunca fica silenciosa; o estado, o áudio e a timeline contam a mesma história antes, durante e depois da queda.
 
 ## Correções de conformidade visual e de produto
 
-Estas correções precisam entrar antes do aceite visual, mesmo não sendo uma issue funcional isolada:
+**Status atual:** as correções de produto listadas abaixo foram aplicadas nos
+commits desta implementação. Resta somente a inspeção manual no APK para
+confirmar margens, rolagem, contraste, escala de fonte e `contentDescription`.
+
+O aceite visual precisa confirmar que continuam verdadeiras estas decisões:
 
 - remover da Home o CTA “Começar a gravar”; o `DESIGN.md` reserva a entrada de gravação para o botão circular da navegação e diz que a Home não deve ter “Gravar agora”;
 - remover a waveform com `rememberInfiniteTransition`; o movimento aprovado não possui loops contínuos;
@@ -134,14 +188,90 @@ Estas correções precisam entrar antes do aceite visual, mesmo não sendo uma i
 - mock é determinístico e offline; adapter real substitui a fonte sem reescrever o fluxo;
 - não usar `mwdat-display` nem criar editor de vídeo próprio.
 
-## Ordem objetiva de execução
+## Plano de implementação para concluir
 
-1. Corrigir as não conformidades visuais e os claims não medidos.
-2. Fechar testes de FE-02 e FE-09 no mock.
-3. Adicionar o `.ppn`, validar FE-03 offline e testar alcance/retorno.
-4. Fechar cues, falhas e ensaio de headset de FE-04.
-5. Integrar BE-12, gerar JSON e concluir o handoff de FE-08.
-6. Registrar evidências por issue no Linear; só então alterar o status para `Done`.
+### Fase 0 — preparar dependências sem alterar o escopo
+
+- [ ] Obter o `.ppn` oficial de “Oi, Olivia”; não fabricar um artefato e não
+  commitar a chave do Porcupine.
+- [ ] Confirmar disponibilidade do aparelho Android API 31+ e de um headset
+  Bluetooth comum.
+- [ ] Manter BE-12 responsável por `RecordingAsset`/fixture de vídeo e BE-00
+  responsável pelo adapter de frames DAT; o frontend não pode contornar esses
+  contratos com APIs do SDK espalhadas pela UI.
+- [ ] Manter a integração real de hardware como dependência de INT-04. Não
+  transformar uma validação mock em alegação de hardware.
+
+### Fase 1 — fechar o vertical slice offline (FE-02 e FE-09)
+
+- [ ] Adicionar o teste de orquestração de sessão com pausa, retomada, queda,
+  recuperação e término, incluindo a lista de eventos da timeline.
+- [ ] Exercitar o mock com frames de 2 s e gap maior que 4 s; confirmar que
+  marcas anteriores permanecem e que a sessão não reinicia.
+- [ ] Cobrir explicitamente o polling de 250 ms, a pausa sem watchdog, o
+  frame atrasado/fora de sessão e a distinção entre os sinais de pausa e
+  conexão.
+- [ ] Executar a suíte unitária do flavor mock e guardar o resultado.
+- [ ] Fazer o ensaio manual saudável e o ensaio com gap; capturar estado,
+  áudio e timeline observados.
+
+### Fase 2 — fechar voz local (FE-03)
+
+- [ ] Adicionar o `.ppn` ao caminho de assets e configurar a chave somente em
+  `local.properties` ou ambiente.
+- [ ] Instalar o APK mock em aparelho API 31+ com `RECORD_AUDIO` concedido.
+- [ ] Testar `gravar`, `pausar`, `retomar` e `terminar` em modo avião.
+- [ ] Testar comando desconhecido, comando em estado inválido, erro de
+  reconhecimento e retorno ao wake word.
+- [ ] Repetir com o celular distante na bancada e registrar os retornos
+  audíveis de sucesso, erro e indisponibilidade.
+- [ ] Confirmar que somente o mock expõe controles de debug.
+
+### Fase 3 — fechar áudio (FE-04)
+
+- [ ] Executar os testes de `AudioCue` e validar os WAVs locais: PCM16,
+  estéreo, 16 kHz e aproximadamente 80 ms.
+- [ ] Validar Modo Voz e Modo Sinal em headset Bluetooth comum.
+- [ ] Desabilitar/indisponibilizar TTS e confirmar fallback audível, erro
+  observável e continuidade do Modo Sinal.
+- [ ] Confirmar que os alertas de queda/retomada não são cortados por uma nova
+  correção.
+- [ ] Registrar modelo do headset e rota de áudio; não afirmar saída nos
+  óculos sem o teste de hardware correspondente.
+
+### Fase 4 — concluir exportação (FE-08)
+
+- [ ] Integrar o `RecordingSource` do mock a uma fixture local reproduzível.
+- [ ] Gerar `olivia-markers.json` a partir da revisão, sem frames, áudio bruto,
+  credenciais ou dados de terceiros.
+- [ ] Compartilhar vídeo e JSON juntos via URI `content://` depois de
+  `STOPPED`, sem bloquear o loop ao vivo.
+- [ ] Testar sucesso, falha, ausência de vídeo, conteúdo do JSON e URI
+  compartilhada.
+- [ ] Fazer o spike de CapCut; se não houver integração direta, documentar e
+  reproduzir o handoff manual usando os dois arquivos.
+- [ ] Substituir a fixture pelo adapter nativo somente quando BE-12/INT-04
+  estiverem disponíveis e medidos.
+
+### Fase 5 — evidência e fechamento no Linear
+
+- [ ] Executar `:app:testMockDebugUnitTest` e `assembleMockDebug`.
+- [ ] Instalar o APK e anexar/registrar o resultado dos ensaios nas cinco
+  issues.
+- [ ] Registrar dependências ainda abertas, especialmente BE-12, BE-00 e
+  INT-04, sem marcar o frontend como validado em hardware.
+- [ ] Só depois da revisão dos critérios abaixo, mover cada issue para
+  `Done` individualmente.
+
+## Critérios de fechamento por issue
+
+| Issue | Código mínimo | Evidência obrigatória | Bloqueio atual |
+| --- | --- | --- | --- |
+| FE-02 / `OLI-10` | Orquestração completa e mock determinístico | Teste verde + ensaio dos quatro estados e timeline | Nenhum estrutural; falta executar e registrar |
+| FE-03 / `OLI-11` | `.ppn`, comandos locais e fallback mock | Aparelho API 31+, modo avião, quatro comandos e erros | Modelo `.ppn` e aparelho |
+| FE-04 / `OLI-12` | Cues WAV, TTS/fallback e fila de avisos | Headset Bluetooth em Voz e Sinal | Headset e execução |
+| FE-08 / `OLI-16` | `RecordingAsset`, JSON e share conjunto | Vídeo + JSON compartilhados e handoff CapCut reproduzido | BE-12 / `OLI-29` |
+| FE-09 / `OLI-17` | Watchdog, timeline e reconexão por adapter | Ensaio saudável + gap + recuperação | BE-00 / `OLI-40` e INT-04 / `OLI-33` para hardware |
 
 ## Checklist final de evidência
 
