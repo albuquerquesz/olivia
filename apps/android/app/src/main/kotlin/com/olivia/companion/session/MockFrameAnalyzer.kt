@@ -28,40 +28,62 @@ internal class MockFrameAnalyzer(
         val marker = frame.bytes.firstOrNull()?.toInt()
             ?: return Result.failure(IllegalArgumentException("Fixture mock sem marcador"))
         val analyzedAt = clock()
-        val diagnosis = when (marker) {
-            MockFrameFixtures.FRAMING_MARKER -> VisualDiagnosis(
-                kind = DiagnosisKind.FRAMING,
-                severity = Severity.MAJOR,
-                confidence = Confidence(0.91f),
-                direction = Direction.TURN_RIGHT,
-                magnitude = 20.0,
+        if (marker == MockFrameFixtures.FRAMING_MARKER) {
+            return analysisResult(
+                frame = frame,
+                analyzedAt = analyzedAt,
+                diagnosis = VisualDiagnosis(
+                    kind = DiagnosisKind.FRAMING,
+                    severity = Severity.MAJOR,
+                    confidence = Confidence(0.91f),
+                    direction = Direction.TURN_RIGHT,
+                    magnitude = 20.0,
+                ),
             )
-            MockFrameFixtures.LIGHT_MARKER -> VisualDiagnosis(
-                kind = DiagnosisKind.LIGHT,
-                severity = Severity.MAJOR,
-                confidence = Confidence(0.88f),
-                direction = Direction.LEAVE_THE_SHADOW,
-            )
-            MockFrameFixtures.HORIZON_MARKER -> VisualDiagnosis(
-                kind = DiagnosisKind.HORIZON,
-                severity = Severity.MINOR,
-                confidence = Confidence(0.74f),
-                direction = Direction.LEVEL_HORIZON_LEFT,
-                magnitude = 8.0,
-            )
-            MockFrameFixtures.NORMAL_MARKER -> null
-            else -> return Result.failure(IllegalArgumentException("Marcador mock desconhecido: $marker"))
         }
-
-        return Result.success(
-            FrameAnalysis(
-                sessionId = frame.sessionId,
-                frameCapturedAtEpochMs = frame.capturedAtEpochMs,
-                analyzedAtEpochMs = analyzedAt,
-                latencyMs = (analyzedAt - frame.capturedAtEpochMs).coerceAtLeast(0),
-                source = AnalyzerSource.MOCK,
-                diagnoses = listOfNotNull(diagnosis),
-            ),
-        )
+        if (marker == MockFrameFixtures.LIGHT_MARKER) {
+            return analysisResult(
+                frame = frame,
+                analyzedAt = analyzedAt,
+                diagnosis = VisualDiagnosis(
+                    kind = DiagnosisKind.LIGHT,
+                    severity = Severity.MAJOR,
+                    confidence = Confidence(0.88f),
+                    direction = Direction.LEAVE_THE_SHADOW,
+                ),
+            )
+        }
+        if (marker == MockFrameFixtures.HORIZON_MARKER) {
+            return analysisResult(
+                frame = frame,
+                analyzedAt = analyzedAt,
+                diagnosis = VisualDiagnosis(
+                    kind = DiagnosisKind.HORIZON,
+                    severity = Severity.MINOR,
+                    confidence = Confidence(0.74f),
+                    direction = Direction.LEVEL_HORIZON_LEFT,
+                    magnitude = 8.0,
+                ),
+            )
+        }
+        if (marker == MockFrameFixtures.NORMAL_MARKER) {
+            return analysisResult(frame = frame, analyzedAt = analyzedAt, diagnosis = null)
+        }
+        return Result.failure(IllegalArgumentException("Marcador mock desconhecido: $marker"))
     }
+
+    private fun analysisResult(
+        frame: Frame,
+        analyzedAt: Long,
+        diagnosis: VisualDiagnosis?,
+    ): Result<FrameAnalysis> = Result.success(
+        FrameAnalysis(
+            sessionId = frame.sessionId,
+            frameCapturedAtEpochMs = frame.capturedAtEpochMs,
+            analyzedAtEpochMs = analyzedAt,
+            latencyMs = (analyzedAt - frame.capturedAtEpochMs).coerceAtLeast(0),
+            source = AnalyzerSource.MOCK,
+            diagnoses = listOfNotNull(diagnosis),
+        ),
+    )
 }

@@ -7,11 +7,19 @@ import androidx.lifecycle.viewModelScope
 import com.olivia.companion.ActiveBackend
 import com.olivia.companion.GlassesBackend
 import com.olivia.core.AudioMode
+import com.olivia.core.AudioFeedback
+import com.olivia.core.Correction
+import com.olivia.core.CorrectionStatus
+import com.olivia.core.DiagnosisKind
+import com.olivia.core.FrameAnalysis
 import com.olivia.core.GlassesConnection
 import com.olivia.core.SessionConfig
 import com.olivia.core.SessionId
 import com.olivia.core.SessionSnapshot
 import com.olivia.core.SessionState
+import com.olivia.core.SessionSignal
+import com.olivia.core.TimelineEvent
+import com.olivia.core.TimelineEventType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -41,24 +49,23 @@ data class OliviaUiState(
 class OliviaSessionViewModel(
     private val audioModeStore: AudioModeStore,
     backend: GlassesBackend,
+    private val audioFeedback: AndroidAudioFeedback,
     private val clock: () -> Long = { System.currentTimeMillis() },
 ) : ViewModel() {
     private val timeline = InMemoryTimeline()
     private val runtime = DebugSessionRuntime(timeline, clock)
-    private val mockGateway = if (backend.requiresPhysicalGlasses) {
-        null
-    } else {
-        MockFrameGateway(clock = clock)
-    }
-    private val mockAnalyzer = if (backend.requiresPhysicalGlasses) {
-        null
-    } else {
-        MockFrameAnalyzer(clock = clock)
-    }
+    private val guidance = MockGuidanceEngine(SessionConfig().correctionCooldownMs)
+    private val mockGateway = backend
+        .takeUnless { it.requiresPhysicalGlasses }
+        ?.let { MockFrameGateway(clock = clock) }
+    private val mockAnalyzer = backend
+        .takeUnless { it.requiresPhysicalGlasses }
+        ?.let { MockFrameAnalyzer(clock = clock) }
     private var frameJob: Job? = null
     private var gatewayCommand: Job? = null
     private var ticker: Job? = null
     private var watchdog: Job? = null
+    private var pendingCorrection: Correction? = null
 
     private val _uiState = MutableStateFlow(
         OliviaUiState(
@@ -76,8 +83,12 @@ class OliviaSessionViewModel(
         frameJob = mockGateway?.let { gateway ->
             viewModelScope.launch {
                 gateway.frames.collect { frame ->
-                    mockAnalyzer?.analyze(frame)?.onFailure { }
+                    val wasDegraded = runtime.snapshot?.state == SessionState.DEGRADED
+                    mockAnalyzer?.analyze(frame)?.getOrNull()?.let { analysis ->
+                        handleAnalysis(analysis)
+                    }
                     runtime.frameReceived(frame.capturedAtEpochMs)
+                    if (wasDegraded) signalAudio(SessionSignal.CONNECTION_RESTORED)
                     publish()
                 }
             }
@@ -93,9 +104,16 @@ class OliviaSessionViewModel(
 
     fun start() {
         val config = SessionConfig(audioMode = _uiState.value.audioMode)
+        val canStart = runtime.snapshot?.state == null || runtime.snapshot?.state in setOf(
+            SessionState.IDLE,
+            SessionState.STOPPED,
+        )
         val started = runtime.start(config)
-        if (started != null) {
+        if (canStart && started != null) {
+            guidance.reset()
+            pendingCorrection = null
             startGateway(started.id, config)
+            signalAudio(SessionSignal.SESSION_STARTED)
         }
         startTicker()
         startWatchdog()
@@ -103,17 +121,26 @@ class OliviaSessionViewModel(
     }
 
     fun pause() {
-        runtime.pause()
-        gatewayCommand = mockGateway?.let { gateway ->
-            viewModelScope.launch { gateway.pauseCapture() }
+        val wasLive = runtime.snapshot?.state in setOf(SessionState.STARTED, SessionState.DEGRADED)
+        val paused = runtime.pause()
+        if (wasLive && paused?.state == SessionState.PAUSED) {
+            expirePendingCorrection(paused.id, clock())
+            gatewayCommand = mockGateway?.let { gateway ->
+                viewModelScope.launch { gateway.pauseCapture() }
+            }
+            signalAudio(SessionSignal.SESSION_PAUSED)
         }
         publish()
     }
 
     fun resume() {
-        runtime.resume()
-        gatewayCommand = mockGateway?.let { gateway ->
-            viewModelScope.launch { gateway.resumeCapture() }
+        val wasPaused = runtime.snapshot?.state == SessionState.PAUSED
+        val resumed = runtime.resume()
+        if (wasPaused && resumed?.state == SessionState.STARTED) {
+            gatewayCommand = mockGateway?.let { gateway ->
+                viewModelScope.launch { gateway.resumeCapture() }
+            }
+            signalAudio(SessionSignal.SESSION_RESUMED)
         }
         startTicker()
         startWatchdog()
@@ -121,18 +148,33 @@ class OliviaSessionViewModel(
     }
 
     fun degrade() {
-        runtime.degrade()
+        val degraded = runtime.degrade()
+        if (degraded?.state == SessionState.DEGRADED) {
+            expirePendingCorrection(degraded.id, clock())
+            signalAudio(SessionSignal.CONNECTION_LOST)
+        }
         publish()
     }
 
     fun recover() {
-        runtime.recover()
+        val wasDegraded = runtime.snapshot?.state == SessionState.DEGRADED
+        val recovered = runtime.recover()
+        if (wasDegraded && recovered?.state == SessionState.STARTED) {
+            signalAudio(SessionSignal.CONNECTION_RESTORED)
+        }
         startTicker()
         publish()
     }
 
     fun stop() {
-        runtime.stop()
+        val shouldSignal = runtime.snapshot?.state in setOf(
+            SessionState.STARTED,
+            SessionState.PAUSED,
+            SessionState.DEGRADED,
+        )
+        runtime.snapshot?.id?.let { sessionId -> expirePendingCorrection(sessionId, clock()) }
+        val stopped = runtime.stop()
+        if (shouldSignal && stopped?.state == SessionState.STOPPED) signalAudio(SessionSignal.SESSION_STOPPED)
         ticker?.cancel()
         ticker = null
         watchdog?.cancel()
@@ -165,6 +207,112 @@ class OliviaSessionViewModel(
         }
     }
 
+    private suspend fun handleAnalysis(analysis: FrameAnalysis) {
+        recordDiagnoses(analysis)
+        val pending = pendingCorrection
+        if (pending != null && !analysis.hasDeviation) {
+            guidance.onCorrectionOutcome(pending.id, CorrectionStatus.OBEYED)
+            recordCorrectionOutcome(pending, CorrectionStatus.OBEYED, analysis.analyzedAtEpochMs)
+            pendingCorrection = null
+        }
+        guidance.onAnalysis(analysis, analysis.analyzedAtEpochMs)?.let { correction ->
+            pendingCorrection?.let { previous ->
+                guidance.onCorrectionOutcome(previous.id, CorrectionStatus.SUPERSEDED)
+                recordCorrectionOutcome(previous, CorrectionStatus.SUPERSEDED, correction.issuedAtEpochMs)
+            }
+            pendingCorrection = correction
+            recordCorrectionIssued(correction)
+            audioFeedback.announce(correction)
+        }
+    }
+
+    private fun recordDiagnoses(analysis: FrameAnalysis) {
+        analysis.diagnoses.forEach { diagnosis ->
+            timeline.record(
+                TimelineEvent(
+                    id = "${analysis.sessionId.value}-diagnosis-${analysis.frameCapturedAtEpochMs}-${diagnosis.kind}",
+                    sessionId = analysis.sessionId,
+                    atEpochMs = analysis.analyzedAtEpochMs,
+                    offsetMs = sessionOffset(analysis.frameCapturedAtEpochMs),
+                    type = TimelineEventType.DIAGNOSIS,
+                    diagnosis = diagnosis,
+                    direction = diagnosis.direction,
+                    confidence = diagnosis.confidence,
+                    label = diagnosisLabel(diagnosis.kind),
+                ),
+            )
+        }
+    }
+
+    private fun recordCorrectionIssued(correction: Correction) {
+        timeline.record(
+            TimelineEvent(
+                id = "${correction.sessionId.value}-correction-${correction.id}",
+                sessionId = correction.sessionId,
+                atEpochMs = correction.issuedAtEpochMs,
+                offsetMs = sessionOffset(correction.issuedAtEpochMs),
+                type = TimelineEventType.CORRECTION_ISSUED,
+                diagnosis = correction.diagnosis,
+                direction = correction.direction,
+                confidence = correction.confidence,
+                correctionStatus = CorrectionStatus.PENDING,
+                correctionId = correction.id,
+                label = correction.spokenText,
+            ),
+        )
+    }
+
+    private fun recordCorrectionOutcome(
+        correction: Correction,
+        status: CorrectionStatus,
+        atEpochMs: Long,
+    ) {
+        timeline.record(
+            TimelineEvent(
+                id = "${correction.sessionId.value}-outcome-${correction.id}-$status",
+                sessionId = correction.sessionId,
+                atEpochMs = atEpochMs,
+                offsetMs = sessionOffset(atEpochMs),
+                type = TimelineEventType.CORRECTION_RESOLVED,
+                diagnosis = correction.diagnosis,
+                direction = correction.direction,
+                confidence = correction.confidence,
+                correctionStatus = status,
+                correctionId = correction.id,
+                label = correctionOutcomeLabel(status),
+            ),
+        )
+    }
+
+    private fun expirePendingCorrection(sessionId: SessionId, atEpochMs: Long) {
+        val pending = pendingCorrection ?: return
+        if (pending.sessionId != sessionId) return
+        guidance.onCorrectionOutcome(pending.id, CorrectionStatus.EXPIRED)
+        recordCorrectionOutcome(pending, CorrectionStatus.EXPIRED, atEpochMs)
+        pendingCorrection = null
+    }
+
+    private fun signalAudio(signal: SessionSignal) {
+        viewModelScope.launch { audioFeedback.signal(signal) }
+    }
+
+    private fun sessionOffset(atEpochMs: Long): Long =
+        (atEpochMs - (runtime.snapshot?.startedAtEpochMs ?: atEpochMs)).coerceAtLeast(0)
+
+    private fun diagnosisLabel(kind: DiagnosisKind): String = when (kind) {
+        DiagnosisKind.FRAMING -> "Desvio de enquadramento"
+        DiagnosisKind.LIGHT -> "Sombra ou baixa luz"
+        DiagnosisKind.HORIZON -> "Horizonte inclinado"
+    }
+
+    private fun correctionOutcomeLabel(status: CorrectionStatus): String = when (status) {
+        CorrectionStatus.OBEYED -> "Correção confirmada"
+        CorrectionStatus.PENDING -> "Correção pendente"
+        CorrectionStatus.IGNORED -> "Correção não confirmada"
+        CorrectionStatus.EXPIRED -> "Correção expirada"
+        CorrectionStatus.SUPERSEDED -> "Correção substituída"
+    }
+
     private fun startWatchdog() {
         if (watchdog?.isActive == true) return
         watchdog = viewModelScope.launch {
@@ -179,8 +327,12 @@ class OliviaSessionViewModel(
                     session.state == SessionState.STARTED &&
                     clock() - lastFrameAt >= session.config.degradedAfterMs
                 ) {
-                    runtime.degrade()
-                    publish()
+                    val degraded = runtime.degrade()
+                    if (degraded?.state == SessionState.DEGRADED) {
+                        expirePendingCorrection(degraded.id, clock())
+                        signalAudio(SessionSignal.CONNECTION_LOST)
+                        publish()
+                    }
                 }
             }
         }
@@ -216,13 +368,14 @@ class OliviaSessionViewModel(
     private fun initialConnection(
         backend: GlassesBackend,
         session: SessionSnapshot?,
-    ): GlassesConnection = when {
-        session?.state == SessionState.DEGRADED -> GlassesConnection.DISCONNECTED
-        backend.requiresPhysicalGlasses -> GlassesConnection.UNAVAILABLE
-        else -> GlassesConnection.CONNECTED
+    ): GlassesConnection {
+        if (session?.state == SessionState.DEGRADED) return GlassesConnection.DISCONNECTED
+        if (backend.requiresPhysicalGlasses) return GlassesConnection.UNAVAILABLE
+        return GlassesConnection.CONNECTED
     }
 
     override fun onCleared() {
+        audioFeedback.close()
         mockGateway?.close()
         frameJob?.cancel()
         gatewayCommand?.cancel()
@@ -234,9 +387,14 @@ class OliviaSessionViewModel(
     class Factory(private val application: Application) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            val audioModeStore = AudioModeStore(application)
             return OliviaSessionViewModel(
-                audioModeStore = AudioModeStore(application),
+                audioModeStore = audioModeStore,
                 backend = ActiveBackend.current,
+                audioFeedback = AndroidAudioFeedback(
+                    context = application,
+                    modeProvider = audioModeStore::current,
+                ),
             ) as T
         }
     }

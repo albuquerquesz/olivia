@@ -29,11 +29,9 @@ fun formatRelativeDay(
     if (epochMs <= 0) return ""
     val day = Instant.ofEpochMilli(epochMs).atZone(zone).toLocalDate()
     val today = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
-    return when (day) {
-        today -> "Hoje"
-        today.minusDays(1) -> "Ontem"
-        else -> day.format(DayMonthFormatter)
-    }
+    if (day == today) return "Hoje"
+    if (day == today.minusDays(1)) return "Ontem"
+    return day.format(DayMonthFormatter)
 }
 
 fun sessionStateLabel(state: SessionState): String = when (state) {
@@ -85,14 +83,7 @@ fun diagnosisKindLabel(kind: DiagnosisKind?): String = when (kind) {
 }
 
 fun confirmationLabel(event: TimelineEvent): String? {
-    val status = event.correctionStatus ?: return when (event.type) {
-        TimelineEventType.CUT_SUGGESTED -> "Sugestão"
-        TimelineEventType.DIAGNOSIS,
-        TimelineEventType.CORRECTION_ISSUED,
-        TimelineEventType.CORRECTION_RESOLVED,
-        -> "Não confirmado"
-        else -> null
-    }
+    val status = event.correctionStatus ?: return confirmationLabelForType(event.type)
     return when (status) {
         CorrectionStatus.OBEYED -> "Confirmado"
         CorrectionStatus.PENDING -> "Não confirmado"
@@ -100,6 +91,18 @@ fun confirmationLabel(event: TimelineEvent): String? {
         CorrectionStatus.EXPIRED -> "Não confirmado"
         CorrectionStatus.SUPERSEDED -> "Não confirmado"
     }
+}
+
+private fun confirmationLabelForType(type: TimelineEventType): String? {
+    if (type == TimelineEventType.CUT_SUGGESTED) return "Sugestão"
+    if (
+        type == TimelineEventType.DIAGNOSIS ||
+        type == TimelineEventType.CORRECTION_ISSUED ||
+        type == TimelineEventType.CORRECTION_RESOLVED
+    ) {
+        return "Não confirmado"
+    }
+    return null
 }
 
 fun isConfirmed(event: TimelineEvent): Boolean =

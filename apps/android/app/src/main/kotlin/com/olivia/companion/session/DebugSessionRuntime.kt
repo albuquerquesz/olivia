@@ -30,7 +30,12 @@ class DebugSessionRuntime(
                 (now - startedAt - pausedTotal).coerceAtLeast(0)
             SessionState.PAUSED ->
                 (pausedAt ?: now).let { it - startedAt - pausedTotal }.coerceAtLeast(0)
-            else -> frozenElapsed
+            SessionState.IDLE,
+            SessionState.STOPPING,
+            SessionState.STOPPED,
+            SessionState.PROCESSING,
+            SessionState.READY,
+            SessionState.ERROR -> frozenElapsed
         }
     }
 
