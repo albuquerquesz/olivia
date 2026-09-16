@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.olivia.companion.ActiveBackend
 import com.olivia.companion.GlassesBackend
 import com.olivia.core.AudioMode
-import com.olivia.core.AudioFeedback
 import com.olivia.core.Correction
 import com.olivia.core.CorrectionStatus
 import com.olivia.core.DiagnosisKind
@@ -16,6 +15,7 @@ import com.olivia.core.FrameAnalyzer
 import com.olivia.core.GlassesConnection
 import com.olivia.core.GlassesGateway
 import com.olivia.core.PostProcessor
+import com.olivia.core.RecordingSource
 import com.olivia.core.SessionConfig
 import com.olivia.core.SessionId
 import com.olivia.core.SessionReview
@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 data class OliviaUiState(
     val backend: GlassesBackend,
@@ -42,6 +43,9 @@ data class OliviaUiState(
     val elapsedMs: Long,
     val takes: List<TakeSummary>,
     val voiceState: VoiceCommandState,
+    val audioStatus: AudioFeedbackStatus = AudioFeedbackStatus.INITIALIZING,
+    val audioStatusMessage: String? = null,
+    val exportState: ExportState = ExportState(),
 ) {
     val isLive: Boolean
         get() = session?.state in setOf(
@@ -60,6 +64,8 @@ class OliviaSessionViewModel(
     private val audioFeedback: AndroidAudioFeedback,
     private val voiceCommandSource: VoiceCommandSource? = null,
     private val clock: () -> Long = { System.currentTimeMillis() },
+    private val recordingSource: RecordingSource? = null,
+    private val exportAdapter: SessionExportAdapter? = null,
 ) : ViewModel() {
     private val timeline = InMemoryTimeline()
     private val runtime = SessionRuntime(timeline, clock)
@@ -69,8 +75,11 @@ class OliviaSessionViewModel(
     private var ticker: Job? = null
     private var watchdog: Job? = null
     private var voiceCommandJob: Job? = null
+    private var connectionJob: Job? = null
+    private var audioStatusJob: Job? = null
     private var pendingCorrection: Correction? = null
     private val reviews = mutableMapOf<String, SessionReview>()
+    private var latestConnection = initialConnection(backend, null)
 
     private val _uiState = MutableStateFlow(
         OliviaUiState(
@@ -81,22 +90,42 @@ class OliviaSessionViewModel(
             elapsedMs = 0,
             takes = emptyList(),
             voiceState = voiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
+            audioStatus = audioFeedback.status.value,
+            audioStatusMessage = audioFeedback.statusMessage.value,
         ),
     )
     val uiState: StateFlow<OliviaUiState> = _uiState.asStateFlow()
 
     init {
+        glassesGateway?.let { gateway ->
+            connectionJob = viewModelScope.launch {
+                gateway.connection.collect { connection ->
+                    latestConnection = connection
+                    publish()
+                }
+            }
+        }
         frameJob = glassesGateway?.let { gateway ->
             viewModelScope.launch {
                 gateway.frames.collect { frame ->
+                    if (!runtime.canProcessFrame(frame.sessionId, frame.capturedAtEpochMs)) return@collect
                     val wasDegraded = runtime.snapshot?.state == SessionState.DEGRADED
-                    frameAnalyzer?.analyze(frame)?.getOrNull()?.let { analysis ->
-                        handleAnalysis(analysis)
-                    }
+                    frameAnalyzer?.analyze(frame)?.getOrNull()
+                        ?.takeIf { it.sessionId == frame.sessionId }
+                        ?.let { analysis ->
+                            if (!runtime.canProcessFrame(frame.sessionId, frame.capturedAtEpochMs)) return@collect
+                            handleAnalysis(analysis)
+                        }
+                    if (!runtime.canProcessFrame(frame.sessionId, frame.capturedAtEpochMs)) return@collect
                     runtime.frameReceived(frame.capturedAtEpochMs)
                     if (wasDegraded) signalAudio(SessionSignal.CONNECTION_RESTORED)
                     publish()
                 }
+            }
+        }
+        audioStatusJob = viewModelScope.launch {
+            audioFeedback.status.collect {
+                publish()
             }
         }
         voiceCommandSource?.let { source ->
@@ -138,8 +167,12 @@ class OliviaSessionViewModel(
             SessionState.IDLE,
             SessionState.STOPPED,
         )
+        if (!canStart) {
+            publish()
+            return
+        }
         val started = runtime.start(config)
-        if (canStart && started != null) {
+        if (started != null) {
             guidance.reset()
             pendingCorrection = null
             startGateway(started.id, config)
@@ -182,6 +215,7 @@ class OliviaSessionViewModel(
         if (degraded?.state == SessionState.DEGRADED) {
             expirePendingCorrection(degraded.id, clock())
             signalAudio(SessionSignal.CONNECTION_LOST)
+            requestGatewayRecovery()
         }
         publish()
     }
@@ -192,6 +226,7 @@ class OliviaSessionViewModel(
         if (wasDegraded && recovered?.state == SessionState.STARTED) {
             signalAudio(SessionSignal.CONNECTION_RESTORED)
         }
+        if (wasDegraded) requestGatewayRecovery()
         startTicker()
         publish()
     }
@@ -374,15 +409,12 @@ class OliviaSessionViewModel(
                 if (session.state != SessionState.STARTED && session.state != SessionState.DEGRADED) {
                     break
                 }
-                val lastFrameAt = session.lastFrameAtEpochMs ?: continue
-                if (
-                    session.state == SessionState.STARTED &&
-                    clock() - lastFrameAt >= session.config.degradedAfterMs
-                ) {
+                if (runtime.shouldDegrade(clock())) {
                     val degraded = runtime.degrade()
                     if (degraded?.state == SessionState.DEGRADED) {
                         expirePendingCorrection(degraded.id, clock())
                         signalAudio(SessionSignal.CONNECTION_LOST)
+                        requestGatewayRecovery()
                         publish()
                     }
                 }
@@ -397,10 +429,12 @@ class OliviaSessionViewModel(
             it.copy(
                 audioMode = audioMode,
                 session = session,
-                connection = initialConnection(it.backend, session),
+                connection = currentConnection(it.backend, session),
                 elapsedMs = session?.elapsedMs ?: 0,
                 takes = buildTakes(),
                 voiceState = voiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
+                audioStatus = audioFeedback.status.value,
+                audioStatusMessage = audioFeedback.statusMessage.value,
             )
         }
     }
@@ -421,9 +455,22 @@ class OliviaSessionViewModel(
     private fun processTake(sessionId: SessionId) {
         val events = timeline.events(sessionId)
         viewModelScope.launch {
+            val recording = recordingSource?.let { source ->
+                try {
+                    val asset = source.listTakes(sessionId).firstOrNull()
+                    if (asset != null) {
+                        source.fetch(asset).collect { }
+                    }
+                    asset
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (_: Exception) {
+                    null
+                }
+            }
             postProcessor.process(
                 sessionId = sessionId,
-                recording = null,
+                recording = recording,
                 timeline = events,
             ).getOrNull()?.let { review ->
                 timeline.replace(sessionId, review.timeline)
@@ -431,6 +478,52 @@ class OliviaSessionViewModel(
                 publish()
             }
         }
+    }
+
+    fun exportTake(sessionId: SessionId) {
+        val take = take(sessionId)
+        val review = take?.review
+        val recording = review?.recording
+        val source = recordingSource
+        val adapter = exportAdapter
+        if (review == null || recording == null || source == null || adapter == null) {
+            _uiState.update {
+                it.copy(
+                    exportState = ExportState(
+                        status = ExportStatus.UNAVAILABLE,
+                        message = "O vídeo nativo ainda não está disponível neste ambiente.",
+                    ),
+                )
+            }
+            return
+        }
+        _uiState.update { it.copy(exportState = ExportState(status = ExportStatus.SHARING)) }
+        viewModelScope.launch {
+            val path = try {
+                source.localPathOf(recording.id)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                null
+            }
+            val result = adapter.share(review, path)
+            _uiState.update { it.copy(exportState = result) }
+        }
+    }
+
+    private fun requestGatewayRecovery() {
+        gatewayCommand = glassesGateway?.let { gateway ->
+            viewModelScope.launch { gateway.resumeCapture() }
+        }
+    }
+
+    private fun currentConnection(
+        backend: GlassesBackend,
+        session: SessionSnapshot?,
+    ): GlassesConnection {
+        if (session?.state == SessionState.DEGRADED) return GlassesConnection.DISCONNECTED
+        return latestConnection.takeIf { glassesGateway != null }
+            ?: initialConnection(backend, session)
     }
 
     private fun initialConnection(
@@ -446,6 +539,8 @@ class OliviaSessionViewModel(
         audioFeedback.close()
         if (glassesGateway is AutoCloseable) glassesGateway.close()
         frameJob?.cancel()
+        connectionJob?.cancel()
+        audioStatusJob?.cancel()
         gatewayCommand?.cancel()
         watchdog?.cancel()
         ticker?.cancel()
@@ -464,6 +559,8 @@ class OliviaSessionViewModel(
                 glassesGateway = ActiveBackend.createGlassesGateway(),
                 frameAnalyzer = ActiveBackend.createFrameAnalyzer(),
                 postProcessor = ActiveBackend.createPostProcessor(),
+                recordingSource = ActiveBackend.createRecordingSource(application),
+                exportAdapter = AndroidSessionExportAdapter(application),
                 audioFeedback = AndroidAudioFeedback(
                     context = application,
                     modeProvider = audioModeStore::current,

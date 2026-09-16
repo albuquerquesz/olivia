@@ -30,7 +30,9 @@ fun takeFromEvents(
         suggestedCuts = emptyList(),
         timeline = ordered,
     )
-    val durationMs = ordered.maxOfOrNull { it.offsetMs } ?: 0
+    val durationMs = resolvedReview.recording?.durationMs?.takeIf { it > 0 }
+        ?: ordered.maxOfOrNull { it.offsetMs }
+        ?: 0
     val recordedAtEpochMs = ordered.minOfOrNull { it.atEpochMs } ?: 0
     val correctionCount = ordered.count { it.type == TimelineEventType.CORRECTION_ISSUED }
     val cutCount = resolvedReview.suggestedCuts.size.takeIf { it > 0 }

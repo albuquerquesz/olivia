@@ -1,6 +1,7 @@
 package com.olivia.companion.session
 
 import com.olivia.core.SessionConfig
+import com.olivia.core.SessionId
 import com.olivia.core.SessionState
 import com.olivia.core.TimelineEventType
 import org.junit.Assert.assertEquals
@@ -99,5 +100,66 @@ class SessionRuntimeTest {
         val second = runtime.start(SessionConfig())
         assertEquals(first?.id, second?.id)
         assertTrue(runtime.snapshot?.state == SessionState.STARTED)
+    }
+
+    @Test
+    fun invalidPauseResumeDegradeRecoverAndStopDoNotCreateEvents() {
+        var now = 4_000_000L
+        val timeline = InMemoryTimeline()
+        val runtime = SessionRuntime(timeline) { now }
+
+        assertNull(runtime.pause())
+        assertNull(runtime.resume())
+        assertNull(runtime.degrade())
+        assertNull(runtime.recover())
+        assertNull(runtime.stop())
+
+        val started = runtime.start(SessionConfig())!!
+        assertEquals(SessionState.STARTED, runtime.resume()?.state)
+        assertEquals(SessionState.STARTED, runtime.recover()?.state)
+        assertEquals(SessionState.STOPPED, runtime.stop()?.state)
+
+        now += 1_000
+        assertEquals(SessionState.STOPPED, runtime.pause()?.state)
+        assertEquals(
+            listOf(TimelineEventType.SESSION_STARTED, TimelineEventType.SESSION_STOPPED),
+            timeline.events(started.id).map { it.type },
+        )
+    }
+
+    @Test
+    fun delayedOrForeignFramesAreNotAcceptedAfterPauseOrStop() {
+        var now = 5_000_000L
+        val runtime = SessionRuntime(InMemoryTimeline()) { now }
+        val started = runtime.start(SessionConfig())!!
+
+        assertTrue(runtime.canProcessFrame(started.id, now))
+        now += 2_000
+        runtime.frameReceived(now)
+        assertTrue(!runtime.canProcessFrame(started.id, now - 1))
+        assertTrue(!runtime.canProcessFrame(SessionId("other"), now))
+
+        runtime.pause()
+        assertTrue(!runtime.canProcessFrame(started.id, now + 1))
+        runtime.resume()
+        runtime.stop()
+        assertTrue(!runtime.canProcessFrame(started.id, now + 2_000))
+        assertEquals(SessionState.STOPPED, runtime.snapshot?.state)
+    }
+
+    @Test
+    fun watchdogDegradesOnlyAtTheConfiguredFourSecondWindowAndNeverWhilePaused() {
+        var now = 6_000_000L
+        val runtime = SessionRuntime(InMemoryTimeline()) { now }
+        runtime.start(SessionConfig())
+
+        now += 3_999
+        assertTrue(!runtime.shouldDegrade())
+        now += 1
+        assertTrue(runtime.shouldDegrade())
+
+        runtime.pause()
+        now += 10_000
+        assertTrue(!runtime.shouldDegrade())
     }
 }

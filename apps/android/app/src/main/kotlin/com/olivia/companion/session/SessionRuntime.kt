@@ -97,9 +97,35 @@ class SessionRuntime(
         label = "Conexão restaurada",
     )
 
+    /**
+     * Confere se um frame ainda pertence ao loop vivo antes de entregá-lo ao analisador.
+     * A checagem fica aqui para que pausa, encerramento, frames atrasados e frames de uma
+     * sessão anterior tenham o mesmo comportamento no mock e no adapter real.
+     */
+    fun canProcessFrame(frameSessionId: SessionId, capturedAtEpochMs: Long): Boolean {
+        val current = snapshot ?: return false
+        if (
+            current.id != frameSessionId ||
+            (current.state != SessionState.STARTED && current.state != SessionState.DEGRADED)
+        ) {
+            return false
+        }
+        return current.lastFrameAtEpochMs?.let { capturedAtEpochMs >= it } ?: true
+    }
+
+    fun shouldDegrade(now: Long = clock()): Boolean {
+        val current = snapshot ?: return false
+        val lastFrameAt = current.lastFrameAtEpochMs ?: return false
+        return current.state == SessionState.STARTED &&
+            now - lastFrameAt >= current.config.degradedAfterMs
+    }
+
     fun frameReceived(capturedAtEpochMs: Long = clock()): SessionSnapshot? {
         val current = snapshot ?: return null
         if (current.state != SessionState.STARTED && current.state != SessionState.DEGRADED) {
+            return snapshot
+        }
+        if (current.lastFrameAtEpochMs != null && capturedAtEpochMs < current.lastFrameAtEpochMs) {
             return snapshot
         }
         val elapsedMs = elapsed(capturedAtEpochMs)

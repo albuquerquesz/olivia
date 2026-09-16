@@ -26,6 +26,11 @@ class ScenarioFramePipelineTest {
         assertEquals(0L, fixtures.first().offsetMs)
         assertEquals(48_000L, fixtures[24].offsetMs)
         assertEquals(54_000L, fixtures[25].offsetMs)
+        assertTrue(
+            fixtures.zipWithNext().any { (previous, next) ->
+                next.offsetMs - previous.offsetMs >= SessionConfig().degradedAfterMs
+            },
+        )
         assertEquals(DiagnosisKind.FRAMING, fixtures.first { it.offsetMs == 12_000L }.expectedKind)
         assertEquals(DiagnosisKind.LIGHT, fixtures.first { it.offsetMs == 30_000L }.expectedKind)
         assertEquals(DiagnosisKind.HORIZON, fixtures.first { it.offsetMs == 40_000L }.expectedKind)
