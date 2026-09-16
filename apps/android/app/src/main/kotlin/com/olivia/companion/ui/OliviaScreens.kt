@@ -2,6 +2,8 @@ package com.olivia.companion.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -166,87 +168,71 @@ private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
         contentColor = MaterialTheme.colorScheme.onSurface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
+        Column(
             modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            TakeThumbnail()
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                TakeThumbnail()
                 Text(
                     take.title,
+                    modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val recorded = formatRelativeDay(take.recordedAtEpochMs)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    TakeMetaLine(
-                        icon = Icons.Outlined.Schedule,
-                        text = formatOffset(take.durationMs),
-                        modifier = Modifier.weight(1f),
-                    )
-                    TakeMetaLine(
-                        icon = Icons.Outlined.CalendarToday,
-                        text = recorded,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    TakeMetaLine(
-                        icon = Icons.Outlined.BookmarkBorder,
-                        text = if (take.correctionCount == 1) "1 marca" else "${take.correctionCount} marcas",
-                        modifier = Modifier.weight(1f),
-                    )
-                    TakeMetaLine(
-                        icon = Icons.Outlined.ContentCut,
-                        text = if (take.cutCount == 1) "1 corte" else "${take.cutCount} cortes",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+                Icon(
+                    Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Icon(
-                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            val recorded = formatRelativeDay(take.recordedAtEpochMs)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TakeMetaBadge(Icons.Outlined.Schedule, formatOffset(take.durationMs))
+                TakeMetaBadge(Icons.Outlined.CalendarToday, recorded)
+                TakeMetaBadge(
+                    Icons.Outlined.BookmarkBorder,
+                    if (take.correctionCount == 1) "1 marca" else "${take.correctionCount} marcas",
+                )
+                TakeMetaBadge(
+                    Icons.Outlined.ContentCut,
+                    if (take.cutCount == 1) "1 corte" else "${take.cutCount} cortes",
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun TakeMetaLine(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
-    if (text.isEmpty()) {
-        Box(modifier)
-        return
-    }
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun TakeMetaBadge(icon: ImageVector, text: String) {
+    if (text.isEmpty()) return
+    Surface(
+        shape = RoundedCornerShape(percent = 50),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
