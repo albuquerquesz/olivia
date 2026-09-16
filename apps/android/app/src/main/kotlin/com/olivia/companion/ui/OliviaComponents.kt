@@ -361,7 +361,7 @@ private fun VoiceWaveform() {
         ),
         label = "voice waveform progress",
     )
-    Canvas(modifier = Modifier.size(width = 30.dp, height = 32.dp)) {
+    Canvas(modifier = Modifier.size(width = 42.dp, height = 44.dp)) {
         val heights = List(5) { index ->
             val wave = ((sin((progress + index * 0.2f) * 2f * PI) + 1f) / 2f).toFloat()
             0.36f + wave * 0.64f
@@ -374,7 +374,7 @@ private fun VoiceWaveform() {
                 color = color,
                 start = Offset(x, size.height / 2f - halfHeight),
                 end = Offset(x, size.height / 2f + halfHeight),
-                strokeWidth = 3.dp.toPx(),
+                strokeWidth = 4.dp.toPx(),
                 cap = StrokeCap.Round,
             )
         }
