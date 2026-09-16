@@ -333,12 +333,13 @@ private fun WakeWordNotice(
                 Text(
                     title,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 20.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                 )
                 Text(
                     description,
+                    modifier = Modifier.widthIn(max = 280.dp),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
