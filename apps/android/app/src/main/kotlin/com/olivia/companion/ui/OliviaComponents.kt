@@ -87,7 +87,13 @@ internal fun OliviaPage(
             verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
             if (onNavigateBack != null) {
-                IconButton(onClick = onNavigateBack) {
+                IconButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(14.dp),
+                    ),
+                ) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
                 }
             }
@@ -232,7 +238,9 @@ internal fun SettingsMetricRow(
     trailing: @Composable () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
