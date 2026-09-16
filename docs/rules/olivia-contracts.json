@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "contract_version": "1.0.0",
+  "contract_version": "1.1.0",
   "title": "Contratos entre app, IA, mock e hardware real",
   "task": "SH-04",
   "source_of_truth": {
@@ -9,7 +9,7 @@
   },
   "versioning": {
     "scheme": "semver",
-    "current": "1.0.0",
+    "current": "1.1.0",
     "rule": "MAJOR quebra consumidores, MINOR adiciona de forma compatível, PATCH é correção de detalhe.",
     "carried_in": [
       "TimelineEvent.contractVersion",
@@ -81,6 +81,14 @@
       "members": ["process(sessionId, recording, timeline): Result<SessionReview>"],
       "note": "Usa o áudio da gravação, nunca o microfone ao vivo."
     }
+  ],
+  "session_signals": [
+    "SESSION_STARTED",
+    "SESSION_PAUSED",
+    "SESSION_RESUMED",
+    "SESSION_STOPPED",
+    "CONNECTION_LOST",
+    "CONNECTION_RESTORED"
   ],
   "session_states": {
     "values": [

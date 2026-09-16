@@ -95,8 +95,12 @@
         "Modo Sinal: WAV local"
       ],
       "events": [
-        "queda",
-        "retomada"
+        "início",
+        "pausa",
+        "retomada",
+        "encerramento",
+        "queda de conexão",
+        "retorno da conexão"
       ],
       "purpose": "Entrega instruções e tons nos óculos."
     },

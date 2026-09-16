@@ -70,6 +70,8 @@ public enum class AudioMode {
 /** Avisos que não são correção de enquadramento. */
 public enum class SessionSignal {
     SESSION_STARTED,
+    SESSION_PAUSED,
+    SESSION_RESUMED,
     SESSION_STOPPED,
 
     /** Queda de conexão com os óculos. */
