@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -84,6 +85,7 @@ internal fun OliviaPage(
 internal fun OliviaPanel(
     degraded: Boolean = false,
     compact: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues(24.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -95,7 +97,9 @@ internal fun OliviaPanel(
         border = if (degraded) BorderStroke(2.dp, colors.primary) else null,
     ) {
         Column(
-            modifier = Modifier.heightIn(min = if (compact) 0.dp else 248.dp).padding(24.dp),
+            modifier = Modifier
+                .heightIn(min = if (compact) 0.dp else 248.dp)
+                .padding(contentPadding),
             verticalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 24.dp),
             content = content,
         )
@@ -266,7 +270,7 @@ private fun WakeWordNotice() {
             ) {
                 Text("“Oi, Olivia, gravar”", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Wake word no celular. O áudio não sai do aparelho.",
+                    "Wake word local planejado. Ainda não está ativo nesta versão.",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
