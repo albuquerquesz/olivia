@@ -123,17 +123,6 @@ internal fun SectionTitle(text: String) {
 }
 
 @Composable
-internal fun OliviaStat(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.semantics(mergeDescendants = true) {},
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(value, style = MaterialTheme.typography.headlineSmall)
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
 internal fun AudioModeOption(label: String, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val background by animateColorAsState(

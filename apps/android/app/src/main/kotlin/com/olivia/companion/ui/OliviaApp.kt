@@ -129,7 +129,19 @@ fun OliviaApp(
                 )
             }
             composable(OliviaDestination.HOME.route) {
-                OliviaHomeScreen(uiState)
+                OliviaHomeScreen(
+                    state = uiState,
+                    onSeeAllTakes = {
+                        navController.navigate(OliviaDestination.SESSIONS.route) {
+                            popUpTo(OliviaDestination.HOME.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenTake = { sessionId ->
+                        navController.navigate("take/${sessionId.value}")
+                    },
+                )
             }
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(

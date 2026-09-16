@@ -1,5 +1,7 @@
 package com.olivia.companion.ui
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material3.Button
@@ -22,12 +25,19 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.R
 import com.olivia.companion.session.OliviaUiState
@@ -93,23 +103,123 @@ fun OliviaWelcomeScreen(onEnter: () -> Unit) {
 }
 
 @Composable
-fun OliviaHomeScreen(state: OliviaUiState) {
-    val sessions = state.takes.count { !it.isDemo || it.events.isNotEmpty() }
-    val corrections = state.takes.sumOf { it.correctionCount }
+fun OliviaHomeScreen(
+    state: OliviaUiState,
+    onSeeAllTakes: () -> Unit,
+    onOpenTake: (SessionId) -> Unit,
+) {
+    val recent = state.takes.filter { !it.isDemo || it.events.isNotEmpty() }.take(3)
     OliviaPage {
         OliviaPanel {
             Text("Dispositivo", style = MaterialTheme.typography.bodyLarge)
             Text("Ray-Ban Meta", style = MaterialTheme.typography.headlineMedium)
         }
-        Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            SectionTitle("Seu resumo")
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                OliviaStat("Sessões", sessions.toString(), Modifier.weight(1f))
-                OliviaStat("Correções", corrections.toString(), Modifier.weight(1f))
+                Text(
+                    "Últimos takes".uppercase(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "ver todos",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clickable(onClick = onSeeAllTakes)
+                        .semantics { role = Role.Button },
+                )
             }
+            if (recent.isEmpty()) {
+                Text(
+                    "Depois da gravação, as timelines aparecem aqui.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                recent.forEach { take ->
+                    TakePreviewCard(take = take, onClick = { onOpenTake(take.sessionId) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TakeThumbnail()
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    take.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    formatOffset(take.durationMs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    take.correctionCount.toString(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    "marcas",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TakeThumbnail() {
+    val stripe = MaterialTheme.colorScheme.outlineVariant
+    val ground = MaterialTheme.colorScheme.surfaceVariant
+    Canvas(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(RoundedCornerShape(16.dp)),
+    ) {
+        drawRect(ground)
+        val step = 8.dp.toPx()
+        var x = -size.height
+        while (x < size.width + size.height) {
+            drawLine(
+                color = stripe,
+                start = Offset(x, size.height),
+                end = Offset(x + size.height, 0f),
+                strokeWidth = 4.dp.toPx(),
+            )
+            x += step
         }
     }
 }
