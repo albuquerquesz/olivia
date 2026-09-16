@@ -34,6 +34,11 @@ android {
             localOrEnvironment("mwdat_application_id", "MWDAT_APPLICATION_ID") ?: "0"
         manifestPlaceholders["mwdatClientToken"] =
             localOrEnvironment("mwdat_client_token", "MWDAT_CLIENT_TOKEN") ?: "0"
+        buildConfigField(
+            "boolean",
+            "MWDAT_USE_MOCK_DEVICE_KIT",
+            (localOrEnvironment("mwdat_mock_device_kit", "MWDAT_MOCK_DEVICE_KIT") == "true").toString(),
+        )
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Live tests must be selected explicitly; default instrumentation is offline.
         testInstrumentationRunnerArguments["class"] = "com.olivia.companion.infra.InfraConfigurationIntegrationTest"
@@ -107,6 +112,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
     implementation(project(":core"))
+    // The BOM only supplies versions. Firebase binaries remain glasses-only.
+    implementation(platform(libs.firebase.bom))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

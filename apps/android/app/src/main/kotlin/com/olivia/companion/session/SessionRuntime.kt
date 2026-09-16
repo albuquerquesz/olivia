@@ -11,6 +11,7 @@ import com.olivia.core.CorrectionTracker
 import com.olivia.core.DefaultGuidanceEngine
 import com.olivia.core.FileTimeline
 import com.olivia.core.Frame
+import com.olivia.core.FrameAnalyzer
 import com.olivia.core.FrameSampler
 import com.olivia.core.FrameFormat
 import com.olivia.core.FrameOrigin
@@ -63,13 +64,22 @@ interface SessionRuntime : AutoCloseable {
     suspend fun processPostTake(work: suspend (SessionId) -> Result<SessionReview>): Result<SessionReview>
 }
 
-/** The glasses flavor stays explicitly unavailable until INT-00 supplies a verified DAT adapter. */
-object SessionRuntimeFactory {
-    fun create(context: Context, backend: GlassesBackend): SessionRuntime =
-        if (backend.id == "mock") MockSessionRuntime(context.applicationContext) else UnavailableSessionRuntime()
+/** Variant boundary: mock stays offline; the glasses source set owns the DAT/Firebase wiring. */
+interface BackendRuntimeProvider {
+    fun create(context: Context): SessionRuntime
 }
 
-private class UnavailableSessionRuntime : SessionRuntime {
+object SessionRuntimeFactory {
+    fun create(context: Context, backend: GlassesBackend): SessionRuntime = try {
+        val providerClass = Class.forName("com.olivia.companion.VariantRuntimeProvider")
+        val provider = providerClass.getField("INSTANCE").get(null) as BackendRuntimeProvider
+        provider.create(context.applicationContext)
+    } catch (_: Throwable) {
+        UnavailableSessionRuntime()
+    }
+}
+
+class UnavailableSessionRuntime : SessionRuntime {
     private val state = MutableStateFlow<SessionSnapshot?>(null)
     override val snapshot: StateFlow<SessionSnapshot?> = state.asStateFlow()
     override suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot> =
@@ -154,23 +164,17 @@ private class MockGlassesGateway(
  * Full offline demo loop. Frames are synthetic markers, analyzed locally and discarded after
  * classification; this is deliberately not a DAT, Gemini, recording, or hardware claim.
  */
-private class MockSessionRuntime(context: Context) : SessionRuntime {
+internal class LiveSessionRuntime(
+    context: Context,
+    private val gateway: GlassesGateway,
+    private val analyzer: FrameAnalyzer,
+) : SessionRuntime {
     private val runtimeScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val clock = SystemOliviaClock()
-    private val gateway = MockGlassesGateway(clock, runtimeScope)
     private val audio = AndroidAudioFeedback(context, clock, AudioMode.VOICE)
     private val timeline = FileTimeline(context.filesDir.toPath().resolve("olivia-timeline"))
     private val coordinator = SessionCoordinator(clock, gateway, audio, timeline)
     private val sampler = FrameSampler(clock)
-    private val analyzer = MockFrameAnalyzer(
-        clock,
-        mapOf(
-            4L to MockAnalysisReply.Diagnosis(MockVisualFixtures.subjectRight.expectedDiagnoses),
-            8L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
-            12L to MockAnalysisReply.Diagnosis(MockVisualFixtures.handShadow.expectedDiagnoses),
-            16L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
-        ),
-    )
     private val guidance = DefaultGuidanceEngine(AudioMode.VOICE)
     private val correctionTracker = CorrectionTracker()
     private val metrics = LiveLoopMetrics()
@@ -329,8 +333,25 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
         connectionObserver.cancel()
         frameObserver.cancel()
         watchdog.cancel()
-        gateway.close()
+        (gateway as? AutoCloseable)?.close()
         audio.close()
         runtimeScope.cancel()
     }
 }
+
+fun createMockSessionRuntime(context: Context): SessionRuntime = LiveSessionRuntime(
+    context = context,
+    gateway = MockGlassesGateway(
+        clock = SystemOliviaClock(),
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    ),
+    analyzer = MockFrameAnalyzer(
+        SystemOliviaClock(),
+        mapOf(
+            4L to MockAnalysisReply.Diagnosis(MockVisualFixtures.subjectRight.expectedDiagnoses),
+            8L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
+            12L to MockAnalysisReply.Diagnosis(MockVisualFixtures.handShadow.expectedDiagnoses),
+            16L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
+        ),
+    ),
+)
