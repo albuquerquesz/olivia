@@ -17,10 +17,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class MockFramePipelineTest {
+class ScenarioFramePipelineTest {
     @Test
     fun fixturesKeepTwoSecondCadenceAndReserveTheDegradedGap() {
-        val fixtures = MockFrameFixtures.sequence()
+        val fixtures = SessionScenario.sequence()
 
         assertEquals(29, fixtures.size)
         assertEquals(0L, fixtures.first().offsetMs)
@@ -32,12 +32,12 @@ class MockFramePipelineTest {
     }
 
     @Test
-    fun analyzerReturnsStructuredMockDiagnosisAndNoProblemForNormalFrame() = runTest {
-        val analyzer = MockFrameAnalyzer { 1_000L }
-        val sessionId = SessionId("mock-test")
+    fun analyzerReturnsStructuredScenarioDiagnosisAndNoProblemForNormalFrame() = runTest {
+        val analyzer = ScenarioFrameAnalyzer { 1_000L }
+        val sessionId = SessionId("scenario-test")
 
-        val framing = analyzer.analyze(frame(sessionId, MockFrameFixtures.FRAMING_MARKER)).getOrThrow()
-        val normal = analyzer.analyze(frame(sessionId, MockFrameFixtures.NORMAL_MARKER)).getOrThrow()
+        val framing = analyzer.analyze(frame(sessionId, SessionScenario.FRAMING_MARKER)).getOrThrow()
+        val normal = analyzer.analyze(frame(sessionId, SessionScenario.NORMAL_MARKER)).getOrThrow()
 
         assertEquals(DiagnosisKind.FRAMING, framing.diagnoses.single().kind)
         assertEquals(com.olivia.core.AnalyzerSource.MOCK, framing.source)
@@ -48,19 +48,19 @@ class MockFramePipelineTest {
     fun gatewayEmitsFramesAndResumesAfterPause() = runTest {
         var now = 10_000L
         val dispatcher = StandardTestDispatcher(testScheduler)
-        val gateway = MockFrameGateway(clock = { now }, dispatcher = dispatcher)
+        val gateway = ScenarioGlassesGateway(clock = { now }, dispatcher = dispatcher)
         val frames = mutableListOf<Frame>()
         val collectJob = launch(dispatcher) {
             gateway.frames.take(2).collect { frames += it }
         }
 
-        gateway.startCapture(SessionId("mock-test"), SessionConfig())
+        gateway.startCapture(SessionId("scenario-test"), SessionConfig())
         runCurrent()
         assertEquals(1, frames.size)
         assertEquals(10_000L, frames.first().capturedAtEpochMs)
 
-        now += MockFrameFixtures.FRAME_INTERVAL_MS
-        advanceTimeBy(MockFrameFixtures.FRAME_INTERVAL_MS)
+        now += SessionScenario.FRAME_INTERVAL_MS
+        advanceTimeBy(SessionScenario.FRAME_INTERVAL_MS)
         runCurrent()
         collectJob.join()
         assertEquals(2, frames.size)
@@ -74,8 +74,8 @@ class MockFramePipelineTest {
     private fun frame(sessionId: SessionId, marker: Int): Frame = Frame(
         sessionId = sessionId,
         capturedAtEpochMs = 0L,
-        width = MockFrameFixtures.FRAME_WIDTH,
-        height = MockFrameFixtures.FRAME_HEIGHT,
+        width = SessionScenario.FRAME_WIDTH,
+        height = SessionScenario.FRAME_HEIGHT,
         format = FrameFormat.RGBA_8888,
         origin = FrameOrigin.MOCK,
         bytes = byteArrayOf(marker.toByte()),

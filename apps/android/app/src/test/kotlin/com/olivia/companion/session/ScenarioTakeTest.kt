@@ -7,10 +7,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class MockDemoTakeTest {
+class ScenarioTakeTest {
     @Test
     fun sampleCoversFramingLightHorizonPauseReconnectAndCuts() {
-        val events = MockDemoTake.events()
+        val events = ScenarioTake.events()
         val types = events.map { it.type }.toSet()
         assertTrue(types.contains(TimelineEventType.SESSION_PAUSED))
         assertTrue(types.contains(TimelineEventType.SESSION_DEGRADED))
@@ -32,11 +32,10 @@ class MockDemoTakeTest {
     @Test
     fun reviewCountsCorrectionsAndCuts() {
         val take = takeFromEvents(
-            sessionId = MockDemoTake.sessionId,
-            title = "Ensaio mock",
-            events = MockDemoTake.events(),
-            isDemo = true,
-            review = MockDemoTake.review(),
+            sessionId = ScenarioTake.sessionId,
+            title = "Cenário offline",
+            events = ScenarioTake.events(),
+            review = ScenarioTake.review(),
         )
         assertEquals(60_000, take.durationMs)
         assertEquals(3, take.correctionCount)

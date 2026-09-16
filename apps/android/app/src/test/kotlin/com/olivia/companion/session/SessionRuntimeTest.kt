@@ -8,12 +8,12 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class DebugSessionRuntimeTest {
+class SessionRuntimeTest {
     @Test
     fun startPauseResumeStopRecordsTimelineAndFreezesElapsed() {
         var now = 1_000_000L
         val timeline = InMemoryTimeline()
-        val runtime = DebugSessionRuntime(timeline) { now }
+        val runtime = SessionRuntime(timeline) { now }
 
         val started = runtime.start(SessionConfig())
         assertEquals(SessionState.STARTED, started?.state)
@@ -51,7 +51,7 @@ class DebugSessionRuntimeTest {
     fun degradeAndRecoverAreDistinctFromPause() {
         var now = 2_000_000L
         val timeline = InMemoryTimeline()
-        val runtime = DebugSessionRuntime(timeline) { now }
+        val runtime = SessionRuntime(timeline) { now }
 
         runtime.start(SessionConfig())
         runtime.degrade()
@@ -73,7 +73,7 @@ class DebugSessionRuntimeTest {
     fun frameAfterDegradedSessionRecordsRecovery() {
         var now = 3_000_000L
         val timeline = InMemoryTimeline()
-        val runtime = DebugSessionRuntime(timeline) { now }
+        val runtime = SessionRuntime(timeline) { now }
 
         val started = runtime.start(SessionConfig())!!
         runtime.degrade()
@@ -94,7 +94,7 @@ class DebugSessionRuntimeTest {
 
     @Test
     fun invalidStartWhileLiveIsIgnored() {
-        val runtime = DebugSessionRuntime(InMemoryTimeline()) { 0 }
+        val runtime = SessionRuntime(InMemoryTimeline()) { 0 }
         val first = runtime.start(SessionConfig())
         val second = runtime.start(SessionConfig())
         assertEquals(first?.id, second?.id)

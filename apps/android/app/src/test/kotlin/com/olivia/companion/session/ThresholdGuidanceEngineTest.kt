@@ -13,10 +13,10 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-class MockGuidanceEngineTest {
+class ThresholdGuidanceEngineTest {
     @Test
     fun emitsShortCorrectionAndHonorsCooldown() {
-        val engine = MockGuidanceEngine(correctionCooldownMs = 4_000L)
+        val engine = ThresholdGuidanceEngine(correctionCooldownMs = 4_000L)
         val issue = analysis(
             VisualDiagnosis(
                 kind = DiagnosisKind.FRAMING,
@@ -37,7 +37,7 @@ class MockGuidanceEngineTest {
 
     @Test
     fun ignoresLowConfidenceAndHealthyFrames() {
-        val engine = MockGuidanceEngine(correctionCooldownMs = 4_000L)
+        val engine = ThresholdGuidanceEngine(correctionCooldownMs = 4_000L)
         val lowConfidence = analysis(
             VisualDiagnosis(
                 kind = DiagnosisKind.LIGHT,
