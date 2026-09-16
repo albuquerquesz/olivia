@@ -15,7 +15,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,12 +22,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -51,12 +52,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -66,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
+import com.olivia.core.AudioMode
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -120,6 +123,137 @@ internal fun OliviaPanel(
             verticalArrangement = Arrangement.spacedBy(panelSpacing),
             content = content,
         )
+    }
+}
+
+@Composable
+internal fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(24.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+internal fun SettingsOverline(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall.copy(
+            fontSize = 16.sp,
+            lineHeight = 24.sp,
+            letterSpacing = 0.sp,
+            fontWeight = FontWeight.Medium,
+        ),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.95f),
+    )
+}
+
+@Composable
+internal fun SettingsAudioModeSelector(
+    audioMode: AudioMode,
+    enabled: Boolean,
+    onAudioMode: (AudioMode) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .selectableGroup(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SettingsAudioModeOption(
+            label = "Modo voz",
+            selected = audioMode == AudioMode.VOICE,
+            enabled = enabled,
+            modifier = Modifier.weight(1f),
+            onClick = { onAudioMode(AudioMode.VOICE) },
+        )
+        SettingsAudioModeOption(
+            label = "Modo sinal",
+            selected = audioMode == AudioMode.SIGNAL,
+            enabled = enabled,
+            modifier = Modifier.weight(1f),
+            onClick = { onAudioMode(AudioMode.SIGNAL) },
+        )
+    }
+}
+
+@Composable
+private fun SettingsAudioModeOption(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    val background by animateColorAsState(
+        targetValue = MaterialTheme.colorScheme.onSurface.takeIf { selected }
+            ?: Color.Transparent,
+        animationSpec = OliviaMotion.selection(),
+        label = "settings audio mode background",
+    )
+    val contentColor by animateColorAsState(
+        targetValue = MaterialTheme.colorScheme.surface.takeIf { selected }
+            ?: MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = OliviaMotion.selection(),
+        label = "settings audio mode content",
+    )
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(background, RoundedCornerShape(16.dp))
+            .selectable(
+                selected = selected,
+                enabled = enabled,
+                onClick = onClick,
+                role = Role.RadioButton,
+            )
+            .semantics(mergeDescendants = true) {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = contentColor)
+    }
+}
+
+@Composable
+internal fun SettingsMetricRow(
+    title: String,
+    description: String,
+    trailing: @Composable () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.95f),
+                ),
+            )
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        trailing()
     }
 }
 
@@ -191,32 +325,21 @@ private fun DeviceMetricInline(metric: DeviceMetric, modifier: Modifier = Modifi
 
 @Composable
 private fun DeviceIdentity() {
-    val fontScale = LocalDensity.current.fontScale
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val useWideLayout = maxWidth >= 280.dp && fontScale < 1.3f
-        DeviceIdentityLayout(useWideLayout)
-    }
+    DeviceIdentityLayout()
 }
 
 @Composable
-private fun DeviceIdentityLayout(
-    useWideLayout: Boolean,
-) {
+private fun DeviceIdentityLayout() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            DeviceIdentityCopy(Modifier.weight(1f))
-            if (useWideLayout) {
-                DeviceLabel()
-            }
+            DeviceIdentityCopy()
         }
-        if (!useWideLayout) DeviceLabel()
         WayfarerProductImage(Modifier.align(Alignment.CenterHorizontally))
     }
 }
@@ -229,21 +352,6 @@ private fun DeviceIdentityCopy(modifier: Modifier = Modifier) {
             "Companion app no celular",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.inverseOnSurface,
-        )
-    }
-}
-
-@Composable
-private fun DeviceLabel() {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.onPrimary,
-        contentColor = MaterialTheme.colorScheme.primary,
-    ) {
-        Text(
-            "DISPOSITIVO",
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelMedium,
         )
     }
 }

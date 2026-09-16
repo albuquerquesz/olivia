@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -70,9 +72,6 @@ import com.olivia.core.SessionState
 import com.olivia.core.SuggestedCut
 import com.olivia.core.TimelineEvent
 import com.olivia.core.TimelineEventType
-
-private val PrivacyCopy =
-    "Frames de análise são efêmeros. O áudio do celular não alimenta IA durante o take."
 
 @Composable
 fun OliviaWelcomeScreen(onEnter: () -> Unit) {
@@ -144,10 +143,7 @@ fun OliviaHomeScreen(
                     onSeeAllTakes = onSeeAllTakes,
                 )
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RecentTakesHeader(onSeeAllTakes)
-                    RecentTakes(recent, onOpenTake)
-                }
+                RecentTakesCard(recent, onSeeAllTakes, onOpenTake)
             }
         }
     }
@@ -201,6 +197,30 @@ private fun RecentTakesHeader(onSeeAllTakes: () -> Unit) {
                     modifier = Modifier.size(20.dp),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun RecentTakesCard(
+    takes: List<TakeSummary>,
+    onSeeAllTakes: () -> Unit,
+    onOpenTake: (SessionId) -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            RecentTakesHeader(onSeeAllTakes)
+            RecentTakes(takes, onOpenTake)
         }
     }
 }
@@ -278,7 +298,7 @@ private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -832,41 +852,52 @@ fun OliviaSettingsScreen(
     onAudioMode: (AudioMode) -> Unit,
 ) {
     OliviaPage {
-        OliviaPanel {
-            SectionTitle("Modo de feedback")
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                AudioModeOption("Voz", audioMode == AudioMode.VOICE, enabled = !live) {
-                    onAudioMode(AudioMode.VOICE)
-                }
-                AudioModeOption("Sinal", audioMode == AudioMode.SIGNAL, enabled = !live) {
-                    onAudioMode(AudioMode.SIGNAL)
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            Text(
+                "Ajustes",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.95f),
+                ),
+                modifier = Modifier.semantics { heading() },
+            )
+            SettingsCard {
+                SettingsOverline("Voz da Olivia")
+                SettingsAudioModeSelector(
+                    audioMode = audioMode,
+                    enabled = !live,
+                    onAudioMode = onAudioMode,
+                )
+            }
+            SettingsCard {
+                SettingsOverline("Bateria e análise")
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SettingsMetricRow(
+                        title = "Amostragem",
+                        description = "1 frame a cada 2s · corta ~60x as inferências",
+                    ) {
+                        SettingsMetricValue("0,5 fps")
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    SettingsMetricRow(
+                        title = "Cooldown de correção",
+                        description = "Silêncio mínimo entre duas falas",
+                    ) {
+                        SettingsMetricValue("4 s")
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    SettingsMetricRow(
+                        title = "Watchdog de sessão",
+                        description = "4s sem frame → tom de queda e estado degradado",
+                    ) {
+                        Switch(checked = true, onCheckedChange = null)
+                    }
                 }
             }
-            PanelDetail(
-                audioModeDescription(audioMode),
-            )
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionTitle("Meu perfil")
-            Text("Mariana · Tatuadora", style = MaterialTheme.typography.bodyLarge)
-            Text(
-                "Perfil local do protótipo, sem conta ou rede social.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionTitle("Privacidade")
-            Text(
-                PrivacyCopy,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
@@ -908,9 +939,14 @@ private fun DebugActions(
     }
 }
 
-private fun audioModeDescription(audioMode: AudioMode): String {
-    if (audioMode == AudioMode.VOICE) return "Instruções curtas, faladas pela Olivia."
-    return "Tons locais de 80 ms para orientar a correção."
+@Composable
+private fun SettingsMetricValue(value: String) {
+    Text(
+        value,
+        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.primary,
+        textAlign = TextAlign.End,
+    )
 }
 
 @Composable
