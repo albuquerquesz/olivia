@@ -1,6 +1,7 @@
 package com.olivia.companion.session
 
 import android.content.Context
+import android.content.res.Resources
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
@@ -10,39 +11,74 @@ import com.olivia.core.AudioMode
 import com.olivia.core.Correction
 import com.olivia.core.Direction
 import com.olivia.core.SessionSignal
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.Locale
-import kotlin.math.PI
-import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
+
+enum class AudioFeedbackStatus {
+    INITIALIZING,
+    READY,
+    ERROR,
+}
 
 /**
- * Saída local de áudio para o headset Bluetooth ou os alto-falantes dos óculos.
+ * Saída local para o headset Bluetooth ou os alto-falantes dos óculos.
  *
- * Voz usa o TTS do Android. Sinal usa PCM curto gerado localmente: não há round-trip
- * de nuvem e a distinção esquerda/direita é feita pelo volume estéreo.
+ * Voz usa TTS do Android. Sinal usa somente WAVs empacotados no app, com duração curta
+ * e volume estéreo para distinguir correções laterais. Nenhuma dessas intenções conhece
+ * um modelo específico de óculos.
  */
 class AndroidAudioFeedback(
     context: Context,
     private val modeProvider: () -> AudioMode,
 ) : AudioFeedback {
+    private val appContext = context.applicationContext
     private val audioMutex = Mutex()
     private var textToSpeech: TextToSpeech? = null
+
+    @Volatile
     private var textToSpeechReady = false
+
+    private val _status = MutableStateFlow(AudioFeedbackStatus.INITIALIZING)
+    private val _statusMessage = MutableStateFlow<String?>(null)
+    val status: StateFlow<AudioFeedbackStatus> = _status.asStateFlow()
+    val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
     @Volatile
     private var activeTrack: AudioTrack? = null
 
     init {
-        textToSpeech = TextToSpeech(context.applicationContext) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                textToSpeechReady = textToSpeech?.setLanguage(Locale("pt", "BR"))
-                    ?.let { it != TextToSpeech.LANG_MISSING_DATA && it != TextToSpeech.LANG_NOT_SUPPORTED }
-                    ?: false
+        textToSpeech = runCatching {
+            TextToSpeech(appContext) { status ->
+                if (status != TextToSpeech.SUCCESS) {
+                    markError("O TTS do Android não está disponível.")
+                } else {
+                    val languageStatus = textToSpeech?.setLanguage(Locale("pt", "BR"))
+                    if (
+                        languageStatus == null ||
+                        languageStatus == TextToSpeech.LANG_MISSING_DATA ||
+                        languageStatus == TextToSpeech.LANG_NOT_SUPPORTED
+                    ) {
+                        markError("O pacote de voz em português não está disponível.")
+                    } else {
+                        textToSpeechReady = true
+                        _status.value = AudioFeedbackStatus.READY
+                        _statusMessage.value = null
+                    }
+                }
             }
+        }.getOrElse {
+            markError("Não foi possível iniciar o TTS do Android.")
+            null
         }
     }
 
@@ -50,29 +86,35 @@ class AndroidAudioFeedback(
         get() = modeProvider()
 
     override suspend fun announce(correction: Correction) {
-        if (mode == AudioMode.VOICE) {
-            speak(correction.spokenText)
-            return
+        audioMutex.withLock {
+            if (mode == AudioMode.VOICE && textToSpeechReady) {
+                speakLocked(correction.spokenText, TextToSpeech.QUEUE_ADD)
+            } else {
+                playCueLocked(cueFor(correction.direction), correction.direction)
+            }
         }
-        playTone(toneFor(correction.direction))
     }
 
     override suspend fun signal(signal: SessionSignal) {
-        if (mode == AudioMode.VOICE) {
-            speak(signalText(signal))
-            return
+        audioMutex.withLock {
+            if (mode == AudioMode.VOICE && textToSpeechReady) {
+                // Sinais de estado têm prioridade e limpam uma instrução antiga. Uma nova
+                // correção usa QUEUE_ADD, portanto não corta queda ou retomada crítica.
+                speakLocked(spokenTextFor(signal), TextToSpeech.QUEUE_FLUSH)
+            } else {
+                playCueLocked(cueFor(signal))
+            }
         }
-        playTone(toneFor(signal))
     }
 
     override suspend fun stop() {
+        activeTrack?.let { track ->
+            runCatching {
+                if (track.playState == AudioTrack.PLAYSTATE_PLAYING) track.stop()
+            }
+        }
         withContext(Dispatchers.Main.immediate) {
             textToSpeech?.stop()
-        }
-        activeTrack?.let { track ->
-            if (track.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                track.stop()
-            }
         }
     }
 
@@ -80,125 +122,145 @@ class AndroidAudioFeedback(
         textToSpeech?.stop()
         textToSpeech?.shutdown()
         textToSpeech = null
+        textToSpeechReady = false
         activeTrack?.let { track ->
-            if (track.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                track.stop()
+            runCatching {
+                if (track.playState == AudioTrack.PLAYSTATE_PLAYING) track.stop()
+                track.release()
             }
-            track.release()
         }
         activeTrack = null
     }
 
-    private suspend fun speak(text: String) {
+    private fun speakLocked(text: String, queueMode: Int) {
         if (text.isBlank()) return
-        withContext(Dispatchers.Main.immediate) {
-            if (!textToSpeechReady) return@withContext
-            textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "olivia-${System.nanoTime()}")
+        val accepted = textToSpeech?.speak(
+            text,
+            queueMode,
+            null,
+            "olivia-${System.nanoTime()}",
+        )
+        if (accepted == TextToSpeech.ERROR) {
+            textToSpeechReady = false
+            markError("O TTS do Android recusou a instrução.")
         }
     }
 
-    private suspend fun playTone(tone: Tone) = audioMutex.withLock {
+    private suspend fun playCueLocked(cue: AudioCue, direction: Direction? = null) {
         withContext(Dispatchers.Default) {
-            val frameCount = SAMPLE_RATE * SIGNAL_DURATION_MS / 1_000
-            val samples = ShortArray(frameCount * CHANNELS) { index ->
-                val frameIndex = index / CHANNELS
-                val envelope = envelope(frameIndex, frameCount)
-                val sample = sin(2.0 * PI * tone.frequencyHz * frameIndex / SAMPLE_RATE)
-                (sample * envelope * Short.MAX_VALUE).toInt().toShort()
-            }
-            val format = AudioFormat.Builder()
-                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                .setSampleRate(SAMPLE_RATE)
-                .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
-                .build()
-            val attributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-            val minBufferSize = AudioTrack.getMinBufferSize(
-                SAMPLE_RATE,
-                AudioFormat.CHANNEL_OUT_STEREO,
-                AudioFormat.ENCODING_PCM_16BIT,
-            )
-            val track = AudioTrack.Builder()
-                .setAudioAttributes(attributes)
-                .setAudioFormat(format)
-                .setBufferSizeInBytes(maxOf(minBufferSize, samples.size * 2))
-                .setTransferMode(AudioTrack.MODE_STATIC)
-                .build()
             try {
-                activeTrack = track
-                track.setStereoVolume(channelVolume(tone.pan, true), channelVolume(tone.pan, false))
-                track.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
-                track.play()
-                delay(SIGNAL_DURATION_MS.toLong())
-            } finally {
-                if (track.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                    track.stop()
+                val wave = readWave(appContext.resources, cue.resourceId)
+                val channelMask = if (wave.channels == 1) {
+                    AudioFormat.CHANNEL_OUT_MONO
+                } else {
+                    AudioFormat.CHANNEL_OUT_STEREO
                 }
-                track.release()
-                activeTrack = null
+                val format = AudioFormat.Builder()
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setSampleRate(wave.sampleRate)
+                    .setChannelMask(channelMask)
+                    .build()
+                val attributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                val track = AudioTrack.Builder()
+                    .setAudioAttributes(attributes)
+                    .setAudioFormat(format)
+                    .setBufferSizeInBytes(wave.pcm.size)
+                    .setTransferMode(AudioTrack.MODE_STATIC)
+                    .build()
+                try {
+                    activeTrack = track
+                    val pan = direction?.let(::panFor) ?: 0f
+                    track.setStereoVolume(channelVolume(pan, left = true), channelVolume(pan, left = false))
+                    track.write(wave.pcm, 0, wave.pcm.size, AudioTrack.WRITE_BLOCKING)
+                    track.play()
+                    delay(wave.durationMs)
+                } finally {
+                    runCatching {
+                        if (track.playState == AudioTrack.PLAYSTATE_PLAYING) track.stop()
+                        track.release()
+                    }
+                    activeTrack = null
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                markError("O sinal sonoro local não pôde ser reproduzido.")
             }
         }
     }
 
-    private fun envelope(index: Int, sampleCount: Int): Double {
-        val fadeSamples = SAMPLE_RATE * 8 / 1_000
-        if (index < fadeSamples) return index.toDouble() / fadeSamples
-        if (index >= sampleCount - fadeSamples) return (sampleCount - index).toDouble() / fadeSamples
-        return 0.42
+    private fun panFor(direction: Direction): Float = when (cueFor(direction)) {
+        AudioCue.DIRECTION_LEFT -> -0.85f
+        AudioCue.DIRECTION_RIGHT -> 0.85f
+        else -> 0f
     }
 
-    private fun channelVolume(pan: Float, leftChannel: Boolean): Float {
+    private fun channelVolume(pan: Float, left: Boolean): Float {
         if (pan == 0f) return 1f
-        if (leftChannel == (pan < 0f)) return 1f
+        if (left == (pan < 0f)) return 1f
         return 0.16f
     }
 
-    private fun toneFor(direction: Direction): Tone = when (direction) {
-        Direction.TURN_LEFT,
-        Direction.LEVEL_HORIZON_LEFT -> Tone(frequencyHz = 520.0, pan = -0.85f)
-        Direction.TURN_RIGHT,
-        Direction.LEVEL_HORIZON_RIGHT -> Tone(frequencyHz = 520.0, pan = 0.85f)
-        Direction.MOVE_CLOSER,
-        Direction.MOVE_BACK,
-        Direction.RAISE,
-        Direction.LOWER,
-        Direction.FACE_THE_LIGHT,
-        Direction.AVOID_BACKLIGHT,
-        Direction.LEAVE_THE_SHADOW -> Tone(frequencyHz = 680.0, pan = 0f)
+    private fun markError(message: String) {
+        _status.value = AudioFeedbackStatus.ERROR
+        _statusMessage.value = message
     }
 
-    private fun toneFor(signal: SessionSignal): Tone = when (signal) {
-        SessionSignal.SESSION_STARTED -> Tone(frequencyHz = 880.0, pan = 0f)
-        SessionSignal.SESSION_PAUSED -> Tone(frequencyHz = 560.0, pan = 0f)
-        SessionSignal.SESSION_RESUMED -> Tone(frequencyHz = 760.0, pan = 0f)
-        SessionSignal.SESSION_STOPPED -> Tone(frequencyHz = 440.0, pan = 0f)
-        SessionSignal.CONNECTION_LOST -> Tone(frequencyHz = 220.0, pan = 0f)
-        SessionSignal.CONNECTION_RESTORED -> Tone(frequencyHz = 660.0, pan = 0f)
-        SessionSignal.VOICE_COMMAND_ERROR -> Tone(frequencyHz = 300.0, pan = 0f)
-        SessionSignal.VOICE_INPUT_UNAVAILABLE -> Tone(frequencyHz = 180.0, pan = 0f)
-    }
-
-    private fun signalText(signal: SessionSignal): String = when (signal) {
-        SessionSignal.SESSION_STARTED -> "Sessão iniciada"
-        SessionSignal.SESSION_PAUSED -> "Sessão pausada"
-        SessionSignal.SESSION_RESUMED -> "Sessão retomada"
-        SessionSignal.SESSION_STOPPED -> "Sessão encerrada"
-        SessionSignal.CONNECTION_LOST -> "Conexão perdida"
-        SessionSignal.CONNECTION_RESTORED -> "Conexão restaurada"
-        SessionSignal.VOICE_COMMAND_ERROR -> "Não entendi o comando"
-        SessionSignal.VOICE_INPUT_UNAVAILABLE -> "Comandos de voz indisponíveis"
-    }
-
-    private data class Tone(
-        val frequencyHz: Double,
-        val pan: Float,
+    private data class Wave(
+        val sampleRate: Int,
+        val channels: Int,
+        val pcm: ByteArray,
+        val durationMs: Long,
     )
 
-    private companion object {
-        const val SAMPLE_RATE = 16_000
-        const val SIGNAL_DURATION_MS = 80
-        const val CHANNELS = 2
+    private fun readWave(resources: Resources, resourceId: Int): Wave {
+        val bytes = resources.openRawResource(resourceId).use { it.readBytes() }
+        require(bytes.size >= 44) { "Cue WAV inválido" }
+        require(bytes.copyOfRange(0, 4).contentEquals(byteArrayOf('R'.code.toByte(), 'I'.code.toByte(), 'F'.code.toByte(), 'F'.code.toByte()))) {
+            "Cue WAV sem RIFF"
+        }
+        require(bytes.copyOfRange(8, 12).contentEquals(byteArrayOf('W'.code.toByte(), 'A'.code.toByte(), 'V'.code.toByte(), 'E'.code.toByte()))) {
+            "Cue WAV sem WAVE"
+        }
+
+        var channels = 0
+        var sampleRate = 0
+        var bitsPerSample = 0
+        var dataOffset = -1
+        var dataSize = 0
+        var offset = 12
+        while (offset + 8 <= bytes.size) {
+            val chunkId = bytes.copyOfRange(offset, offset + 4)
+            val chunkSize = littleEndianInt(bytes, offset + 4)
+            val payload = offset + 8
+            if (chunkId.contentEquals(byteArrayOf('f'.code.toByte(), 'm'.code.toByte(), 't'.code.toByte(), ' '.code.toByte()))) {
+                val audioFormat = littleEndianShort(bytes, payload)
+                require(audioFormat == 1) { "Cue WAV precisa ser PCM" }
+                channels = littleEndianShort(bytes, payload + 2)
+                sampleRate = littleEndianInt(bytes, payload + 4)
+                bitsPerSample = littleEndianShort(bytes, payload + 14)
+            } else if (chunkId.contentEquals(byteArrayOf('d'.code.toByte(), 'a'.code.toByte(), 't'.code.toByte(), 'a'.code.toByte()))) {
+                dataOffset = payload
+                dataSize = chunkSize.coerceAtMost(bytes.size - payload)
+                break
+            }
+            offset = payload + chunkSize + (chunkSize and 1)
+        }
+        require(channels > 0 && sampleRate > 0 && bitsPerSample == 16 && dataOffset >= 0) {
+            "Cue WAV sem PCM 16-bit estéreo válido"
+        }
+        val pcm = bytes.copyOfRange(dataOffset, dataOffset + dataSize)
+        val bytesPerFrame = channels * 2
+        val durationMs = (pcm.size.toLong() * 1_000L / bytesPerFrame / sampleRate).coerceIn(1L, 120L)
+        return Wave(sampleRate, channels, pcm, durationMs)
     }
+
+    private fun littleEndianShort(bytes: ByteArray, offset: Int): Int =
+        ByteBuffer.wrap(bytes, offset, 2).order(ByteOrder.LITTLE_ENDIAN).short.toInt() and 0xffff
+
+    private fun littleEndianInt(bytes: ByteArray, offset: Int): Int =
+        ByteBuffer.wrap(bytes, offset, 4).order(ByteOrder.LITTLE_ENDIAN).int
 }

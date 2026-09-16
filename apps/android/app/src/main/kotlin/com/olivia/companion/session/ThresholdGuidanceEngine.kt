@@ -8,7 +8,6 @@ import com.olivia.core.FrameAnalysis
 import com.olivia.core.GuidanceEngine
 import com.olivia.core.Severity
 import com.olivia.core.VisualDiagnosis
-import java.util.Locale
 
 /** Política de direção: uma correção por janela de cooldown. */
 internal class ThresholdGuidanceEngine(
@@ -32,7 +31,7 @@ internal class ThresholdGuidanceEngine(
             diagnosis = diagnosis,
             direction = direction,
             confidence = diagnosis.confidence,
-            spokenText = spokenText(direction, diagnosis.magnitude),
+            spokenText = spokenTextFor(direction, diagnosis.magnitude),
         ).also {
             lastCorrectionAtEpochMs = nowEpochMs
         }
@@ -51,23 +50,6 @@ internal class ThresholdGuidanceEngine(
         Severity.OK -> 0
         Severity.MINOR -> 1
         Severity.MAJOR -> 2
-    }
-
-    private fun spokenText(direction: Direction, magnitude: Double?): String {
-        val degrees = magnitude?.let { String.format(Locale.US, "%.0f", it) } ?: "alguns"
-        return when (direction) {
-            Direction.TURN_LEFT -> "Vire uns $degrees graus à esquerda."
-            Direction.TURN_RIGHT -> "Vire uns $degrees graus à direita."
-            Direction.MOVE_CLOSER -> "Chegue um pouco mais perto da peça."
-            Direction.MOVE_BACK -> "Afaste um pouco a câmera da peça."
-            Direction.RAISE -> "Levante um pouco a câmera."
-            Direction.LOWER -> "Abaixe um pouco a câmera."
-            Direction.FACE_THE_LIGHT -> "Vire a peça para a luz."
-            Direction.AVOID_BACKLIGHT -> "Evite a luz atrás da peça."
-            Direction.LEAVE_THE_SHADOW -> "A sua mão está fazendo sombra na peça."
-            Direction.LEVEL_HORIZON_LEFT -> "Endireite o horizonte à esquerda."
-            Direction.LEVEL_HORIZON_RIGHT -> "Endireite o horizonte à direita."
-        }
     }
 
     private companion object {

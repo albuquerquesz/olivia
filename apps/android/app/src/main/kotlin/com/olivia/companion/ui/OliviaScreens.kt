@@ -1,7 +1,6 @@
 package com.olivia.companion.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,17 +45,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.R
+import com.olivia.companion.session.AudioFeedbackStatus
+import com.olivia.companion.session.ExportState
+import com.olivia.companion.session.ExportStatus
 import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.TakeSummary
 import com.olivia.companion.session.confirmationLabel
+import com.olivia.companion.session.connectionLabel
 import com.olivia.companion.session.eventTitle
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
@@ -79,7 +81,7 @@ fun OliviaWelcomeScreen(onEnter: () -> Unit) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 24.dp)
+                .padding(horizontal = 24.dp, vertical = 24.dp)
                 .widthIn(max = 600.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -119,19 +121,12 @@ fun OliviaWelcomeScreen(onEnter: () -> Unit) {
 @Composable
 fun OliviaHomeScreen(
     state: OliviaUiState,
-    voicePermissionGranted: Boolean,
     onSeeAllTakes: () -> Unit,
-    onOpenRecord: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     val recent = state.takes.take(3)
     OliviaPage {
-        DeviceOverview(
-            backend = state.backend,
-            connection = state.connection,
-            voiceState = state.voiceState,
-            voicePermissionGranted = voicePermissionGranted,
-        )
+        DeviceOverview()
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -143,16 +138,18 @@ fun OliviaHomeScreen(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text(
+                TextButton(
+                    onClick = onSeeAllTakes,
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    Text(
                     "ver todos",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .clickable(onClick = onSeeAllTakes)
-                        .semantics { role = Role.Button },
+                    )
                 )
             }
-            RecentTakes(recent, onOpenRecord, onOpenTake)
+            RecentTakes(recent, onOpenTake)
         }
     }
 }
@@ -160,11 +157,10 @@ fun OliviaHomeScreen(
 @Composable
 private fun RecentTakes(
     takes: List<TakeSummary>,
-    onOpenRecord: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     if (takes.isEmpty()) {
-        EmptyTakesCard(onOpenRecord)
+        EmptyTakesCard()
         return
     }
     takes.forEach { take ->
@@ -173,7 +169,7 @@ private fun RecentTakes(
 }
 
 @Composable
-private fun EmptyTakesCard(onOpenRecord: () -> Unit) {
+private fun EmptyTakesCard() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -211,17 +207,6 @@ private fun EmptyTakesCard(onOpenRecord: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
-            }
-            Button(
-                onClick = onOpenRecord,
-                modifier = Modifier.fillMaxWidth(0.82f).heightIn(min = 48.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
-                Text("Começar a gravar", style = MaterialTheme.typography.labelLarge)
             }
         }
     }
@@ -322,6 +307,7 @@ private fun TakeThumbnail() {
 @Composable
 fun OliviaRecordingScreen(
     state: OliviaUiState,
+    voicePermissionGranted: Boolean,
     onOpenSettings: () -> Unit,
     onAudioMode: (AudioMode) -> Unit,
     onStart: () -> Unit,
@@ -358,6 +344,12 @@ fun OliviaRecordingScreen(
                         .align(Alignment.TopStart)
                         .padding(20.dp),
                 )
+                ConnectionStateBadge(
+                    label = connectionLabel(state.connection),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(20.dp),
+                )
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -386,6 +378,18 @@ fun OliviaRecordingScreen(
                 }
             }
         }
+        if (!state.backend.requiresPhysicalGlasses) {
+            BackendModeNotice()
+        }
+        VoiceAvailabilityNotice(
+            voiceState = state.voiceState,
+            voicePermissionGranted = voicePermissionGranted,
+        )
+        AudioAvailabilityNotice(
+            mode = state.audioMode,
+            status = state.audioStatus,
+            message = state.audioStatusMessage,
+        )
         if (!state.backend.requiresPhysicalGlasses) {
             DebugActions(
                 sessionState = sessionState,
@@ -428,6 +432,40 @@ fun OliviaRecordingScreen(
 }
 
 @Composable
+private fun BackendModeNotice() {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        StatusChip("MODO MOCK", inverted = false)
+        PanelDetail(
+            "Fluxo offline determinístico. A disponibilidade dos óculos reais ainda não é afirmada.",
+            onPanel = false,
+        )
+    }
+}
+
+@Composable
+private fun AudioAvailabilityNotice(
+    mode: AudioMode,
+    status: AudioFeedbackStatus,
+    message: String?,
+) {
+    if (mode != AudioMode.VOICE || status != AudioFeedbackStatus.ERROR) return
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Text(
+            message ?: "Modo Voz indisponível. O Modo Sinal continua local.",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
 private fun SessionStateBadge(state: SessionState, modifier: Modifier = Modifier) {
     val degraded = state == SessionState.DEGRADED
     val containerColor = MaterialTheme.colorScheme.onPrimary.takeIf { !degraded }
@@ -444,6 +482,22 @@ private fun SessionStateBadge(state: SessionState, modifier: Modifier = Modifier
             sessionStateLabel(state),
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             style = MaterialTheme.typography.labelLarge,
+        )
+    }
+}
+
+@Composable
+private fun ConnectionStateBadge(label: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.94f),
+        contentColor = MaterialTheme.colorScheme.primary,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }
@@ -620,12 +674,46 @@ private fun SessionTakeList(takes: List<TakeSummary>, onOpenTake: (SessionId) ->
 }
 
 @Composable
-fun OliviaTakeScreen(take: TakeSummary, onNavigateBack: () -> Unit) {
+fun OliviaTakeScreen(
+    take: TakeSummary,
+    onNavigateBack: () -> Unit,
+    exportState: ExportState = ExportState(),
+    onExport: () -> Unit = {},
+) {
     OliviaPage(onNavigateBack = onNavigateBack) {
         OliviaPanel {
             Text("Revisão", style = MaterialTheme.typography.bodyLarge)
             Text(formatOffset(take.durationMs), style = MaterialTheme.typography.headlineMedium)
             PanelDetail("${take.correctionCount} correções · ${take.cutCount} cortes sugeridos")
+            if (take.review.recording != null) {
+                OutlinedButton(
+                    onClick = onExport,
+                    enabled = exportState.status != ExportStatus.SHARING,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    shape = RoundedCornerShape(20.dp),
+                ) {
+                    Text(
+                        if (exportState.status == ExportStatus.SHARING) {
+                            "Preparando compartilhamento…"
+                        } else {
+                            "Compartilhar take e marcações"
+                        },
+                    )
+                }
+            } else {
+                Text(
+                    "O vídeo nativo ainda não está disponível neste ambiente.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            exportState.message?.let { message ->
+                Text(
+                    message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionTitle("Cortes sugeridos")

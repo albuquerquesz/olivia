@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -205,12 +206,6 @@ fun OliviaApp(
             composable(OliviaDestination.HOME.route) {
                 OliviaHomeScreen(
                     state = uiState,
-                    voicePermissionGranted = audioPermissionGranted,
-                    onOpenRecord = {
-                        navController.navigate(OliviaDestination.RECORD.route) {
-                            launchSingleTop = true
-                        }
-                    },
                     onSeeAllTakes = {
                         navController.navigate(OliviaDestination.SESSIONS.route) {
                             popUpTo(OliviaDestination.HOME.route) { saveState = true }
@@ -226,6 +221,7 @@ fun OliviaApp(
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     state = uiState,
+                    voicePermissionGranted = audioPermissionGranted,
                     onOpenSettings = {
                         navController.navigate(OliviaDestination.SETTINGS.route) {
                             popUpTo(OliviaDestination.HOME.route) { saveState = true }
@@ -255,6 +251,8 @@ fun OliviaApp(
                 TakeRouteContent(
                     take = viewModel.take(sessionId),
                     takes = uiState.takes,
+                    exportState = uiState.exportState,
+                    onExport = { viewModel.exportTake(sessionId) },
                     onOpenTake = { id -> navController.navigate("take/${id.value}") },
                     onNavigateBack = { navController.popBackStack() },
                 )
@@ -300,11 +298,18 @@ fun OliviaApp(
 private fun TakeRouteContent(
     take: TakeSummary?,
     takes: List<TakeSummary>,
+    exportState: com.olivia.companion.session.ExportState,
+    onExport: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     if (take != null) {
-        OliviaTakeScreen(take, onNavigateBack)
+        OliviaTakeScreen(
+            take = take,
+            onNavigateBack = onNavigateBack,
+            exportState = exportState,
+            onExport = onExport,
+        )
         return
     }
     OliviaSessionsScreen(takes, onOpenTake)
@@ -384,6 +389,7 @@ private fun OliviaNavigationItem(
                 indication = null,
             )
             .semantics(mergeDescendants = true) {}
+            .heightIn(min = 48.dp)
             .padding(horizontal = 4.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -419,6 +425,8 @@ private fun OliviaRecordButton(
     Box(
         modifier = modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
+            .heightIn(min = 48.dp)
+            .widthIn(min = 48.dp)
             .selectable(
                 selected = selected,
                 onClick = onClick,
