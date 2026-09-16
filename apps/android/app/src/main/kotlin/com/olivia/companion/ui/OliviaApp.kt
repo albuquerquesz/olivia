@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -213,6 +215,9 @@ fun OliviaApp(
                             restoreState = true
                         }
                     },
+                    onOpenRecord = {
+                        navController.navigate(OliviaDestination.RECORD.route)
+                    },
                     onOpenTake = { sessionId ->
                         navController.navigate("take/${sessionId.value}")
                     },
@@ -221,7 +226,6 @@ fun OliviaApp(
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     state = uiState,
-                    voicePermissionGranted = audioPermissionGranted,
                     onOpenSettings = {
                         navController.navigate(OliviaDestination.SETTINGS.route) {
                             popUpTo(OliviaDestination.HOME.route) { saveState = true }
@@ -285,7 +289,9 @@ fun OliviaApp(
                     },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(start = 24.dp, end = 24.dp, bottom = 8.dp)
+                        .navigationBarsPadding()
+                        .offset(y = 8.dp)
+                        .padding(start = 16.dp, end = 16.dp)
                         .widthIn(max = 600.dp)
                         .fillMaxWidth(),
                 )

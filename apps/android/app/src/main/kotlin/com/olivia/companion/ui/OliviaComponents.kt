@@ -1,8 +1,14 @@
 package com.olivia.companion.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -28,8 +34,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.BatteryFull
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.MicNone
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -42,7 +51,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -54,7 +66,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
-import com.olivia.companion.session.VoiceCommandState
+import kotlin.math.PI
+import kotlin.math.sin
 
 @Composable
 internal fun OliviaPage(
@@ -67,7 +80,7 @@ internal fun OliviaPage(
                 .widthIn(max = 600.dp)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 24.dp),
+                .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
             if (onNavigateBack != null) {
@@ -110,6 +123,18 @@ internal fun OliviaPanel(
     }
 }
 
+private data class DeviceMetric(
+    val icon: ImageVector,
+    val value: String,
+    val label: String,
+)
+
+private val OfflineDeviceMetrics = listOf(
+    DeviceMetric(Icons.Outlined.BatteryFull, "78%", "bateria dos óculos"),
+    DeviceMetric(Icons.Outlined.Videocam, "3K", "30 fps nativo"),
+    DeviceMetric(Icons.Outlined.Storage, "12,4 GB", "livres de 32"),
+)
+
 @Composable
 internal fun DeviceOverview() {
     Column(
@@ -130,9 +155,37 @@ internal fun DeviceOverview() {
                     verticalArrangement = Arrangement.SpaceBetween,
                 ) {
                     DeviceIdentity()
+                    DeviceMetrics(OfflineDeviceMetrics)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DeviceMetrics(metrics: List<DeviceMetric>) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        metrics.forEach { metric ->
+            DeviceMetricInline(metric, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun DeviceMetricInline(metric: DeviceMetric, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.semantics(mergeDescendants = true) {
+            contentDescription = "${metric.label}: ${metric.value}"
+        },
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(metric.icon, contentDescription = null, modifier = Modifier.size(14.dp))
+        Text(metric.value, style = MaterialTheme.typography.labelMedium)
     }
 }
 
@@ -196,71 +249,76 @@ private fun DeviceLabel() {
 }
 
 @Composable
-internal fun VoiceAvailabilityNotice(
-    voiceState: VoiceCommandState,
-    voicePermissionGranted: Boolean,
+internal fun RecordVideoCta(
+    onClick: () -> Unit,
 ) {
-    val (title, description) = when {
-        voiceState == VoiceCommandState.UNAVAILABLE ->
-            "Não configurados" to "O modelo local ou o reconhecimento offline ainda não está disponível."
-        !voicePermissionGranted ->
-            "Permissão necessária" to "Permita o microfone do celular para usar os comandos locais."
-        else -> when (voiceState) {
-            VoiceCommandState.LISTENING_FOR_WAKE_WORD ->
-                "Disponível neste aparelho" to "Diga “Oi, Olivia” e depois gravar, pausar, retomar ou terminar."
-            VoiceCommandState.LISTENING_FOR_COMMAND ->
-                "Aguardando comando" to "Diga gravar, pausar, retomar ou terminar."
-            VoiceCommandState.UNAVAILABLE ->
-                "Não configurados" to "O modelo local ou o reconhecimento offline ainda não está disponível."
-            VoiceCommandState.ERROR ->
-                "Indisponível nesta sessão" to "Não foi possível iniciar o reconhecimento local."
-            VoiceCommandState.IDLE ->
-                "Disponível neste aparelho" to "Use “Oi, Olivia” e depois diga gravar, pausar, retomar ou terminar."
-        }
-    }
     Surface(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 120.dp),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                Icons.Outlined.MicNone,
-                contentDescription = "Comandos de voz locais",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp),
-            )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    "COMANDOS DE VOZ",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    title,
+                    "Olá, Olivia",
+                    modifier = Modifier.widthIn(max = 220.dp),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                 )
                 Text(
-                    description,
-                    modifier = Modifier.widthIn(max = 280.dp),
-                    style = MaterialTheme.typography.labelMedium,
+                    "Grave com os óculos.",
+                    modifier = Modifier.widthIn(max = 220.dp),
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            VoiceWaveform()
+        }
+    }
+}
+
+@Composable
+private fun VoiceWaveform() {
+    val color = MaterialTheme.colorScheme.primary
+    val transition = rememberInfiniteTransition(label = "voice waveform")
+    val progress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "voice waveform progress",
+    )
+    Canvas(modifier = Modifier.size(width = 42.dp, height = 44.dp)) {
+        val heights = List(5) { index ->
+            val wave = ((sin((progress + index * 0.2f) * 2f * PI) + 1f) / 2f).toFloat()
+            0.36f + wave * 0.64f
+        }
+        val spacing = size.width / heights.size
+        heights.forEachIndexed { index, fraction ->
+            val x = spacing * index + spacing / 2f
+            val halfHeight = size.height * fraction / 2f
+            drawLine(
+                color = color,
+                start = Offset(x, size.height / 2f - halfHeight),
+                end = Offset(x, size.height / 2f + halfHeight),
+                strokeWidth = 4.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
         }
     }
 }

@@ -1,8 +1,6 @@
 package com.olivia.companion.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,9 +45,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
 import com.olivia.companion.session.AudioFeedbackStatus
 import com.olivia.companion.session.ExportState
@@ -122,34 +122,33 @@ fun OliviaWelcomeScreen(onEnter: () -> Unit) {
 fun OliviaHomeScreen(
     state: OliviaUiState,
     onSeeAllTakes: () -> Unit,
+    onOpenRecord: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     val recent = state.takes.take(3)
     OliviaPage {
-        DeviceOverview()
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(
-                    "Últimos takes".uppercase(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                TextButton(
-                    onClick = onSeeAllTakes,
-                    modifier = Modifier.heightIn(min = 48.dp),
-                ) {
-                    Text(
-                    "ver todos",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    )
-                )
+                DeviceOverview()
+                RecordVideoCta(onClick = onOpenRecord)
             }
-            RecentTakes(recent, onOpenTake)
+            if (recent.isEmpty()) {
+                EmptyTakesCard(
+                    onOpenRecord = onOpenRecord,
+                    onSeeAllTakes = onSeeAllTakes,
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RecentTakesHeader(onSeeAllTakes)
+                    RecentTakes(recent, onOpenTake)
+                }
+            }
         }
     }
 }
@@ -159,36 +158,78 @@ private fun RecentTakes(
     takes: List<TakeSummary>,
     onOpenTake: (SessionId) -> Unit,
 ) {
-    if (takes.isEmpty()) {
-        EmptyTakesCard()
-        return
-    }
     takes.forEach { take ->
         TakePreviewCard(take = take, onClick = { onOpenTake(take.sessionId) })
     }
 }
 
 @Composable
-private fun EmptyTakesCard() {
+private fun RecentTakesHeader(onSeeAllTakes: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "Últimos takes",
+            modifier = Modifier.align(Alignment.CenterVertically),
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+        )
+        TextButton(
+            onClick = onSeeAllTakes,
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .heightIn(min = 48.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    "Ver mais",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Normal),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                )
+                Icon(
+                    Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyTakesCard(
+    onOpenRecord: () -> Unit,
+    onSeeAllTakes: () -> Unit,
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 280.dp)
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+                .heightIn(min = 320.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            RecentTakesHeader(onSeeAllTakes)
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             ) {
                 Icon(
                     Icons.Outlined.Videocam,
@@ -207,6 +248,17 @@ private fun EmptyTakesCard() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+            }
+            Button(
+                onClick = onOpenRecord,
+                modifier = Modifier.fillMaxWidth(0.82f).heightIn(min = 48.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) {
+                Text("Começar a gravar", style = MaterialTheme.typography.labelLarge)
             }
         }
     }
@@ -239,9 +291,10 @@ private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 val recorded = formatRelativeDay(take.recordedAtEpochMs)
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     TakeMetaBadge(Icons.Outlined.Schedule, formatOffset(take.durationMs))
                     TakeMetaBadge(Icons.Outlined.CalendarToday, recorded)
@@ -307,7 +360,6 @@ private fun TakeThumbnail() {
 @Composable
 fun OliviaRecordingScreen(
     state: OliviaUiState,
-    voicePermissionGranted: Boolean,
     onOpenSettings: () -> Unit,
     onAudioMode: (AudioMode) -> Unit,
     onStart: () -> Unit,
@@ -381,10 +433,6 @@ fun OliviaRecordingScreen(
         if (!state.backend.requiresPhysicalGlasses) {
             BackendModeNotice()
         }
-        VoiceAvailabilityNotice(
-            voiceState = state.voiceState,
-            voicePermissionGranted = voicePermissionGranted,
-        )
         AudioAvailabilityNotice(
             mode = state.audioMode,
             status = state.audioStatus,
