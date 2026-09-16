@@ -127,14 +127,19 @@ internal class DatGlassesGateway(
     override suspend fun pauseCapture() {
         streamJob?.cancel()
         streamJob = null
-        stream?.stop()
+        // DAT closes a Stream after stop() and does not support starting that same instance
+        // again. Keep the capability alive while the app is paused; cancelling this collector
+        // prevents heartbeats/frames from crossing the boundary, and resume simply reattaches it.
         _heartbeat.value = null
     }
 
     override suspend fun resumeCapture(capture: CaptureId) {
-        // DAT transitions a stopped Stream to CLOSED; it cannot be started again. Recreate the
-        // session/camera so PAUSED -> STARTED gets a fresh stream and capture generation.
-        startCapture(capture)
+        val activeStream = stream ?: run { startCapture(capture); return }
+        this.capture = capture
+        sequence = 0
+        _heartbeat.value = null
+        _connection.value = GlassesConnection.CONNECTED
+        observeFrames(activeStream, capture)
     }
 
     override suspend fun stopCapture() {

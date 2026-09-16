@@ -44,7 +44,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class DatMockDeviceKitIntegrationTest {
     @Test
-    fun mockDeviceKitDeliversPortraitRgbaFramesAndRecoversSession() = runBlocking {
+    fun mockDeviceKitDeliversPortraitNv21FramesAndRecoversSession() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         listOf(

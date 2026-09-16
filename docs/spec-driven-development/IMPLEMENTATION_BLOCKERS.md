@@ -6,7 +6,7 @@ As entregas abaixo não podem ser concluídas de modo honesto sem configuração
 
 | Frente | Pré-condição necessária | Tasks bloqueadas | O que não será assumido |
 | --- | --- | --- | --- |
-| DAT e MockDeviceKit | artefatos Maven Central, app registrado no Wearables Developer Center e, fora do Developer Mode, Application ID/client token locais | INT-00.2–00.4, BE-00.1–00.2, INT-04–06 | API, formato de callback, streaming físico, gravação nativa ou 3K |
+| DAT físico e capacidades nativas | pareamento dos óculos, Application ID/client token do canal físico e dispositivo compatível | BE-00.1–00.2, INT-04–06 | streaming Bluetooth físico, alto-falantes, gravação nativa ou 3K |
 | Firebase AI Logic | `google-services.json` local, App Check, projeto/modelo autorizado e quota | BE-03.4–03.5, INT-03 | acesso real, retenção do provedor, latência ou qualidade do modelo |
 | Wake word Porcupine | access key e modelos pt-BR aprovados/localmente provisionados | FE-03.1–03.2 | reconhecimento por microfone dos óculos ou áudio enviado à nuvem |
 | Whisper local | runtime Android definido, modelo multilíngue local com hash/licença e caminho provisionado | BE-08, BE-09, integração Whisper | transcrição remota, desempenho de 8 s ou cortes reais |
@@ -15,3 +15,8 @@ As entregas abaixo não podem ser concluídas de modo honesto sem configuração
 Quando os itens forem provisionados, a ordem é: resolver/rodar `mock` e MockDeviceKit, conectar
 o adapter DAT a `GlassesGateway`, habilitar a factory Firebase no runtime `glasses`, rodar o teste
 Android live controlado, validar importação de take e só então executar a matriz física BE-12.
+
+O setup e o ciclo MockDeviceKit já foram executados no Moto G60. O teste cobre frame raw portrait
+(I420 convertido para NV21), queda de heartbeat, `DEGRADED`, recuperação, pausa/retomada e
+`STOPPED`; portanto INT-00.1–00.4 não estão mais bloqueadas. O bloqueio restante é exclusivamente
+a evidência física e as capacidades nativas listadas acima.

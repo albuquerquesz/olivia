@@ -1,6 +1,7 @@
 # Setup do Meta Wearables Device Access Toolkit
 
-Status: planejado; implementação e execução de testes pendentes.
+Status: implementado e validado no modo MockDeviceKit; validação física dos óculos permanece
+pendente.
 
 Tasks canônicas: INT-00; FE-00 e SH-03 como fundação; início antecipado do spike BE-12.
 
@@ -22,6 +23,27 @@ Iniciar BE-12 agora com a matriz de capacidades: iniciar/encerrar gravação nat
 
 Unitários: tradução de status/erros e configuração incompleta. Integração Android/MockDeviceKit: registrar/inicializar, emitir frame, indisponibilidade e recuperação sem reescrever consumidor. Runner Docker cobre somente o contrato normalizado, sem alegar Bluetooth simulado.
 
-Pronto em modo toolkit quando a evidência inclui versão, variante, fixture e frame origin MOCK do mock; hardware real recebe DAT apenas quando efetivamente vem dos óculos. Gate físico fica INT-04/05/06. Não considerar pacote Gradle declarado como SDK integrado.
+Pronto em modo toolkit quando a evidência inclui versão, variante, fixture e frame normalizado pelo
+adapter MockDeviceKit (`FrameOrigin.DAT`); o mock local offline continua usando `FrameOrigin.MOCK`.
+Hardware real recebe DAT apenas quando efetivamente vem dos óculos. Gate físico fica INT-04/05/06.
+Não considerar pacote Gradle declarado como SDK integrado.
 
-Veja [subtasks](tasks.md), [diagrama](diagram.mmd), [decisões](../DECISIONS.md) e [contrato de testes](../TESTING.md). Os critérios aqui são obrigatórios para fechar as tasks associadas; nenhum resultado foi medido nesta revisão.
+Veja [subtasks](tasks.md), [diagrama](diagram.mmd), [decisões](../DECISIONS.md) e [contrato de testes](../TESTING.md).
+
+## Evidência MockDeviceKit Android (16/09/2026)
+
+`DatMockDeviceKitIntegrationTest` passou no Moto G60 (`moto g(60) - 12`, ADB `0072882177`)
+com o flavor `glasses`. O teste cobre o ciclo completo da fronteira DAT:
+
+- inicialização idempotente do runtime, sessão `STARTING → STARTED` e primeiro frame;
+- frame raw do MockDeviceKit convertido de I420 para NV21, com orientação portrait e buffer
+  tightly-packed (`480×640` no feed de câmera do mock; o tamanho não é uma afirmação sobre o
+  modo HIGH dos óculos físicos);
+- interrupção do collector, 4,1 s sem heartbeat e transição para `DEGRADED`;
+- retomada reanexando o mesmo stream DAT, seguida de pausa/retomada de sessão e `STOPPED`;
+- descarte de recursos no encerramento, sem persistir bytes de frame.
+
+No caminho MockDeviceKit o gateway solicita frames raw para evitar o decoder HEVC específico do
+dispositivo; o caminho físico continua usando HEVC comprimido e o decoder local. A evidência
+fecha INT-00.2–00.4 em modo toolkit, mas não fecha INT-04–06 (pareamento, áudio e vídeo nativos
+dos óculos).
