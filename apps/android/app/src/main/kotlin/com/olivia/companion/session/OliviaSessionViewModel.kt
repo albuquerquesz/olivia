@@ -12,7 +12,9 @@ import com.olivia.core.Correction
 import com.olivia.core.CorrectionStatus
 import com.olivia.core.DiagnosisKind
 import com.olivia.core.FrameAnalysis
+import com.olivia.core.FrameAnalyzer
 import com.olivia.core.GlassesConnection
+import com.olivia.core.GlassesGateway
 import com.olivia.core.SessionConfig
 import com.olivia.core.SessionId
 import com.olivia.core.SessionSnapshot
@@ -49,18 +51,14 @@ data class OliviaUiState(
 class OliviaSessionViewModel(
     private val audioModeStore: AudioModeStore,
     backend: GlassesBackend,
+    private val glassesGateway: GlassesGateway?,
+    private val frameAnalyzer: FrameAnalyzer?,
     private val audioFeedback: AndroidAudioFeedback,
     private val clock: () -> Long = { System.currentTimeMillis() },
 ) : ViewModel() {
     private val timeline = InMemoryTimeline()
-    private val runtime = DebugSessionRuntime(timeline, clock)
-    private val guidance = MockGuidanceEngine(SessionConfig().correctionCooldownMs)
-    private val mockGateway = backend
-        .takeUnless { it.requiresPhysicalGlasses }
-        ?.let { MockFrameGateway(clock = clock) }
-    private val mockAnalyzer = backend
-        .takeUnless { it.requiresPhysicalGlasses }
-        ?.let { MockFrameAnalyzer(clock = clock) }
+    private val runtime = SessionRuntime(timeline, clock)
+    private val guidance = ThresholdGuidanceEngine(SessionConfig().correctionCooldownMs)
     private var frameJob: Job? = null
     private var gatewayCommand: Job? = null
     private var ticker: Job? = null
@@ -80,11 +78,11 @@ class OliviaSessionViewModel(
     val uiState: StateFlow<OliviaUiState> = _uiState.asStateFlow()
 
     init {
-        frameJob = mockGateway?.let { gateway ->
+        frameJob = glassesGateway?.let { gateway ->
             viewModelScope.launch {
                 gateway.frames.collect { frame ->
                     val wasDegraded = runtime.snapshot?.state == SessionState.DEGRADED
-                    mockAnalyzer?.analyze(frame)?.getOrNull()?.let { analysis ->
+                    frameAnalyzer?.analyze(frame)?.getOrNull()?.let { analysis ->
                         handleAnalysis(analysis)
                     }
                     runtime.frameReceived(frame.capturedAtEpochMs)
@@ -125,7 +123,7 @@ class OliviaSessionViewModel(
         val paused = runtime.pause()
         if (wasLive && paused?.state == SessionState.PAUSED) {
             expirePendingCorrection(paused.id, clock())
-            gatewayCommand = mockGateway?.let { gateway ->
+            gatewayCommand = glassesGateway?.let { gateway ->
                 viewModelScope.launch { gateway.pauseCapture() }
             }
             signalAudio(SessionSignal.SESSION_PAUSED)
@@ -137,7 +135,7 @@ class OliviaSessionViewModel(
         val wasPaused = runtime.snapshot?.state == SessionState.PAUSED
         val resumed = runtime.resume()
         if (wasPaused && resumed?.state == SessionState.STARTED) {
-            gatewayCommand = mockGateway?.let { gateway ->
+            gatewayCommand = glassesGateway?.let { gateway ->
                 viewModelScope.launch { gateway.resumeCapture() }
             }
             signalAudio(SessionSignal.SESSION_RESUMED)
@@ -179,7 +177,7 @@ class OliviaSessionViewModel(
         ticker = null
         watchdog?.cancel()
         watchdog = null
-        gatewayCommand = mockGateway?.let { gateway ->
+        gatewayCommand = glassesGateway?.let { gateway ->
             viewModelScope.launch { gateway.stopCapture() }
         }
         publish()
@@ -202,7 +200,7 @@ class OliviaSessionViewModel(
 
     private fun startGateway(sessionId: SessionId, config: SessionConfig) {
         gatewayCommand?.cancel()
-        gatewayCommand = mockGateway?.let { gateway ->
+        gatewayCommand = glassesGateway?.let { gateway ->
             viewModelScope.launch { gateway.startCapture(sessionId, config) }
         }
     }
@@ -359,7 +357,6 @@ class OliviaSessionViewModel(
                     sessionId = id,
                     title = "Take ao vivo",
                     events = timeline.events(id),
-                    isDemo = false,
                 )
             }
         return listOfNotNull(live)
@@ -376,7 +373,7 @@ class OliviaSessionViewModel(
 
     override fun onCleared() {
         audioFeedback.close()
-        mockGateway?.close()
+        if (glassesGateway is AutoCloseable) glassesGateway.close()
         frameJob?.cancel()
         gatewayCommand?.cancel()
         watchdog?.cancel()
@@ -391,6 +388,8 @@ class OliviaSessionViewModel(
             return OliviaSessionViewModel(
                 audioModeStore = audioModeStore,
                 backend = ActiveBackend.current,
+                glassesGateway = ActiveBackend.createGlassesGateway(),
+                frameAnalyzer = ActiveBackend.createFrameAnalyzer(),
                 audioFeedback = AndroidAudioFeedback(
                     context = application,
                     modeProvider = audioModeStore::current,

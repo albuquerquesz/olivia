@@ -12,7 +12,6 @@ data class TakeSummary(
     val recordedAtEpochMs: Long,
     val correctionCount: Int,
     val cutCount: Int,
-    val isDemo: Boolean,
     val events: List<TimelineEvent>,
     val review: SessionReview,
 )
@@ -21,7 +20,6 @@ fun takeFromEvents(
     sessionId: SessionId,
     title: String,
     events: List<TimelineEvent>,
-    isDemo: Boolean,
     review: SessionReview? = null,
 ): TakeSummary {
     val ordered = events.sortedBy { it.offsetMs }
@@ -36,7 +34,6 @@ fun takeFromEvents(
         recordedAtEpochMs = recordedAtEpochMs,
         correctionCount = correctionCount,
         cutCount = cutCount,
-        isDemo = isDemo,
         events = ordered,
         review = review ?: SessionReview(
             sessionId = sessionId,

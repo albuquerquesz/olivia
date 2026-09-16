@@ -25,11 +25,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-internal class MockFrameGateway(
+internal class ScenarioGlassesGateway(
     private val clock: () -> Long = { System.currentTimeMillis() },
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val fixtures: List<MockFrameFixture> = MockFrameFixtures.sequence(),
-) : GlassesGateway {
+    private val fixtures: List<ScenarioFrame> = SessionScenario.sequence(),
+) : GlassesGateway, AutoCloseable {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val lock = Mutex()
     private val _connection = MutableStateFlow(GlassesConnection.CONNECTED)
@@ -82,7 +82,7 @@ internal class MockFrameGateway(
         }
     }
 
-    fun close() {
+    override fun close() {
         scope.cancel()
     }
 
@@ -95,7 +95,7 @@ internal class MockFrameGateway(
                 ?.offsetMs
                 ?: fixture.offsetMs
             val gapMs = fixture.offsetMs - previousOffsetMs
-            if (gapMs > MockFrameFixtures.FRAME_INTERVAL_MS) {
+            if (gapMs > SessionScenario.FRAME_INTERVAL_MS) {
                 val disconnectAtEpochMs = startedAtEpochMs + previousOffsetMs + 4_000L
                 delay((disconnectAtEpochMs - clock()).coerceAtLeast(0))
                 if (!scope.isActive) return
@@ -108,8 +108,8 @@ internal class MockFrameGateway(
                 Frame(
                     sessionId = currentSessionId,
                     capturedAtEpochMs = targetEpochMs,
-                    width = MockFrameFixtures.FRAME_WIDTH,
-                    height = MockFrameFixtures.FRAME_HEIGHT,
+                    width = SessionScenario.FRAME_WIDTH,
+                    height = SessionScenario.FRAME_HEIGHT,
                     format = FrameFormat.RGBA_8888,
                     origin = FrameOrigin.MOCK,
                     bytes = byteArrayOf(fixture.marker.toByte()),

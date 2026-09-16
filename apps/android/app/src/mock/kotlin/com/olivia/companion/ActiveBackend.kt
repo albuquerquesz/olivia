@@ -1,5 +1,10 @@
 package com.olivia.companion
 
+import com.olivia.companion.session.ScenarioFrameAnalyzer
+import com.olivia.companion.session.ScenarioGlassesGateway
+import com.olivia.core.FrameAnalyzer
+import com.olivia.core.GlassesGateway
+
 object ActiveBackend {
     val current = GlassesBackend(
         id = "mock",
@@ -7,4 +12,8 @@ object ActiveBackend {
         requiresPhysicalGlasses = false,
         usesDatSdk = false,
     )
+
+    fun createGlassesGateway(): GlassesGateway = ScenarioGlassesGateway()
+
+    fun createFrameAnalyzer(): FrameAnalyzer = ScenarioFrameAnalyzer()
 }

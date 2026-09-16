@@ -10,8 +10,8 @@ import com.olivia.core.Severity
 import com.olivia.core.VisualDiagnosis
 import java.util.Locale
 
-/** Política determinística do demo: uma correção por janela de cooldown. */
-internal class MockGuidanceEngine(
+/** Política de direção: uma correção por janela de cooldown. */
+internal class ThresholdGuidanceEngine(
     private val correctionCooldownMs: Long,
 ) : GuidanceEngine {
     private var lastCorrectionAtEpochMs: Long? = null

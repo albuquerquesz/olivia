@@ -1,7 +1,7 @@
 package com.olivia.core
 
 /**
- * Versão dos contratos entre app, IA, mock e hardware real.
+ * Versão dos contratos entre app, IA, execução offline e hardware real.
  *
  * Semver: MAJOR quebra consumidores, MINOR adiciona de forma compatível, PATCH é
  * correção de documentação ou detalhe interno. Todo evento serializado carrega

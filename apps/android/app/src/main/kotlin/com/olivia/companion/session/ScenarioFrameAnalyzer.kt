@@ -12,23 +12,23 @@ import com.olivia.core.VisualDiagnosis
 import com.olivia.core.DiagnosisKind
 import com.olivia.core.Severity
 
-internal class MockFrameAnalyzer(
+internal class ScenarioFrameAnalyzer(
     private val clock: () -> Long = { System.currentTimeMillis() },
 ) : FrameAnalyzer {
     override suspend fun analyze(frame: Frame): Result<FrameAnalysis> {
         if (
             frame.origin != FrameOrigin.MOCK ||
-            frame.width != MockFrameFixtures.FRAME_WIDTH ||
-            frame.height != MockFrameFixtures.FRAME_HEIGHT ||
+            frame.width != SessionScenario.FRAME_WIDTH ||
+            frame.height != SessionScenario.FRAME_HEIGHT ||
             frame.format != FrameFormat.RGBA_8888
         ) {
-            return Result.failure(IllegalArgumentException("Fixture de frame mock inválida"))
+            return Result.failure(IllegalArgumentException("Frame de cenário offline inválido"))
         }
 
         val marker = frame.bytes.firstOrNull()?.toInt()
-            ?: return Result.failure(IllegalArgumentException("Fixture mock sem marcador"))
+            ?: return Result.failure(IllegalArgumentException("Frame de cenário sem marcador"))
         val analyzedAt = clock()
-        if (marker == MockFrameFixtures.FRAMING_MARKER) {
+        if (marker == SessionScenario.FRAMING_MARKER) {
             return analysisResult(
                 frame = frame,
                 analyzedAt = analyzedAt,
@@ -41,7 +41,7 @@ internal class MockFrameAnalyzer(
                 ),
             )
         }
-        if (marker == MockFrameFixtures.LIGHT_MARKER) {
+        if (marker == SessionScenario.LIGHT_MARKER) {
             return analysisResult(
                 frame = frame,
                 analyzedAt = analyzedAt,
@@ -53,7 +53,7 @@ internal class MockFrameAnalyzer(
                 ),
             )
         }
-        if (marker == MockFrameFixtures.HORIZON_MARKER) {
+        if (marker == SessionScenario.HORIZON_MARKER) {
             return analysisResult(
                 frame = frame,
                 analyzedAt = analyzedAt,
@@ -66,10 +66,10 @@ internal class MockFrameAnalyzer(
                 ),
             )
         }
-        if (marker == MockFrameFixtures.NORMAL_MARKER) {
+        if (marker == SessionScenario.NORMAL_MARKER) {
             return analysisResult(frame = frame, analyzedAt = analyzedAt, diagnosis = null)
         }
-        return Result.failure(IllegalArgumentException("Marcador mock desconhecido: $marker"))
+        return Result.failure(IllegalArgumentException("Marcador de cenário desconhecido: $marker"))
     }
 
     private fun analysisResult(

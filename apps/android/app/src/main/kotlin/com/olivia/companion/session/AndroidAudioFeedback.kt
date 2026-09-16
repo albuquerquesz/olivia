@@ -25,7 +25,7 @@ import kotlinx.coroutines.withContext
  * Voz usa o TTS do Android. Sinal usa PCM curto gerado localmente: não há round-trip
  * de nuvem e a distinção esquerda/direita é feita pelo volume estéreo.
  */
-internal class AndroidAudioFeedback(
+class AndroidAudioFeedback(
     context: Context,
     private val modeProvider: () -> AudioMode,
 ) : AudioFeedback {

@@ -8,10 +8,9 @@ import com.olivia.core.TimelineEvent
 import com.olivia.core.TimelineEventType
 
 /**
- * Controlador de sessão só para a UI de debug do flavor mock.
- * Não substitui a máquina de estados do FE-02: transições inválidas são ignoradas.
+ * Runtime da sessão. Transições inválidas são ignoradas para manter o fluxo previsível.
  */
-class DebugSessionRuntime(
+class SessionRuntime(
     private val timeline: InMemoryTimeline,
     private val clock: () -> Long,
 ) {
