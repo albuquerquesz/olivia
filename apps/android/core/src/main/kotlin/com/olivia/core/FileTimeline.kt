@@ -57,11 +57,12 @@ public class FileTimeline(private val directory: Path) : Timeline {
         val target = fileFor(sessionId)
         val temporary = Files.createTempFile(directory, ".timeline-", ".tmp")
         try {
-            Files.writeString(
-                temporary,
-                events.joinToString(separator = "\n") { ContractJson.encodeEvent(it) },
-                UTF_8,
-            )
+            // Files.writeString is a Java 11 convenience API and is absent from Android's
+            // runtime. java.io is available on every supported Android API; the completed
+            // temporary file is still atomically renamed below.
+            temporary.toFile().outputStream().bufferedWriter(UTF_8).use { writer ->
+                writer.write(events.joinToString(separator = "\n") { ContractJson.encodeEvent(it) })
+            }
             try {
                 Files.move(temporary, target, ATOMIC_MOVE, REPLACE_EXISTING)
             } catch (_: AtomicMoveNotSupportedException) {

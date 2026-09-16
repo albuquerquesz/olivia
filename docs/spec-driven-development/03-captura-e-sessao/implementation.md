@@ -37,3 +37,14 @@ and lifecycle, then forwards recognized commands to `SessionRuntime`. The curren
 implementation is explicitly unavailable: it does not request the microphone, record audio, or
 call a network service until an access key and approved pt-BR models are configured outside the
 repository. Therefore FE-03.1 remains open and no local recognition is claimed yet.
+
+Mock demo control update: while FE-03.1 is blocked, the `mock` flavor exposes clearly labelled
+`Iniciar demonstração`, pause, resume and stop controls. They call the same parsed
+`LocalSessionCommand` boundary as a future recognizer, exist only when the simulated backend is
+active, and do not represent voice recognition. The `glasses` flavor keeps the voice-only entry
+state until Porcupine is provisioned.
+
+Android mock runtime fix: the first emulator run exposed that `Files.writeString` is not present
+in Android's Java runtime. `FileTimeline` now writes the temporary JSONL file through
+Android-compatible `java.io` and retains the existing atomic rename. The corrected `mockDebug`
+APK was rebuilt; no DAT, Gemini or Porcupine capability is implied by this local check.

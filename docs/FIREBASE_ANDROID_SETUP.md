@@ -22,9 +22,28 @@ persistência de frames neste MVP.
    App Check ou `google-services.json` em segredo de usuário; tokens administrativos e debug
    continuam fora do repositório.
 
-O app instala Play Integrity antes de criar o adapter Firebase AI. Se configuração, App Check,
-quota ou modelo faltarem, o adapter falha com erro sanitizado; nunca troca silenciosamente para
-mock nem envia mídia para outro serviço.
+O APK `release` instala Play Integrity antes de criar o adapter Firebase AI. O APK `debug` usa o
+Debug provider exclusivamente para desenvolvimento local. Se configuração, App Check, quota ou
+modelo faltarem, o adapter falha com erro sanitizado; nunca troca silenciosamente para mock nem
+envia mídia para outro serviço.
+
+## Probe no emulador
+
+Para o probe de instrumentação, crie um token em **App Check → Apps → Olivia → Manage debug
+tokens**, mantenha-o apenas na sessão do PowerShell e rode o comando abaixo. O
+`DebugAppCheckTestHelper` recebe esse token pelo runner e não depende de um UUID dinâmico do
+logcat. O token não entra no código, `local.properties` ou `.env`.
+
+```powershell
+$env:OLIVIA_LIVE_AI_ENABLED = "true"
+$env:OLIVIA_AI_MODEL = "gemini-3.5-flash-lite"
+$env:FIREBASE_APP_CHECK_DEBUG_TOKEN = "cole-o-token-criado-no-console-aqui"
+& .\gradlew.bat ':app:connectedGlassesDebugAndroidTest' `
+  '-Pandroid.testInstrumentationRunnerArguments.class=com.olivia.companion.infra.FirebaseAccessIntegrationTest'
+```
+
+O token de debug é um segredo de acesso ao ambiente de desenvolvimento: revogue-o ao concluir o
+teste ou imediatamente se ele for exposto.
 
 ## Limite de evidência
 

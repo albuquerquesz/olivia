@@ -40,9 +40,6 @@ android {
         if (System.getenv("OLIVIA_LIVE_AI_ENABLED") == "true") {
             mapOf(
                 "oliviaLiveAiEnabled" to "OLIVIA_LIVE_AI_ENABLED",
-                "oliviaFirebaseProjectId" to "OLIVIA_FIREBASE_PROJECT_ID",
-                "oliviaFirebaseAppId" to "OLIVIA_FIREBASE_APP_ID",
-                "oliviaFirebaseApiKey" to "OLIVIA_FIREBASE_API_KEY",
                 "oliviaAiModel" to "OLIVIA_AI_MODEL",
                 "firebaseAppCheckDebugSecret" to "FIREBASE_APP_CHECK_DEBUG_TOKEN",
             ).forEach { (argument, variable) ->
@@ -81,6 +78,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -98,10 +96,13 @@ dependencies {
     "glassesImplementation"(platform(libs.firebase.bom))
     "glassesImplementation"(libs.firebase.ai)
     "glassesImplementation"(libs.firebase.appcheck.playintegrity)
-
-    // Test APK only: no Firebase/debug provider shipped in the product APK.
+    debugImplementation(libs.firebase.appcheck.debug)
+    // Test APK only: no debug provider is shipped in the release APK.
     androidTestImplementation(platform(libs.firebase.bom))
     androidTestImplementation(libs.firebase.ai)
+    // The test APK needs this registrar as well as the helper; debugImplementation alone is
+    // packaged only with the target APK.
+    androidTestImplementation(libs.firebase.appcheck.debug)
     androidTestImplementation(libs.firebase.appcheck.debug.testing)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)

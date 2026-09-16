@@ -1,8 +1,10 @@
 package com.olivia.companion.ai
 
 import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.AppCheckProviderFactory
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
+import com.olivia.companion.BuildConfig
 
 /**
  * Installs Android attestation before Firebase AI Logic is used. The Firebase Console still owns
@@ -11,9 +13,15 @@ import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderF
  */
 internal object FirebaseAppCheckBootstrap {
     fun install(app: FirebaseApp) {
+        val factory = if (BuildConfig.DEBUG) debugFactory() else PlayIntegrityAppCheckProviderFactory.getInstance()
         FirebaseAppCheck.getInstance(app).installAppCheckProviderFactory(
-            PlayIntegrityAppCheckProviderFactory.getInstance(),
+            factory,
             true,
         )
     }
+
+    private fun debugFactory(): AppCheckProviderFactory =
+        Class.forName("com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory")
+            .getMethod("getInstance")
+            .invoke(null) as AppCheckProviderFactory
 }

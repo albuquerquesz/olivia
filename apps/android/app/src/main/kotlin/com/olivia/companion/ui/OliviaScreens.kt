@@ -59,6 +59,7 @@ import com.olivia.companion.GlassesBackend
 import com.olivia.companion.media.AndroidLocalRecordingSource
 import com.olivia.companion.media.AndroidReviewExporter
 import com.olivia.companion.media.LocalReviewExport
+import com.olivia.companion.session.LocalSessionCommand
 import com.olivia.companion.session.SessionRuntime
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionState
@@ -124,6 +125,8 @@ fun OliviaRecordingScreen(
     onOpenSettings: () -> Unit,
 ) {
     val snapshot by sessionRuntime.snapshot.collectAsState()
+    val scope = rememberCoroutineScope()
+    var commandError by rememberSaveable { mutableStateOf<String?>(null) }
     OliviaPage {
         OliviaPanel {
             Text("Comando de voz", style = MaterialTheme.typography.bodyLarge)
@@ -135,7 +138,7 @@ fun OliviaRecordingScreen(
                     if (backend.requiresPhysicalGlasses) {
                         "É necessário conectar os óculos para gravar."
                     } else {
-                        "Prévia do fluxo por voz, com óculos simulados."
+                        "Prévia local com óculos simulados. O wake word Porcupine ainda não está configurado."
                     },
                 )
             }
@@ -145,6 +148,20 @@ fun OliviaRecordingScreen(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (!backend.requiresPhysicalGlasses) {
+            MockSessionControls(
+                state = snapshot?.state,
+                onCommand = { command ->
+                    commandError = null
+                    scope.launch {
+                        sessionRuntime.handle(command).onFailure {
+                            commandError = "Não foi possível executar a demonstração"
+                        }
+                    }
+                },
+            )
+            commandError?.let { PanelDetail(it) }
+        }
         OutlinedButton(
             onClick = onOpenSettings,
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
@@ -278,6 +295,61 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
                 Text("Compartilhar marcas do take")
             }
         }
+    }
+}
+
+/** Development-only input for the deterministic mock; this never represents voice recognition. */
+@Composable
+private fun MockSessionControls(
+    state: SessionState?,
+    onCommand: (LocalSessionCommand) -> Unit,
+) {
+    when (state) {
+        SessionState.STARTING, SessionState.STARTED -> {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { onCommand(LocalSessionCommand.PAUSE) },
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                ) { Text("Pausar demonstração") }
+                Button(
+                    onClick = { onCommand(LocalSessionCommand.STOP) },
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                ) { Text("Terminar") }
+            }
+        }
+        SessionState.PAUSED -> {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(
+                    onClick = { onCommand(LocalSessionCommand.RESUME) },
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                ) { Text("Retomar") }
+                Button(
+                    onClick = { onCommand(LocalSessionCommand.STOP) },
+                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+                ) { Text("Terminar") }
+            }
+        }
+        SessionState.DEGRADED -> Button(
+            onClick = { onCommand(LocalSessionCommand.STOP) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        ) { Text("Terminar demonstração") }
+        SessionState.STOPPING, SessionState.PROCESSING -> PanelDetail("Aguarde a mudança de estado")
+        SessionState.READY -> PanelDetail("Abra Sessões para revisar e exportar")
+        SessionState.ERROR -> Button(
+            onClick = { onCommand(LocalSessionCommand.START) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        ) { Text("Reiniciar demonstração") }
+        SessionState.IDLE, SessionState.STOPPED, null -> Button(
+            onClick = { onCommand(LocalSessionCommand.START) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            shape = RoundedCornerShape(20.dp),
+        ) { Text("Iniciar demonstração") }
     }
 }
 
