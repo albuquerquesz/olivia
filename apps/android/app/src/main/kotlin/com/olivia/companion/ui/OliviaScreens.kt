@@ -230,7 +230,7 @@ private fun TakeThumbnail() {
     val ground = MaterialTheme.colorScheme.surfaceVariant
     Canvas(
         modifier = Modifier
-            .size(56.dp)
+            .size(72.dp)
             .clip(RoundedCornerShape(16.dp)),
     ) {
         drawRect(ground)
