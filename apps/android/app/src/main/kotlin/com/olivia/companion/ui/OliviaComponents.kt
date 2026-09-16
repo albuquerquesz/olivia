@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -34,10 +35,12 @@ import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -137,22 +140,23 @@ internal fun DeviceOverview(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            shape = RoundedCornerShape(20.dp),
-        ) {
-            Column(
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onPrimary) {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 220.dp)
-                    .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)),
             ) {
-                DeviceIdentity(status = status, connectionDetail = connectionDetail)
-                if (simulated) {
-                    DeviceMetrics(OfflineDeviceMetrics)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 220.dp)
+                        .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    DeviceIdentity(status = status, connectionDetail = connectionDetail)
+                    if (simulated) {
+                        DeviceMetrics(OfflineDeviceMetrics)
+                    }
                 }
             }
         }

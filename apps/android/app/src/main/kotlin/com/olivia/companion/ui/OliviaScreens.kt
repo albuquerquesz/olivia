@@ -59,9 +59,12 @@ import com.olivia.companion.session.eventTitle
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
 import com.olivia.companion.session.isConfirmed
+import com.olivia.companion.session.sessionStateLabel
 import com.olivia.core.AudioMode
+import com.olivia.core.CutReason
 import com.olivia.core.SessionId
 import com.olivia.core.SessionState
+import com.olivia.core.SuggestedCut
 import com.olivia.core.TimelineEvent
 import com.olivia.core.TimelineEventType
 
@@ -286,6 +289,12 @@ fun OliviaRecordingScreen(
                     simulated = !state.backend.requiresPhysicalGlasses,
                     modifier = Modifier.fillMaxSize(),
                 )
+                SessionStateBadge(
+                    state = sessionState,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(20.dp),
+                )
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -352,6 +361,27 @@ fun OliviaRecordingScreen(
                 modifier = Modifier.padding(start = 8.dp).size(20.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun SessionStateBadge(state: SessionState, modifier: Modifier = Modifier) {
+    val degraded = state == SessionState.DEGRADED
+    val containerColor = MaterialTheme.colorScheme.onPrimary.takeIf { !degraded }
+        ?: MaterialTheme.colorScheme.surface
+    val contentColor = MaterialTheme.colorScheme.primary.takeIf { !degraded }
+        ?: MaterialTheme.colorScheme.onSurface
+    Surface(
+        modifier = modifier,
+        color = containerColor,
+        contentColor = contentColor,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Text(
+            sessionStateLabel(state),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge,
+        )
     }
 }
 
@@ -548,7 +578,8 @@ fun OliviaTakeScreen(take: TakeSummary, onNavigateBack: () -> Unit) {
 
 @Composable
 private fun SuggestedCuts(take: TakeSummary) {
-    if (take.cutCount == 0) {
+    val cutEvents = take.events.filter { it.type == TimelineEventType.CUT_SUGGESTED }
+    if (cutEvents.isEmpty() && take.review.suggestedCuts.isEmpty()) {
         Text(
             "Nenhum corte neste take. Os cortes aparecem quando o pós-processamento terminar.",
             style = MaterialTheme.typography.bodyMedium,
@@ -556,9 +587,40 @@ private fun SuggestedCuts(take: TakeSummary) {
         )
         return
     }
-    take.events.filter { it.type == TimelineEventType.CUT_SUGGESTED }.forEach { event ->
-        TimelineRow(event)
+    if (cutEvents.isNotEmpty()) {
+        cutEvents.forEach { event -> TimelineRow(event) }
+        return
     }
+    take.review.suggestedCuts.forEach { cut ->
+        SuggestedCutRow(cut)
+    }
+}
+
+@Composable
+private fun SuggestedCutRow(cut: SuggestedCut) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            "${formatOffset(cut.startMs)} a ${formatOffset(cut.endMs)}",
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(cutReasonLabel(cut.reason), style = MaterialTheme.typography.bodyLarge)
+            StatusChip("Sugestão", inverted = false)
+        }
+    }
+}
+
+private fun cutReasonLabel(reason: CutReason): String = when (reason) {
+    CutReason.UNCORRECTED_DEVIATION -> "Correção não confirmada"
+    CutReason.DEGRADED_STRETCH -> "Trecho sem frame"
+    CutReason.SPEECH_RETAKE -> "Repetição na fala"
+    CutReason.SILENCE -> "Silêncio"
 }
 
 @Composable
