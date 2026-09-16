@@ -28,11 +28,12 @@ class CaptureFenceTest {
     }
 
     @Test
-    fun `valid generation does not authorize analysis outside started`() {
+    fun `valid generation stays available only while started or degraded`() {
         val fence = CaptureFence()
         val stamp = FrameStamp(fence.open(SessionId("take")), 0, ClockReading(0, 100))
-        SessionState.entries.filter { it != SessionState.STARTED }.forEach {
+        SessionState.entries.filter { it !in setOf(SessionState.STARTED, SessionState.DEGRADED) }.forEach {
             assertFalse(fence.accepts(stamp, it), "state=$it")
         }
+        assertTrue(fence.accepts(stamp, SessionState.DEGRADED))
     }
 }

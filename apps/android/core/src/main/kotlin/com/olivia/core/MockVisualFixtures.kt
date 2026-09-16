@@ -7,11 +7,13 @@ package com.olivia.core
 public object MockVisualFixtures {
     public val centered: VisualFixtureManifest = fixture(
         id = "synthetic-centered",
+        roi = NormalizedRoi(0.4f, 0.3f, 0.2f, 0.4f),
         diagnoses = listOf(ok(DiagnosisKind.FRAMING), ok(DiagnosisKind.LIGHT), ok(DiagnosisKind.HORIZON)),
     )
 
     public val subjectRight: VisualFixtureManifest = fixture(
         id = "synthetic-subject-right",
+        roi = NormalizedRoi(0.72f, 0.3f, 0.2f, 0.4f),
         diagnoses = listOf(
             VisualDiagnosis(
                 kind = DiagnosisKind.FRAMING,
@@ -24,6 +26,7 @@ public object MockVisualFixtures {
 
     public val handShadow: VisualFixtureManifest = fixture(
         id = "synthetic-hand-shadow",
+        roi = NormalizedRoi(0.35f, 0.3f, 0.3f, 0.4f),
         diagnoses = listOf(
             VisualDiagnosis(
                 kind = DiagnosisKind.LIGHT,
@@ -36,6 +39,7 @@ public object MockVisualFixtures {
 
     public val lowLight: VisualFixtureManifest = fixture(
         id = "synthetic-low-light-no-hand",
+        roi = NormalizedRoi(0.35f, 0.3f, 0.3f, 0.4f),
         diagnoses = listOf(
             VisualDiagnosis(
                 kind = DiagnosisKind.LIGHT,
@@ -48,6 +52,7 @@ public object MockVisualFixtures {
 
     public val tiltedHorizon: VisualFixtureManifest = fixture(
         id = "synthetic-horizon-left",
+        roi = NormalizedRoi(0.4f, 0.3f, 0.2f, 0.4f),
         diagnoses = listOf(
             VisualDiagnosis(
                 kind = DiagnosisKind.HORIZON,
@@ -60,16 +65,18 @@ public object MockVisualFixtures {
 
     public val targetAbsent: VisualFixtureManifest = fixture(
         id = "synthetic-target-absent",
+        roi = null,
         diagnoses = emptyList(),
     )
 
-    private fun fixture(id: String, diagnoses: List<VisualDiagnosis>): VisualFixtureManifest =
+    private fun fixture(id: String, roi: NormalizedRoi?, diagnoses: List<VisualDiagnosis>): VisualFixtureManifest =
         VisualFixtureManifest(
             id = id,
             source = "synthetic-vector-label",
             licensedForTesting = true,
             width = 720,
             height = 1_280,
+            expectedRoi = roi,
             expectedDiagnoses = diagnoses,
         )
 

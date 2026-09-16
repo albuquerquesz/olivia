@@ -59,11 +59,18 @@ class DatMockDeviceKitIntegrationTest {
         val videoUri = InstrumentationRegistry.getArguments().getString(MOCK_VIDEO_URI_ARGUMENT)
             ?.takeIf { it.isNotBlank() }
             ?.let(Uri::parse)
-        DatMockDeviceBootstrap.enable(context, videoUri)
-
         val clock = SystemOliviaClock()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val gateway = DatGlassesGateway(context, clock, scope)
+        // Android 16 terminates a foreground service started from an instrumentation process
+        // before its lifecycle callback. Production keeps it enabled; this test isolates DAT.
+        val gateway = DatGlassesGateway(
+            context,
+            clock,
+            scope,
+            keepAliveInForeground = false,
+            forceMockDeviceKit = true,
+            mockVideoUri = videoUri,
+        )
         val timeline = InMemoryTimeline()
         val coordinator = SessionCoordinator(clock, gateway, SilentAudio(clock), timeline)
         val heartbeatObserver = launch {
@@ -77,7 +84,9 @@ class DatMockDeviceKitIntegrationTest {
             val firstFrame = async(start = CoroutineStart.UNDISPATCHED) {
                 withTimeout(FRAME_TIMEOUT_MS) { gateway.frames.first() }
             }
-            coordinator.start(capture.sessionId).getOrThrow()
+            coordinator.start(capture.sessionId).getOrElse { failure ->
+                throw AssertionError("DAT_START_FAILED: ${gateway.lastStartError?.message}", failure)
+            }
             val frame = firstFrame.await()
 
             // HIGH portrait is the DAT 0.9.0 contract. Do not derive a final-video orientation from it.

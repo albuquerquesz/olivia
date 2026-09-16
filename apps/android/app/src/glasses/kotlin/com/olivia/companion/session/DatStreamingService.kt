@@ -12,6 +12,13 @@ import com.olivia.companion.R
 
 /** Keeps the active DAT stream eligible to run while the creator is hands-free. */
 class DatStreamingService : Service() {
+    override fun onCreate() {
+        super.onCreate()
+        // Publish the foreground notification before the DAT session handshake. Android applies
+        // a short deadline after startForegroundService(), including in instrumentation runs.
+        createChannel()
+        startForeground(NOTIFICATION_ID, notification())
+    }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createChannel()
         startForeground(
@@ -33,6 +40,13 @@ class DatStreamingService : Service() {
             NotificationChannel(CHANNEL_ID, "Olivia", NotificationManager.IMPORTANCE_LOW),
         )
     }
+
+    private fun notification() = NotificationCompat.Builder(this, CHANNEL_ID)
+        .setSmallIcon(R.mipmap.ic_launcher)
+        .setContentTitle("Olivia ativa")
+        .setContentText("Orientação pelos óculos em andamento")
+        .setOngoing(true)
+        .build()
 
     companion object {
         fun start(context: Context) = ContextCompat.startForegroundService(

@@ -9,7 +9,8 @@ flowchart LR
     Session[SessionCoordinator]
     Gateway[GlassesGateway adapter DAT]
     Sampler[Sampler 0.5 fps]
-    Analyzer[GeminiFrameAnalyzer e validador]
+    Locator[Gemini: localiza ROI da peça]
+    LocalVision[Visão local: framing, luz e horizonte]
     Guidance[Direcao e confirmacao]
     Audio[TTS e WAV local]
     Timeline[Timeline de metadados locais]
@@ -20,10 +21,12 @@ flowchart LR
   Cloud[Firebase AI Logic - Gemini]
   Voice --> Session
   Session --> Gateway
-  Camera --> Gateway --> Sampler --> Analyzer
-  Analyzer -->|frame efemero HTTPS| Cloud
-  Cloud -->|diagnostico estruturado| Analyzer
-  Analyzer --> Guidance --> Audio --> Speaker
+  Camera --> Gateway --> Sampler --> Locator
+  Locator -->|frame efemero HTTPS| Cloud
+  Cloud -->|ROI normalizada| Locator
+  Sampler --> LocalVision
+  Locator --> LocalVision
+  LocalVision -->|diagnostico fechado| Guidance --> Audio --> Speaker
   Gateway -->|saude da captura| Session
   Guidance --> Timeline
   Native -.->|importacao a validar| Import

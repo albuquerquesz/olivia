@@ -9,6 +9,7 @@ public data class VisualFixtureManifest(
     val licensedForTesting: Boolean,
     val width: Int,
     val height: Int,
+    val expectedRoi: NormalizedRoi?,
     val expectedDiagnoses: List<VisualDiagnosis>,
 ) {
     init {

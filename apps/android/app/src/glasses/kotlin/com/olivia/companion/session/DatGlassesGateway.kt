@@ -1,6 +1,8 @@
 package com.olivia.companion.session
 
 import android.content.Context
+import android.net.Uri
+import android.util.Log
 import com.olivia.companion.BuildConfig
 import com.meta.wearable.dat.camera.addCamera
 import com.meta.wearable.dat.camera.types.StreamConfiguration
@@ -8,6 +10,7 @@ import com.meta.wearable.dat.camera.types.VideoQuality
 import com.meta.wearable.dat.core.Wearables
 import com.meta.wearable.dat.core.selectors.AutoDeviceSelector
 import com.meta.wearable.dat.core.session.DeviceSession
+import com.meta.wearable.dat.core.session.DeviceSessionState
 import com.meta.wearable.dat.camera.Camera
 import com.meta.wearable.dat.camera.Stream
 import com.olivia.core.CaptureHeartbeat
@@ -42,6 +45,9 @@ internal class DatGlassesGateway(
     private val context: Context,
     private val clock: OliviaClock,
     private val scope: CoroutineScope,
+    private val keepAliveInForeground: Boolean = true,
+    private val forceMockDeviceKit: Boolean = false,
+    private val mockVideoUri: Uri? = null,
 ) : GlassesGateway, AutoCloseable {
     private val _connection = MutableStateFlow(GlassesConnection.UNAVAILABLE)
     private val _frames = MutableSharedFlow<Frame>(extraBufferCapacity = 1)
@@ -53,6 +59,8 @@ internal class DatGlassesGateway(
     private var decoder: HevcFrameDecoder? = null
     private var streamJob: Job? = null
     private var sequence = 0L
+    internal var lastStartError: Throwable? = null
+        private set
 
     override val connection: Flow<GlassesConnection> = _connection.asStateFlow()
     override val frames: Flow<Frame> = _frames.asSharedFlow()
@@ -60,16 +68,18 @@ internal class DatGlassesGateway(
 
     override suspend fun startCapture(capture: CaptureId) {
         stopResources()
+        lastStartError = null
         this.capture = capture
         sequence = 0
         _heartbeat.value = null
         try {
-            if (BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) {
-                DatMockDeviceBootstrap.enablePhoneCamera(context)
+            // MockDeviceKit replaces device transport, not the SDK singleton. Initialize the same
+            // Wearables runtime in both paths so session state and AutoDeviceSelector can update.
+            Wearables.initialize(context).getOrElse { throw IllegalStateException("DAT initialization unavailable") }
+            if (forceMockDeviceKit || BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) {
+                DatMockDeviceBootstrap.enable(context, mockVideoUri)
             }
-            if (!DatMockDeviceBootstrap.isEnabled(context)) {
-                Wearables.initialize(context).getOrElse { throw IllegalStateException("DAT initialization unavailable") }
-            } else {
+            if (DatMockDeviceBootstrap.isEnabled(context)) {
                 // Pairing in MockDeviceKit is asynchronous. Do not ask AutoDeviceSelector for a
                 // session before its simulated device is visible to Wearables.
                 withTimeout(MOCK_DEVICE_READY_TIMEOUT_MS) {
@@ -80,7 +90,10 @@ internal class DatGlassesGateway(
                 .getOrElse { throw IllegalStateException("DAT glasses unavailable") }
             session = deviceSession
             deviceSession.start()
-            DatStreamingService.start(context)
+            withTimeout(SESSION_STARTED_TIMEOUT_MS) {
+                deviceSession.state.filter { it == DeviceSessionState.STARTED }.first()
+            }
+            if (keepAliveInForeground) DatStreamingService.start(context)
             val attachedCamera = deviceSession.addCamera(
                 StreamConfiguration(videoQuality = VideoQuality.HIGH, frameRate = DAT_FRAME_RATE, compressVideo = true),
             ).getOrElse { throw IllegalStateException("DAT camera unavailable") }
@@ -90,10 +103,13 @@ internal class DatGlassesGateway(
             activeStream.start().getOrElse { throw IllegalStateException("DAT stream unavailable") }
             _connection.value = GlassesConnection.CONNECTED
             observeFrames(activeStream, capture)
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            lastStartError = error
+            Log.w(TAG, "DAT start failed: ${error::class.java.simpleName}: ${error.message}")
             _connection.value = GlassesConnection.UNAVAILABLE
             stopResources()
             this.capture = null
+            throw error
         }
     }
 
@@ -152,7 +168,7 @@ internal class DatGlassesGateway(
         runCatching { stream?.stop() }
         runCatching { camera?.stop() }
         runCatching { session?.stop() }
-        DatStreamingService.stop(context)
+        if (keepAliveInForeground) DatStreamingService.stop(context)
         stream = null
         camera = null
         session = null
@@ -175,7 +191,9 @@ internal class DatGlassesGateway(
     }
 
     private companion object {
+        const val TAG = "OliviaDatGateway"
         const val DAT_FRAME_RATE = 2
         const val MOCK_DEVICE_READY_TIMEOUT_MS = 3_000L
+        const val SESSION_STARTED_TIMEOUT_MS = 8_000L
     }
 }

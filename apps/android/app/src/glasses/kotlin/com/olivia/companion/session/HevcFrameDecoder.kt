@@ -10,12 +10,16 @@ import android.os.HandlerThread
 import java.nio.ByteBuffer
 
 /**
- * Local-only HEVC decoder for DAT's compressed camera stream. Output is a short-lived NV21 frame;
- * no image, encoded packet, or decoder output is written to disk.
+ * Local-only HEVC decoder for DAT's compressed camera stream.
+ *
+ * DAT can deliver codec-config packets before the first independently decodable image.  The
+ * decoder therefore caches config and only starts accepting picture packets at an IRAP frame;
+ * this prevents emitting stale/garbled buffers while a mock or glasses stream comes online.
+ * Output is an ephemeral NV21 frame and neither input nor output is written to disk.
  */
 internal class HevcFrameDecoder(
-    width: Int,
-    height: Int,
+    private val width: Int,
+    private val height: Int,
     private val onFrame: (width: Int, height: Int, nv21: ByteArray) -> Unit,
     private val onUnavailable: () -> Unit,
 ) : AutoCloseable {
@@ -23,6 +27,8 @@ internal class HevcFrameDecoder(
     private val handler = Handler(thread.looper)
     private val imageReader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, MAX_IMAGES)
     private val codec = MediaCodec.createDecoderByType(MediaFormat.MIMETYPE_VIDEO_HEVC)
+    private var cachedConfig: ByteArray? = null
+    private var active = false
     private var closed = false
 
     init {
@@ -32,38 +38,53 @@ internal class HevcFrameDecoder(
                     .onFailure { onUnavailable() }
             }
         }, handler)
-        runCatching {
-            codec.configure(
-                MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_HEVC, width, height),
-                imageReader.surface,
-                null,
-                0,
-            )
-            codec.start()
-        }.onFailure {
-            close()
-            onUnavailable()
-        }
     }
 
     fun enqueue(buffer: ByteBuffer, presentationTimeUs: Long, isCodecConfig: Boolean) {
         if (closed) return
+        val packet = buffer.copyRemaining()
+        if (packet.isEmpty()) return
         runCatching {
-            val index = codec.dequeueInputBuffer(INPUT_TIMEOUT_US)
-            if (index < 0) return
-            val input = requireNotNull(codec.getInputBuffer(index))
-            input.clear()
-            val source = buffer.duplicate()
-            input.put(source)
-            codec.queueInputBuffer(
-                index,
-                0,
-                input.position(),
+            if (isCodecConfig || packet.hasConfigNal()) {
+                cachedConfig = packet
+                if (active) queue(packet, 0L, MediaCodec.BUFFER_FLAG_CODEC_CONFIG)
+                return
+            }
+            if (!active) {
+                if (!packet.hasIrapNal()) return
+                activate()
+                cachedConfig?.let { queue(it, 0L, MediaCodec.BUFFER_FLAG_CODEC_CONFIG) }
+                active = true
+            }
+            queue(
+                packet,
                 presentationTimeUs,
-                if (isCodecConfig) MediaCodec.BUFFER_FLAG_CODEC_CONFIG else 0,
+                if (packet.hasIrapNal()) MediaCodec.BUFFER_FLAG_KEY_FRAME else 0,
             )
             drain()
-        }.onFailure { onUnavailable() }
+        }.onFailure {
+            active = false
+            onUnavailable()
+        }
+    }
+
+    private fun activate() {
+        codec.configure(
+            MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_HEVC, width, height),
+            imageReader.surface,
+            null,
+            0,
+        )
+        codec.start()
+    }
+
+    private fun queue(packet: ByteArray, presentationTimeUs: Long, flags: Int) {
+        val index = codec.dequeueInputBuffer(INPUT_TIMEOUT_US)
+        if (index < 0) return
+        val input = requireNotNull(codec.getInputBuffer(index))
+        input.clear()
+        input.put(packet)
+        codec.queueInputBuffer(index, 0, packet.size, presentationTimeUs, flags)
     }
 
     private fun drain() {
@@ -80,10 +101,37 @@ internal class HevcFrameDecoder(
     override fun close() {
         if (closed) return
         closed = true
-        runCatching { codec.stop() }
+        if (active) runCatching { codec.stop() }
         runCatching { codec.release() }
         imageReader.close()
         thread.quitSafely()
+    }
+
+    private fun ByteBuffer.copyRemaining(): ByteArray = duplicate().let { source ->
+        ByteArray(source.remaining()).also(source::get)
+    }
+
+    private fun ByteArray.hasConfigNal(): Boolean = nalTypes().any { it in 32..34 }
+
+    private fun ByteArray.hasIrapNal(): Boolean = nalTypes().any { it in 16..21 }
+
+    private fun ByteArray.nalTypes(): Sequence<Int> = sequence {
+        var index = 0
+        while (index + 4 < size) {
+            val prefix = when {
+                this@nalTypes[index] == 0.toByte() && this@nalTypes[index + 1] == 0.toByte() &&
+                    this@nalTypes[index + 2] == 1.toByte() -> 3
+                this@nalTypes[index] == 0.toByte() && this@nalTypes[index + 1] == 0.toByte() &&
+                    this@nalTypes[index + 2] == 0.toByte() && this@nalTypes[index + 3] == 1.toByte() -> 4
+                else -> 0
+            }
+            if (prefix == 0) {
+                index++
+            } else {
+                yield((this@nalTypes[index + prefix].toInt() and 0x7e) shr 1)
+                index += prefix + 1
+            }
+        }
     }
 
     private fun Image.toNv21(): ByteArray {
@@ -91,30 +139,18 @@ internal class HevcFrameDecoder(
         val y = planes[0]
         val u = planes[1]
         val v = planes[2]
-        copyPlane(y, width, height, output, 0, 1)
+        copyPlane(y, width, height, output, 0)
         var offset = width * height
-        for (row in 0 until height / 2) {
-            for (column in 0 until width / 2) {
-                output[offset++] = v.byteAt(row, column)
-                output[offset++] = u.byteAt(row, column)
-            }
+        for (row in 0 until height / 2) for (column in 0 until width / 2) {
+            output[offset++] = v.byteAt(row, column)
+            output[offset++] = u.byteAt(row, column)
         }
         return output
     }
 
-    private fun copyPlane(
-        plane: Image.Plane,
-        columns: Int,
-        rows: Int,
-        output: ByteArray,
-        start: Int,
-        step: Int,
-    ) {
+    private fun copyPlane(plane: Image.Plane, columns: Int, rows: Int, output: ByteArray, start: Int) {
         var offset = start
-        for (row in 0 until rows) for (column in 0 until columns) {
-            output[offset] = plane.byteAt(row, column)
-            offset += step
-        }
+        for (row in 0 until rows) for (column in 0 until columns) output[offset++] = plane.byteAt(row, column)
     }
 
     private fun Image.Plane.byteAt(row: Int, column: Int): Byte =

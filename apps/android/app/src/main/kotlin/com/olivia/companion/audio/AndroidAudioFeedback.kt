@@ -163,16 +163,33 @@ class AndroidAudioFeedback(
         }
 }
 
-private enum class SignalDirection { LEFT, RIGHT, CENTER, ALERT }
+/**
+ * Directional corrections remain stereo. Session transitions use distinct frequencies so the
+ * creator can distinguish start, pause, stop, loss, and recovery without looking at the phone.
+ */
+private enum class SignalDirection {
+    LEFT,
+    RIGHT,
+    CENTER,
+    SESSION_STARTED,
+    SESSION_PAUSED,
+    SESSION_STOPPED,
+    SESSION_RESUMED,
+    ALERT,
+    RECOVERED,
+}
 
 private object SignalTone {
     const val DURATION_MS: Long = 80
     private const val SAMPLE_RATE = 48_000
 
     fun directionFor(signal: SessionSignal): SignalDirection = when (signal) {
+        SessionSignal.SESSION_STARTED -> SignalDirection.SESSION_STARTED
+        SessionSignal.SESSION_PAUSED -> SignalDirection.SESSION_PAUSED
+        SessionSignal.SESSION_STOPPED -> SignalDirection.SESSION_STOPPED
+        SessionSignal.SESSION_RESUMED -> SignalDirection.SESSION_RESUMED
         SessionSignal.CONNECTION_LOST, SessionSignal.ANALYSIS_UNAVAILABLE, SessionSignal.AUDIO_UNAVAILABLE -> SignalDirection.ALERT
-        SessionSignal.CONNECTION_RESTORED, SessionSignal.ANALYSIS_RESTORED, SessionSignal.AUDIO_RESTORED -> SignalDirection.CENTER
-        else -> SignalDirection.CENTER
+        SessionSignal.CONNECTION_RESTORED, SessionSignal.ANALYSIS_RESTORED, SessionSignal.AUDIO_RESTORED -> SignalDirection.RECOVERED
     }
 
     fun directionFor(direction: Direction): SignalDirection =
@@ -187,7 +204,15 @@ private object SignalTone {
     fun create(direction: SignalDirection): AudioTrack {
         val samplesPerChannel = (SAMPLE_RATE * DURATION_MS / 1_000).toInt()
         val pcm = ShortArray(samplesPerChannel * 2)
-        val frequency = if (direction == SignalDirection.ALERT) 660.0 else 440.0
+        val frequency = when (direction) {
+            SignalDirection.SESSION_STARTED -> 520.0
+            SignalDirection.SESSION_PAUSED -> 350.0
+            SignalDirection.SESSION_STOPPED -> 280.0
+            SignalDirection.SESSION_RESUMED -> 600.0
+            SignalDirection.ALERT -> 660.0
+            SignalDirection.RECOVERED -> 880.0
+            SignalDirection.LEFT, SignalDirection.RIGHT, SignalDirection.CENTER -> 440.0
+        }
         repeat(samplesPerChannel) { index ->
             val sample = (kotlin.math.sin(2.0 * Math.PI * frequency * index / SAMPLE_RATE) * Short.MAX_VALUE * 0.18).toInt().toShort()
             val left = direction != SignalDirection.RIGHT

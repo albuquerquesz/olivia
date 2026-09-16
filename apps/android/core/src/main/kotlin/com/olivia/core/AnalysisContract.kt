@@ -20,7 +20,8 @@ public value class Confidence(public val value: Float) {
 }
 
 /** De onde veio o diagnóstico, para a demo conseguir provar o que é IA e o que é mock. */
-public enum class AnalyzerSource { MOCK, GEMINI }
+/** GEMINI_ROI_LOCAL distinguishes cloud localization from local visual diagnostics. */
+public enum class AnalyzerSource { MOCK, GEMINI_ROI_LOCAL }
 
 @Serializable
 public data class VisualDiagnosis(
@@ -57,6 +58,56 @@ public data class FrameAnalysis(
     }
 
     public val hasDeviation: Boolean get() = diagnoses.any { it.severity != Severity.OK }
+}
+
+/** A normalized work-area rectangle returned by the cloud locator, never an action. */
+public data class NormalizedRoi(
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+) {
+    init {
+        require(x.isFinite() && y.isFinite() && width.isFinite() && height.isFinite())
+        require(x in 0f..1f && y in 0f..1f)
+        require(width > 0f && height > 0f)
+        require(x + width <= 1f && y + height <= 1f) { "ROI must remain inside frame" }
+    }
+
+    public val centerX: Float get() = x + width / 2f
+    public val centerY: Float get() = y + height / 2f
+}
+
+/** Closed cloud result: Gemini only says whether and where the work area is visible. */
+public data class WorkAreaLocalization(
+    val targetPresent: Boolean,
+    val confidence: Confidence,
+    val roi: NormalizedRoi?,
+) {
+    init {
+        require((targetPresent && roi != null) || (!targetPresent && roi == null)) {
+            "Target presence and ROI must agree"
+        }
+    }
+}
+
+/** Grayscale pixels held in memory only while local visual metrics are computed. */
+public data class LumaFrame(
+    val width: Int,
+    val height: Int,
+    val pixels: ByteArray,
+) {
+    init {
+        require(width > 0 && height > 0)
+        require(pixels.size == width * height) { "Unexpected luma buffer size" }
+    }
+
+    public fun at(x: Int, y: Int): Int = pixels[y * width + x].toInt() and 0xff
+}
+
+/** Android supplies decoded luma; core keeps all policy and math platform-independent. */
+public interface LocalVisualAnalyzer {
+    public fun analyze(luma: LumaFrame, localization: WorkAreaLocalization): List<VisualDiagnosis>
 }
 
 /**

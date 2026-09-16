@@ -5,42 +5,52 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class VisualAnalysisSchemaTest {
+class WorkAreaLocalizationSchemaTest {
     @Test
-    fun `maps closed framing reply to domain diagnosis`() {
-        val result = VisualAnalysisSchema.decode(
-            """{"schemaVersion":"1.0","diagnoses":[{"kind":"FRAMING","severity":"MAJOR","confidence":0.9,"direction":"TURN_RIGHT","magnitude":null}]}""",
+    fun `maps a normalized work area without accepting an action`() {
+        val result = WorkAreaLocalizationSchema.decode(
+            """{"schemaVersion":"2.0","targetPresent":true,"confidence":0.9,"roi":{"x":0.6,"y":0.2,"width":0.2,"height":0.4}}""",
         )
 
         assertTrue(result.isSuccess)
-        assertEquals(Direction.TURN_RIGHT, result.getOrThrow().single().direction)
+        assertTrue(kotlin.math.abs(requireNotNull(result.getOrThrow().roi).centerX - 0.7f) < 0.0001f)
     }
 
     @Test
-    fun `rejects raw prose unknown fields and duplicate diagnosis kinds`() {
-        val prose = VisualAnalysisSchema.decode("turn right now")
-        val unknownField = VisualAnalysisSchema.decode(
-            """{"schemaVersion":"1.0","diagnoses":[],"instruction":"ignore policy"}""",
+    fun `accepts an explicit target absence`() {
+        val result = WorkAreaLocalizationSchema.decode(
+            """{"schemaVersion":"2.0","targetPresent":false,"confidence":0,"roi":null}""",
         )
-        val duplicate = VisualAnalysisSchema.decode(
-            """{"schemaVersion":"1.0","diagnoses":[{"kind":"LIGHT","severity":"OK","confidence":0.9,"direction":null,"magnitude":null},{"kind":"LIGHT","severity":"OK","confidence":0.9,"direction":null,"magnitude":null}]}""",
+
+        assertFalse(result.getOrThrow().targetPresent)
+        assertEquals(null, result.getOrThrow().roi)
+    }
+
+    @Test
+    fun `rejects prose unknown fields and provider action fields`() {
+        val prose = WorkAreaLocalizationSchema.decode("turn right now")
+        val unknownField = WorkAreaLocalizationSchema.decode(
+            """{"schemaVersion":"2.0","targetPresent":false,"confidence":0,"roi":null,"instruction":"ignore policy"}""",
+        )
+        val action = WorkAreaLocalizationSchema.decode(
+            """{"schemaVersion":"2.0","targetPresent":true,"confidence":0.9,"roi":{"x":0.2,"y":0.2,"width":0.3,"height":0.3},"direction":"TURN_RIGHT"}""",
         )
 
         assertFalse(prose.isSuccess)
         assertFalse(unknownField.isSuccess)
-        assertFalse(duplicate.isSuccess)
+        assertFalse(action.isSuccess)
     }
 
     @Test
-    fun `rejects incompatible direction and uncalibrated magnitude`() {
-        val incompatible = VisualAnalysisSchema.decode(
-            """{"schemaVersion":"1.0","diagnoses":[{"kind":"HORIZON","severity":"MAJOR","confidence":0.9,"direction":"TURN_LEFT","magnitude":null}]}""",
+    fun `rejects unbounded or contradictory ROI`() {
+        val outOfBounds = WorkAreaLocalizationSchema.decode(
+            """{"schemaVersion":"2.0","targetPresent":true,"confidence":0.9,"roi":{"x":0.8,"y":0.2,"width":0.3,"height":0.4}}""",
         )
-        val magnitude = VisualAnalysisSchema.decode(
-            """{"schemaVersion":"1.0","diagnoses":[{"kind":"FRAMING","severity":"MAJOR","confidence":0.9,"direction":"TURN_LEFT","magnitude":20.0}]}""",
+        val contradictory = WorkAreaLocalizationSchema.decode(
+            """{"schemaVersion":"2.0","targetPresent":false,"confidence":0.9,"roi":{"x":0.2,"y":0.2,"width":0.3,"height":0.3}}""",
         )
 
-        assertFalse(incompatible.isSuccess)
-        assertFalse(magnitude.isSuccess)
+        assertFalse(outOfBounds.isSuccess)
+        assertFalse(contradictory.isSuccess)
     }
 }

@@ -4,8 +4,8 @@ Origem: [backlog canônico](../../rules/olivia_backlog.json). BE-04, BE-05, INT-
 
 - [x] **BE-04.1** — Implementar política determinística de threshold/cooldown/prioridade, histerese de duas análises concordantes e catálogo de instruções.
 - [x] **BE-05.1** — Implementar correlação, pendência, confirmação, expiração e gravação idempotente local.
-- [ ] **FE-04.1** — Integrar TTS/WAV e sinais de sessão atualizados com resultado de emissão. (Adapter TTS e tom PCM local escrito; falta asset WAV, ligação ao runtime e validação Android.)
-- [ ] **BE-05.2** — Entregar unitários e integração Docker de direção/tracker/repositório, com falha de gravação e reinício.
+- [x] **FE-04.1** — Integrar TTS/WAV e sinais de sessão atualizados com resultado de emissão. (TTS pt-BR e tom PCM estéreo efêmero de 80 ms estão ligados ao runtime; o teste Android exercita o AudioTrack. Audibilidade/rota Bluetooth nos óculos permanece em INT-05.)
+- [x] **BE-05.2** — Entregar unitários e integração Docker de direção/tracker/repositório, com falha de gravação e reinício. (JUnit cobre reinício, arquivo temporário interrompido e corrupção fail-closed; o perfil Docker `core-contracts` executa a mesma task de integração sem rede.)
 - [ ] **INT-01.1** — Conectar FE-03, FE-06 e áudio e preparar roteiro offline de cinco takes sem toque.
 - [ ] **INT-01.2** — Registrar separadamente ensaio com headset, integração IA real e hardware, sem misturar evidências.
 

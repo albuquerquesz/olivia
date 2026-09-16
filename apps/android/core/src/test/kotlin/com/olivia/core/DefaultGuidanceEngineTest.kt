@@ -10,35 +10,35 @@ class DefaultGuidanceEngineTest {
     fun `prioritizes severity confidence then framing and enforces cooldown`() {
         val engine = DefaultGuidanceEngine(AudioMode.VOICE)
         val clock = GuidanceClock()
-        val analysis = analysis(
+        val initialAnalysis = analysis(
             listOf(
                 diagnosis(DiagnosisKind.LIGHT, Direction.LEAVE_THE_SHADOW, 0.9f),
                 diagnosis(DiagnosisKind.FRAMING, Direction.TURN_RIGHT, 0.9f),
             ),
         )
 
-        assertNull(engine.onAnalysis(analysis(sequence = 1), clock.now()))
-        val correction = engine.onAnalysis(analysis(sequence = 2), clock.now())
+        assertNull(engine.onAnalysis(analysis(initialAnalysis.diagnoses, sequence = 1), clock.now()))
+        val correction = engine.onAnalysis(analysis(initialAnalysis.diagnoses, sequence = 2), clock.now())
         assertEquals(Direction.TURN_RIGHT, correction?.direction)
         assertEquals("Vire para a direita.", correction?.spokenText)
         engine.onCorrectionOutcome(requireNotNull(correction).id, CorrectionStatus.OBEYED)
         clock.advanceBy(3_999)
-        assertNull(engine.onAnalysis(analysis, clock.now()))
+        assertNull(engine.onAnalysis(initialAnalysis, clock.now()))
         clock.advanceBy(1)
-        assertNull(engine.onAnalysis(analysis(sequence = 3), clock.now()))
-        assertTrue(engine.onAnalysis(analysis(sequence = 4), clock.now()) != null)
+        assertNull(engine.onAnalysis(analysis(initialAnalysis.diagnoses, sequence = 3), clock.now()))
+        assertTrue(engine.onAnalysis(analysis(initialAnalysis.diagnoses, sequence = 4), clock.now()) != null)
     }
 
     @Test
-    fun `does not speak a low confidence or non major diagnosis`() {
+    fun `does not speak low confidence and uses the slight framing phrase`() {
         val engine = DefaultGuidanceEngine(AudioMode.VOICE)
         val clock = GuidanceClock()
         assertNull(engine.onAnalysis(analysis(listOf(diagnosis(DiagnosisKind.FRAMING, Direction.TURN_RIGHT, 0.79f))), clock.now()))
-        assertNull(
-            engine.onAnalysis(
-                analysis(listOf(diagnosis(DiagnosisKind.FRAMING, Direction.TURN_RIGHT, 0.9f, Severity.MINOR))),
-                clock.now(),
-            ),
+        val slight = listOf(diagnosis(DiagnosisKind.FRAMING, Direction.TURN_RIGHT, 0.9f, Severity.MINOR))
+        assertNull(engine.onAnalysis(analysis(slight, sequence = 2), clock.now()))
+        assertEquals(
+            "Vire um pouco para a direita.",
+            engine.onAnalysis(analysis(slight, sequence = 3), clock.now())?.spokenText,
         )
     }
 

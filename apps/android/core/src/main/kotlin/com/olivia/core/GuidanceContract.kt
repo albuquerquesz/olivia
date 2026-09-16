@@ -42,7 +42,7 @@ public data class Correction(
     val diagnosis: VisualDiagnosis,
     val direction: Direction,
     val confidence: Confidence,
-    /** Texto curto em pt-BR, ex.: "Vire 20 graus à direita". Vazio no modo sinal. */
+    /** Texto curto e qualitativo em pt-BR, ex.: "Vire um pouco para a direita". Vazio no modo sinal. */
     val spokenText: String,
     val status: CorrectionStatus = CorrectionStatus.PENDING,
 )

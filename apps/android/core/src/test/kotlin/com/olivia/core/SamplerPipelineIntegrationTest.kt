@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
  */
 class SamplerPipelineIntegrationTest {
     @Test
-    fun `fast source retains only the newest frame before the next sampled analysis`() = runBlocking {
+    fun `fast source retains only the newest frame before the next sampled analysis`(): Unit = runBlocking {
         val clock = PipelineClock()
         val capture = CaptureId(SessionId("pipeline"), 1)
         val sampler = FrameSampler(clock)

@@ -19,6 +19,7 @@
         "wake_word",
         "session",
         "frame_sampler",
+        "local_vision",
         "guidance_engine",
         "audio_feedback",
         "timeline",
@@ -78,6 +79,17 @@
       "purpose": "Recebe frames e limita a análise para economizar bateria."
     },
     {
+      "id": "local_vision",
+      "name": "Visão local determinística",
+      "zone": "mobile_app",
+      "configuration": {
+        "framing_center_tolerance_normalized": 0.1,
+        "framing_large_offset_normalized": 0.25,
+        "requires_two_consecutive_analyses": true
+      },
+      "purpose": "Recebe somente a ROI normalizada da peça retornada pela IA e mede no celular o deslocamento de enquadramento, luminância na ROI e inclinação do horizonte. Produz diagnósticos fechados; não promete graus físicos. Valores são iniciais e exigem validação com fixtures antes do uso no loop real."
+    },
+    {
       "id": "guidance_engine",
       "name": "Motor de direção",
       "zone": "mobile_app",
@@ -121,10 +133,10 @@
       "zone": "cloud",
       "implementation": "Gemini 3.5 Flash-Lite via Firebase AI Logic SDK",
       "outputs": [
-        "enquadramento",
-        "luz",
-        "horizonte"
-      ]
+        "ROI normalizada da peça",
+        "confiança de localização"
+      ],
+      "purpose": "Localiza a área de trabalho no frame efêmero. Não devolve direção, severidade, luminância, horizonte, fala ou graus."
     },
     {
       "id": "camera",
@@ -173,13 +185,23 @@
     {
       "from": "frame_sampler",
       "to": "ai_checkpoint",
-      "data": "Frame efêmero para classificação",
+      "data": "Frame efêmero reduzido para localizar a ROI da peça",
       "transport": "HTTPS"
     },
     {
       "from": "ai_checkpoint",
+      "to": "local_vision",
+      "data": "ROI normalizada e confiança de localização"
+    },
+    {
+      "from": "frame_sampler",
+      "to": "local_vision",
+      "data": "Frame efêmero mantido apenas até concluir a análise local"
+    },
+    {
+      "from": "local_vision",
       "to": "guidance_engine",
-      "data": "Desvio classificado"
+      "data": "Diagnóstico fechado e determinístico de enquadramento, luz ou horizonte"
     },
     {
       "from": "frame_sampler",
@@ -222,7 +244,7 @@
     {
       "from": "audio_feedback",
       "to": "mariana",
-      "data": "Exemplo: 'Vire 20 graus à direita'"
+      "data": "Exemplo: 'Um pouco para a direita'"
     },
     {
       "from": "mariana",
@@ -234,7 +256,7 @@
     {
       "id": "ai",
       "requirement": "Uso de IA",
-      "evidence": "Gemini classifica enquadramento, luz e horizonte."
+      "evidence": "Gemini localiza a área de trabalho; o app converte a ROI em diagnóstico determinístico de enquadramento, luz e horizonte."
     },
     {
       "id": "camera",
@@ -260,6 +282,8 @@
   "constraints": [
     "O celular é a ponte obrigatória para o Device Access Toolkit.",
     "A análise de frame envia somente um frame por vez para a nuvem.",
+    "Gemini nunca estima graus, direção, severidade, luminância ou inclinação; a nuvem só localiza a ROI normalizada da peça.",
+    "Frases de direção vêm de thresholds locais e qualitativos; não há promessa de ângulo físico calibrado.",
     "Não há streaming de microfone ao vivo pelo DAT.",
     "O vídeo 3K é transferido somente após encerrar a sessão.",
     "A mesma pessoa ajusta o corpo após receber a instrução; isso fecha o loop de correção."
@@ -295,5 +319,7 @@
     "frame_health": "Contrato 2.0.0 inclui heartbeat anterior ao sampler e CaptureId por geração. FE-02/FE-09 implementam watchdog em 4 s; API implementada não comprova comportamento de hardware.",
     "privacy_gate": "Descarte local não comprova retenção zero no provedor; BE-10/13 exigem configuração e evidências externas antes de mídia real.",
     "metrics": "900 ms no loop e aproximadamente 8 s no pós-processamento permanecem metas; callback Android de áudio não comprova instante acústico nos óculos."
+    ,
+    "local_vision_refactor": "Implementado a partir das orientações da organização em 16/09/2026: Gemini retorna somente ROI normalizada/confiança; Android calcula offset de enquadramento, luminância na ROI e horizonte. Há testes JVM para schema, fixtures e pipeline ROI→guidance. Acesso Firebase, frame DAT e campanha Android de qualidade continuam pendências explícitas, não capacidade já comprovada."
   }
 }

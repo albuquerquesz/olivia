@@ -29,6 +29,7 @@ import com.olivia.core.SamplingDecision
 import com.olivia.core.SessionCoordinator
 import com.olivia.core.SessionId
 import com.olivia.core.SessionReview
+import com.olivia.core.SessionConfig
 import com.olivia.core.TimelineEvent
 import com.olivia.core.SessionSnapshot
 import com.olivia.core.SystemOliviaClock
@@ -175,7 +176,12 @@ internal class LiveSessionRuntime(
     private val timeline = FileTimeline(context.filesDir.toPath().resolve("olivia-timeline"))
     private val coordinator = SessionCoordinator(clock, gateway, audio, timeline)
     private val sampler = FrameSampler(clock)
-    private val guidance = DefaultGuidanceEngine(AudioMode.VOICE)
+    /**
+     * The engine owns the local phrase catalogue. Recreate it only while idle so its mode always
+     * matches the output adapter and no pending correction can be lost mid-take.
+     */
+    private var guidance = DefaultGuidanceEngine(AudioMode.VOICE)
+    private var audioMode = AudioMode.VOICE
     private val correctionTracker = CorrectionTracker()
     private val metrics = LiveLoopMetrics()
     /** Serializes coordinator, sampler and guidance because all three keep session state. */
@@ -217,7 +223,10 @@ internal class LiveSessionRuntime(
         if (command in setOf(LocalSessionCommand.PAUSE, LocalSessionCommand.STOP)) expirePendingCorrection()
         if (command in setOf(LocalSessionCommand.START, LocalSessionCommand.STOP)) sampler.cancel()
         when (command) {
-            LocalSessionCommand.START -> coordinator.start(SessionId(UUID.randomUUID().toString()))
+            LocalSessionCommand.START -> coordinator.start(
+                sessionId = SessionId(UUID.randomUUID().toString()),
+                config = SessionConfig(audioMode = audioMode),
+            )
             LocalSessionCommand.PAUSE -> coordinator.pause()
             LocalSessionCommand.RESUME -> coordinator.resume()
             LocalSessionCommand.STOP -> coordinator.stop()
@@ -237,6 +246,8 @@ internal class LiveSessionRuntime(
             return@withLock Result.failure(IllegalStateException("Altere o modo antes do take"))
         }
         audio.setMode(mode)
+        guidance = DefaultGuidanceEngine(mode)
+        audioMode = mode
         Result.success(Unit)
     }
 

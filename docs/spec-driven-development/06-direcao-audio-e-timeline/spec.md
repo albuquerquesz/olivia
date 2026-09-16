@@ -10,7 +10,7 @@ Escopo: Dentro. Fecha orientação→ajuste→confirmação. Não adiciona analy
 
 ## Política e eventos
 
-GuidanceEngine recebe diagnósticos, aplica thresholds configuráveis e produz Correction com texto de catálogo local. Valores iniciais de engenharia: confiança ≥0,80, severity MAJOR, cooldown global 4000 ms e no máximo uma correção pendente. Em empate, maior severity/confiança; empate restante FRAMING, LIGHT, HORIZON. Calibrar com fixtures antes de afirmar qualidade física.
+GuidanceEngine recebe diagnósticos **já calculados localmente** a partir da ROI, aplica thresholds configuráveis e produz Correction com texto de catálogo local. Valores iniciais de engenharia: confiança ≥0,80, severity MAJOR, cooldown global 4000 ms e no máximo uma correção pendente. Para enquadramento, a origem da variante de fala é o offset normalizado local: até 10% é silêncio, 10–25% usa “um pouco” e acima de 25% usa a variante direta; nunca graus. Em empate, maior severity/confiança; empate restante FRAMING, LIGHT, HORIZON. Calibrar com fixtures antes de afirmar qualidade física.
 
 CorrectionTracker mantém a pendência até frame posterior da mesma sessão confirmar severity OK e confidence ≥0,80 para a mesma classe. Janela inicial de confirmação 8000 ms; desvio persistente confiável após janela vira IGNORED; ausência de evidência, pausa, degradação ou STOP vira EXPIRED; nunca confirmar por timeout. Instabilidade e baixa confiança não confirmam. SUPERSEDED só quando uma nova prioridade substitui a anterior por política explícita.
 
@@ -27,4 +27,3 @@ Unitários: thresholds exatos, cooldown 3999/4000 ms, desempate, frame anterior,
 INT-01 deve incluir voz local, ao menos duas correções confirmadas, STOP e timeline, cinco execuções consecutivas de 30–60 s sem toque/debug. Rodada offline com mock não depende de Gemini; rodada real tem aceite separado em INT-03. Não requer polimento da tela.
 
 Veja [subtasks](tasks.md), [diagrama](diagram.mmd), [decisões](../DECISIONS.md) e [contrato de testes](../TESTING.md). Os critérios aqui são obrigatórios para fechar as tasks associadas; nenhum resultado foi medido nesta revisão.
-

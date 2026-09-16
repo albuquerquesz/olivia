@@ -23,6 +23,8 @@ class MockFrameAnalyzerTest {
         assertTrue(fixtures.any { it.expectedDiagnoses.any { diagnosis -> diagnosis.kind == DiagnosisKind.LIGHT } })
         assertTrue(fixtures.any { it.expectedDiagnoses.any { diagnosis -> diagnosis.kind == DiagnosisKind.HORIZON } })
         assertTrue(MockVisualFixtures.targetAbsent.expectedDiagnoses.isEmpty())
+        assertEquals(null, MockVisualFixtures.targetAbsent.expectedRoi)
+        assertTrue(MockVisualFixtures.subjectRight.expectedRoi != null)
     }
 
     @Test

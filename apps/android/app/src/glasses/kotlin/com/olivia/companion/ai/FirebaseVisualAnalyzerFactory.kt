@@ -3,6 +3,7 @@ package com.olivia.companion.ai
 import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.olivia.core.FrameAnalyzer
+import com.olivia.core.DeterministicLocalVisualAnalyzer
 import com.olivia.core.GeminiFrameAnalyzer
 import com.olivia.core.OliviaClock
 
@@ -18,7 +19,14 @@ object FirebaseVisualAnalyzerFactory {
         val app = FirebaseApp.initializeApp(context.applicationContext)
             ?: throw IllegalStateException("Firebase app configuration unavailable")
         FirebaseAppCheckBootstrap.install(app)
-        Result.success(GeminiFrameAnalyzer(clock, FirebaseGeminiVisualTransport.forFirebaseApp(app)))
+        Result.success(
+            GeminiFrameAnalyzer(
+                clock = clock,
+                transport = FirebaseGeminiVisualTransport.forFirebaseApp(app),
+                localVisualAnalyzer = DeterministicLocalVisualAnalyzer(),
+                lumaDecoder = AndroidFrameLumaDecoder(),
+            ),
+        )
     } catch (_: Throwable) {
         // Do not surface configuration/provider detail in UI, timeline, or logs.
         Result.failure(IllegalStateException("Firebase visual analysis unavailable"))

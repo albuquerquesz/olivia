@@ -1,8 +1,10 @@
 flowchart LR
-  Frame[Frame efemero] --> Adapter[GeminiFrameAnalyzer]
-  Adapter --> Firebase[Firebase AI Logic]
-  Firebase --> Validator[DiagnosisValidator]
-  Validator --> Domain[FrameAnalysis Kotlin]
+  Frame[Frame efemero] --> Locator[GeminiWorkAreaLocator]
+  Locator --> Firebase[Firebase AI Logic]
+  Firebase --> Validator[WorkAreaLocalizationValidator]
+  Validator --> LocalVision[LocalVisualAnalyzer]
+  Frame --> LocalVision
+  LocalVision --> Domain[FrameAnalysis Kotlin]
   Validator --> Failure[Abstencao ou falha controlada]
-  Adapter --> Release[Descarte em finally]
-
+  LocalVision --> Failure
+  Locator --> Release[Descarte em finally]

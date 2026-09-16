@@ -11,13 +11,13 @@ class GeminiFrameAnalyzerTest {
     @Test
     fun `maps a validated transport reply and attributes Gemini`() = runBlocking {
         val clock = AnalyzerTestClock(2_000)
-        val analyzer = GeminiFrameAnalyzer(clock, replyTransport(validReply))
+        val analyzer = GeminiFrameAnalyzer(clock, replyTransport(validReply), DeterministicLocalVisualAnalyzer())
 
         val result = analyzer.analyze(frame(clock))
 
         assertTrue(result.isSuccess)
-        assertEquals(AnalyzerSource.GEMINI, result.getOrThrow().source)
-        assertEquals(Direction.TURN_RIGHT, result.getOrThrow().diagnoses.single().direction)
+        assertEquals(AnalyzerSource.GEMINI_ROI_LOCAL, result.getOrThrow().source)
+        assertEquals(Direction.TURN_RIGHT, result.getOrThrow().diagnoses.first { it.kind == DiagnosisKind.FRAMING }.direction)
     }
 
     @Test
@@ -25,8 +25,8 @@ class GeminiFrameAnalyzerTest {
         val clock = AnalyzerTestClock(2_000)
         val transportFailure = GeminiFrameAnalyzer(clock, object : GeminiVisualTransport {
             override suspend fun classify(frame: Frame): Result<String> = Result.failure(IllegalStateException("secret"))
-        }).analyze(frame(clock))
-        val schemaFailure = GeminiFrameAnalyzer(clock, replyTransport("not json")).analyze(frame(clock))
+        }, DeterministicLocalVisualAnalyzer()).analyze(frame(clock))
+        val schemaFailure = GeminiFrameAnalyzer(clock, replyTransport("not json"), DeterministicLocalVisualAnalyzer()).analyze(frame(clock))
 
         assertFalse(transportFailure.isSuccess)
         assertEquals(AnalysisFailureCode.TRANSPORT, (transportFailure.exceptionOrNull() as AnalysisFailure).code)
@@ -42,7 +42,7 @@ class GeminiFrameAnalyzerTest {
                 delay(50)
                 return Result.success(validReply)
             }
-        }, timeoutMs = 1)
+        }, DeterministicLocalVisualAnalyzer(), timeoutMs = 1)
 
         val result = analyzer.analyze(frame(clock))
 
@@ -58,13 +58,13 @@ class GeminiFrameAnalyzerTest {
         stamp = FrameStamp(CaptureId(SessionId("analysis"), 1), 0, clock.now()),
         width = 720,
         height = 1_280,
-        format = FrameFormat.JPEG,
+        format = FrameFormat.RGBA_8888,
         origin = FrameOrigin.MOCK,
-        bytes = byteArrayOf(1),
+        bytes = ByteArray(720 * 1_280 * 4) { if (it % 4 == 3) 0xff.toByte() else 0xff.toByte() },
     )
 
     private companion object {
-        const val validReply = """{"schemaVersion":"1.0","diagnoses":[{"kind":"FRAMING","severity":"MAJOR","confidence":0.9,"direction":"TURN_RIGHT","magnitude":null}]}"""
+        const val validReply = """{"schemaVersion":"2.0","targetPresent":true,"confidence":0.9,"roi":{"x":0.65,"y":0.25,"width":0.2,"height":0.4}}"""
     }
 }
 

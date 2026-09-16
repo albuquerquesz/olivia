@@ -39,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,8 +63,10 @@ import com.olivia.companion.media.LocalReviewExport
 import com.olivia.companion.session.LocalSessionCommand
 import com.olivia.companion.session.SessionRuntime
 import com.olivia.core.AudioMode
+import com.olivia.core.LinearMediaAlignment
+import com.olivia.core.LocalPostProcessor
 import com.olivia.core.SessionState
-import com.olivia.core.SessionReview
+import com.olivia.core.UnavailableLocalTranscriptProvider
 import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
@@ -203,6 +206,7 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
     val snapshot by sessionRuntime.snapshot.collectAsState()
     var importMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var importedVideo by remember { mutableStateOf<File?>(null) }
+    var importedAssetId by remember { mutableStateOf<String?>(null) }
     var reviewExport by remember { mutableStateOf<LocalReviewExport?>(null) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         val stoppedSession = snapshot?.takeIf { it.state == SessionState.STOPPED }
@@ -218,21 +222,34 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
                         importMessage = "Não foi possível usar este vídeo"
                         return@launch
                     }
+                    val previousAssetId = importedAssetId
+                    val previousReview = reviewExport
                     importer.fetch(asset).collect { progress ->
                         importMessage = "Importando vídeo: ${progress.transferredBytes / 1024} KB"
                     }
+                    previousAssetId?.let { importer.discardImportedCopy(it) }
+                    previousReview?.let { exporter.discard(it) }
                     importedVideo = importer.localPathOf(asset.id)?.let(::File)
-                    val timeline = sessionRuntime.timelineFor(asset.sessionId).getOrDefault(emptyList())
-                    reviewExport = exporter.persist(
-                        SessionReview(
-                            sessionId = asset.sessionId,
-                            recording = asset,
-                            transcript = emptyList(),
-                            suggestedCuts = emptyList(),
-                            timeline = timeline,
-                        ),
-                    ).getOrNull()
-                    importMessage = "Vídeo e marcas locais prontos. A transcrição aguarda o modelo Whisper."
+                    importedAssetId = asset.id
+                    importMessage = "Preparando revisão local…"
+                    val review = sessionRuntime.processPostTake { sessionId ->
+                        val timeline = sessionRuntime.timelineFor(sessionId).getOrDefault(emptyList())
+                        LocalPostProcessor(
+                            transcriptProvider = UnavailableLocalTranscriptProvider,
+                            alignmentFor = { recording ->
+                                LinearMediaAlignment(sessionId, recording.startedAtEpochMs, 0)
+                            },
+                        ).process(sessionId, asset, timeline)
+                    }.getOrElse {
+                        importMessage = "Não foi possível preparar a revisão"
+                        return@launch
+                    }
+                    reviewExport = exporter.persist(review).getOrNull()
+                    importMessage = if (review.transcript.isEmpty()) {
+                        "Vídeo e marcas locais prontos. A transcrição aguarda o modelo Whisper."
+                    } else {
+                        "Revisão local pronta."
+                    }
                 } catch (error: CancellationException) {
                     throw error
                 } catch (_: Throwable) {
@@ -293,6 +310,23 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
                 shape = RoundedCornerShape(20.dp),
             ) {
                 Text("Compartilhar marcas do take")
+            }
+        }
+        if (importedAssetId != null || reviewExport != null) {
+            TextButton(
+                onClick = {
+                    scope.launch {
+                        importedAssetId?.let { importer.discardImportedCopy(it) }
+                        reviewExport?.let { exporter.discard(it) }
+                        importedAssetId = null
+                        importedVideo = null
+                        reviewExport = null
+                        importMessage = "Cópias locais temporárias descartadas"
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) {
+                Text("Descartar cópias locais")
             }
         }
     }

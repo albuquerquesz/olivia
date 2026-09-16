@@ -45,4 +45,21 @@ class LocalPostProcessorTest {
 
         assertTrue(review.suggestedCuts.isEmpty())
     }
+
+    @Test
+    fun `keeps a completed take reviewable when the local whisper runtime is unavailable`() = runBlocking {
+        val session = SessionId("post-partial")
+        val recording = RecordingAsset("asset", session, 0, 20_000, 1_000, true)
+        val marker = TimelineEvent("started", session, 0, 0, TimelineEventType.SESSION_STARTED)
+
+        val review = LocalPostProcessor(
+            transcriptProvider = UnavailableLocalTranscriptProvider,
+            alignmentFor = { LinearMediaAlignment(session, 0, 0) },
+        ).process(session, recording, listOf(marker)).getOrThrow()
+
+        assertEquals(recording, review.recording)
+        assertEquals(listOf(marker), review.timeline)
+        assertTrue(review.transcript.isEmpty())
+        assertTrue(review.suggestedCuts.isEmpty())
+    }
 }

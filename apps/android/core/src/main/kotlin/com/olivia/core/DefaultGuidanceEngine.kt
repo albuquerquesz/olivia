@@ -16,19 +16,19 @@ public data class GuidancePolicy(
 
 /** Local phrases only. Model output never becomes speech. */
 public object GuidanceCatalogue {
-    public fun phrase(direction: Direction, mode: AudioMode): String = if (mode == AudioMode.SIGNAL) {
+    public fun phrase(diagnosis: VisualDiagnosis, mode: AudioMode): String = if (mode == AudioMode.SIGNAL) {
         ""
     } else {
-        when (direction) {
-            Direction.TURN_LEFT -> "Vire para a esquerda."
-            Direction.TURN_RIGHT -> "Vire para a direita."
+        when (requireNotNull(diagnosis.direction)) {
+            Direction.TURN_LEFT -> if (diagnosis.severity == Severity.MINOR) "Vire um pouco para a esquerda." else "Vire para a esquerda."
+            Direction.TURN_RIGHT -> if (diagnosis.severity == Severity.MINOR) "Vire um pouco para a direita." else "Vire para a direita."
             Direction.MOVE_CLOSER -> "Aproxime a câmera."
             Direction.MOVE_BACK -> "Afaste a câmera."
             Direction.RAISE -> "Suba um pouco a câmera."
             Direction.LOWER -> "Desça um pouco a câmera."
             Direction.FACE_THE_LIGHT -> "Busque mais luz na peça."
             Direction.AVOID_BACKLIGHT -> "Evite a luz atrás da peça."
-            Direction.LEAVE_THE_SHADOW -> "A sua mão está fazendo sombra na peça."
+            Direction.LEAVE_THE_SHADOW -> "A peça está na sombra."
             Direction.LEVEL_HORIZON_LEFT -> "Nivele o horizonte para a esquerda."
             Direction.LEVEL_HORIZON_RIGHT -> "Nivele o horizonte para a direita."
         }
@@ -54,7 +54,10 @@ public class DefaultGuidanceEngine(
         if (last != null && now.elapsedSince(last) < policy.cooldownMs) return null
         val diagnosis = analysis.diagnoses
             .asSequence()
-            .filter { it.severity.ordinal >= policy.minimumSeverity.ordinal }
+            .filter {
+                it.severity.ordinal >= policy.minimumSeverity.ordinal ||
+                    (it.kind == DiagnosisKind.FRAMING && it.severity == Severity.MINOR)
+            }
             .filter { it.confidence.value >= policy.minimumConfidence.value }
             .filter { it.direction != null }
             .sortedWith(
@@ -93,7 +96,7 @@ public class DefaultGuidanceEngine(
             diagnosis = diagnosis,
             direction = direction,
             confidence = diagnosis.confidence,
-            spokenText = GuidanceCatalogue.phrase(direction, mode),
+            spokenText = GuidanceCatalogue.phrase(diagnosis, mode),
         )
     }
 

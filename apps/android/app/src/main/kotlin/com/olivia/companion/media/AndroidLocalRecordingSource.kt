@@ -33,6 +33,12 @@ class AndroidLocalRecordingSource(context: Context) : RecordingSource {
     private val imports = mutableMapOf<String, ImportedTake>()
     private val completed = mutableMapOf<String, File>()
 
+    init {
+        // Imported files are an in-process review cache, never a durable library. Any orphan was
+        // left by an interrupted import or a process death and has no registered owner anymore.
+        recoverInterruptedImports()
+    }
+
     /** Registers a selected local video only after it passes metadata and track validation. */
     suspend fun registerSelectedTake(
         session: SessionSnapshot,
@@ -106,7 +112,16 @@ class AndroidLocalRecordingSource(context: Context) : RecordingSource {
     /** Deletes only Olivia's private copy after post-processing; it never deletes the original. */
     suspend fun discardImportedCopy(assetId: String) {
         val file = synchronized(completed) { completed.remove(assetId) }
+        synchronized(imports) { imports.remove(assetId) }
         file?.delete()
+    }
+
+    /** Removes only Olivia's transient copies; the user-selected content URI is never touched. */
+    private fun recoverInterruptedImports() {
+        if (!importDirectory.isDirectory) return
+        importDirectory.listFiles()?.forEach { child ->
+            if (child.isFile && (child.extension == "part" || child.extension == "mp4")) child.delete()
+        }
     }
 
     private fun inspect(uri: Uri): RecordingMetadata {

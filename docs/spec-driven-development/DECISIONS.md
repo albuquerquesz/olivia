@@ -14,6 +14,7 @@ Estas decisões orientam a implementação. A API Kotlin evoluiu para 2.0.0 na p
 | ADR-08 | Falha de IA não significa frame saudável nem queda Bluetooth. Suspender orientação e sinalizar indisponibilidade; manter causa tipada e recuperação sem reiniciar timeline | Planejado; SH-04/BE-03/FE-09 |
 | ADR-09 | Vídeo original e transcrição permanecem locais; somente frame amostrado segue ao provedor visual. Nada de bytes de mídia, texto de transcrição ou tokens em logs/test reports | Planejado; BE-10 |
 | ADR-10 | Sem usuários/contas no MVP. App Check e quotas protegem uso da IA; CORS, package name ou API key isoladamente não autenticam chamadores | Planejado; BE-13 |
+| ADR-11 | Gemini localiza somente a ROI normalizada da peça. Offset de enquadramento, luminância na ROI e horizonte são calculados no Android, com thresholds qualitativos e abstenção quando a confiança local não basta. O modelo nunca estima graus ou escolhe a fala. | Decidido em 16/09/2026 a partir de orientação da organização; refactor de contrato 3.0.0, adapter e fixtures pendente em BE-03.6–03.8 |
 
 ## Resolução obrigatória em SH-04
 

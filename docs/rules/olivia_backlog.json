@@ -622,14 +622,14 @@
             "BE-14"
           ],
           "definition_of_done": [
-            "Adapter Firebase AI Logic usa modelo submetido e retorna FrameAnalysis/VisualDiagnosis, com enums Kotlin fechados e validação de confidence/direção/magnitude.",
+            "Adapter Firebase AI Logic usa o modelo submetido exclusivamente para localizar a ROI normalizada da peça; o Android calcula FrameAnalysis/VisualDiagnosis localmente, com schema fechado e validação de ROI/confiança.",
             "Metadados de sessão, origem e tempos são preenchidos pelo app; resposta do modelo nunca vira comando ou fala livre.",
             "Fixture ambígua gera abstenção controlada; diferenciar sombra da mão de baixa luz sem atribuição não sustentada.",
             "Timeout/cancelamento, 401/403/429/5xx, JSON inválido e resposta tardia não derrubam a sessão nem confirmam correção.",
             "Entregar unitários, integração Docker de transporte/parser e integração Android com Firebase real via configuração dev.",
-            "Avaliar qualidade e direção por classe com fixtures rotuladas e limites de teste de TESTING.md, além do smoke de acesso."
+            "Avaliar separadamente localização de ROI pelo Gemini e diagnósticos/direções locais com fixtures rotuladas e limites de TESTING.md, além do smoke de acesso."
           ],
-          "notes_and_risks": "Manter provider atrás de FrameAnalyzer para poder trocar modelo sem alterar app.",
+          "notes_and_risks": "Gemini não estima geometria, direção, luz, horizonte ou graus: apenas localiza a ROI. Manter provider atrás de localizador para poder trocar modelo sem alterar o pipeline local.",
           "priority": "High",
           "estimate": 5,
           "labels": [
@@ -638,9 +638,9 @@
             "ai",
             "gemini"
           ],
-          "description": "## Objetivo\n\nConecte o FrameAnalyzer ao Gemini/Firebase AI Logic para identificar enquadramento, luz/sombra e horizonte nos fixtures. Em vez de texto livre, retorne um objeto validado que o app consiga usar para decidir ação, gravidade, confiança e fala; timeout ou erro precisam degradar sem derrubar a sessão.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, BE-01, BE-02, BE-13, BE-14\n\n## Definição de pronto\n\n- Adapter Firebase AI Logic usa modelo submetido e retorna FrameAnalysis/VisualDiagnosis, com enums Kotlin fechados e validação de confidence/direção/magnitude.\n- Metadados de sessão, origem e tempos são preenchidos pelo app; resposta do modelo nunca vira comando ou fala livre.\n- Fixture ambígua gera abstenção controlada; diferenciar sombra da mão de baixa luz sem atribuição não sustentada.\n- Timeout/cancelamento, 401/403/429/5xx, JSON inválido e resposta tardia não derrubam a sessão nem confirmam correção.\n- Entregar unitários, integração Docker de transporte/parser e integração Android com Firebase real via configuração dev.\n- Avaliar qualidade e direção por classe com fixtures rotuladas e limites de teste de TESTING.md, além do smoke de acesso.\n\n## Notas / risco\n\nManter provider atrás de FrameAnalyzer para poder trocar modelo sem alterar app.\n\n## Especificação e testes\n\ndocs/spec-driven-development/05-classificacao-visual/spec.md\ndocs/spec-driven-development/05-classificacao-visual/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
+          "description": "## Objetivo\n\nConecte o Gemini/Firebase AI Logic para localizar a área de trabalho nos fixtures em ROI normalizada e estruturada. O Android mede enquadramento, luz/sombra e horizonte localmente e usa o resultado validado para decidir ação qualitativa; timeout ou erro precisam degradar sem derrubar a sessão.\n\n**Responsável:** Backend/IA\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** SH-04, BE-01, BE-02, BE-13, BE-14\n\n## Definição de pronto\n\n- Adapter Firebase AI Logic pede somente ROI normalizada/confiança da peça; direção, magnitude, severity, luminância, horizonte e fala são rejeitados se vierem do provedor.\n- O Android calcula FrameAnalysis/VisualDiagnosis localmente a partir da ROI e do frame efêmero, com schema fechado e abstenção segura.\n- Fixture ambígua gera abstenção controlada; baixa luz não atribui causa à mão sem evidência específica.\n- Timeout/cancelamento, 401/403/429/5xx, JSON inválido e resposta tardia não derrubam a sessão nem confirmam correção.\n- Entregar unitários, integração Docker de transporte/parser/visão local e integração Android com Firebase real via configuração dev.\n- Avaliar separadamente localização da ROI e diagnósticos/direções locais com fixtures rotuladas e limites de TESTING.md, além do smoke de acesso.\n\n## Notas / risco\n\nManter o provedor atrás de localizador para poder trocar modelo sem alterar o pipeline local; Gemini nunca estima geometria, direção ou graus.\n\n## Especificação e testes\n\ndocs/spec-driven-development/05-classificacao-visual/spec.md\ndocs/spec-driven-development/05-classificacao-visual/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
           "review_status": "reviewed_for_sdd_2026_09_12",
-          "objective": "Conecte o FrameAnalyzer ao Gemini/Firebase AI Logic para identificar enquadramento, luz/sombra e horizonte nos fixtures. Em vez de texto livre, retorne um objeto validado que o app consiga usar para decidir ação, gravidade, confiança e fala; timeout ou erro precisam degradar sem derrubar a sessão.",
+          "objective": "Conecte o Gemini/Firebase AI Logic para localizar a área de trabalho nos fixtures em ROI estruturada. O app mede enquadramento, luz/sombra e horizonte localmente e usa resultado validado para decidir ação qualitativa; timeout ou erro precisam degradar sem derrubar a sessão.",
           "sdd": {
             "module": "05-classificacao-visual",
             "spec": "docs/spec-driven-development/05-classificacao-visual/spec.md",
@@ -664,7 +664,7 @@
           "definition_of_done": [
             "Política determinística usa catálogo de falas, threshold inicial confidence >= 0.80/severity MAJOR e cooldown global de 4000 ms configurável.",
             "Definir desempate entre classes e manter no máximo uma correção pendente; ausência de desvio resulta em silêncio saudável.",
-            "Não confiar em texto livre ou graus sem calibração; magnitude não validada produz instrução qualitativa.",
+            "Não confiar em texto livre, graus ou direção do modelo: framing vem do offset de ROI local e luz/horizonte de análise local; frases continuam qualitativas.",
             "Implementar unitários nos limites de threshold/cooldown e integração Docker com tracker/timeline; Gemini real não bloqueia desenvolvimento da política."
           ],
           "notes_and_risks": "O demo precisa parecer um diretor assistivo, não um chatbot verboso.",

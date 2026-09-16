@@ -1,14 +1,20 @@
-# Primeira entrega — transporte Firebase para classificação visual
+# Entrega atual — localização da peça via Firebase e diagnóstico visual local
 
-Status: adapter Android e bootstrap do Firebase no flavor glasses escritos; integração DAT/runtime e validação ao vivo pendentes.
+Status: contrato ROI, adapter Android, visão local e testes JVM implementados; integração DAT/runtime e validação ao vivo pendentes.
 
 ## Núcleo já entregue
 
-`VisualAnalysisSchema` aceita somente a versão `1.0` e até um diagnóstico por classe fechada:
-`FRAMING`, `LIGHT` e `HORIZON`. Ele rejeita campos ausentes ou desconhecidos, texto livre,
-duplicatas, confiança inválida, direção incompatível e qualquer magnitude, pois ainda não há
-calibração verificada dos óculos. `GeminiFrameAnalyzer` acrescenta timeout de 2 s, sem retry do
-mesmo frame, erros sem conteúdo e propagação correta de cancelamento.
+`WorkAreaLocalizationSchema` aceita somente a versão `2.0`: `targetPresent`, `confidence` e uma
+ROI normalizada (`x`, `y`, `width`, `height`) ou `null` quando a peça não está identificável. Ele
+rejeita texto livre, campos extras, direção, severidade, magnitude, diagnósticos, números inválidos
+e ROIs fora do frame. `GeminiFrameAnalyzer` acrescenta timeout de 2 s, sem retry do mesmo frame,
+erros sem conteúdo e propagação correta de cancelamento.
+
+`DeterministicLocalVisualAnalyzer` é o único componente que produz `FRAMING`, `LIGHT` e
+`HORIZON`: compara o centro da ROI com o frame, mede luminância da ROI contra a referência do
+frame e estima a inclinação de linhas horizontais com confiança. Até 10% de offset fica silencioso;
+10–25% vira correção `MINOR` (“um pouco”); acima de 25% vira `MAJOR`. Não há ângulo físico nem
+atribuição de sombra à mão. Em baixa confiança o analisador se abstém.
 
 ## Adapter Android
 
@@ -17,16 +23,14 @@ mesmo frame, erros sem conteúdo e propagação correta de cancelamento.
 `GeminiVisualTransport` sem fazer o domínio `:core` importar Android ou Firebase.
 
 O adapter decodifica JPEG, NV21 ou RGBA apenas em memória, reduz o maior lado para 512 px e envia
-um único bitmap com um prompt limitado a enquadramento, luz/sombra e horizonte. A resposta pede
-JSON; `GeminiFrameAnalyzer` e `VisualAnalysisSchema` ainda são a barreira definitiva para o
-contrato fechado, timeout de 2 s e rejeição de texto/propriedades inesperadas.
+um único bitmap com prompt limitado a localizar a área de trabalho. A resposta pede JSON; o core
+valida a ROI e o Android produz uma cópia grayscale efêmera para o cálculo local. O frame, bitmap
+e luma são liberados ao final da chamada; nenhuma métrica, ROI ou byte segue para timeline/log.
 
 Não há cache, arquivo, log ou retry do frame. Cancelamento de coroutine propaga. Demais falhas se
 reduzem a um erro sanitizado, que o núcleo converte em indisponibilidade de análise. O bitmap é
 liberado depois da chamada.
 
-Ainda não há uma instância Firebase configurada no runtime `glasses`, nem frame DAT ligado a esse
-adapter. O `google-services.json` fica em `app/src/glasses/`, App Check usa Play Integrity antes
-da criação do adapter e as quotas/modelo aprovados continuam configuração externa obrigatória.
-INT-00. O mock continua deliberadamente sem Firebase. Nenhum teste Android/Firebase foi executado
-nesta entrega.
+O `FirebaseVisualAnalyzerFactory` injeta o decoder Android e o analisador local somente no flavor
+`glasses`. O mock continua deliberadamente sem Firebase. Acesso Firebase, frame DAT e validação de
+qualidade ao vivo continuam gates separados; testes JVM não são evidência de hardware ou acurácia.

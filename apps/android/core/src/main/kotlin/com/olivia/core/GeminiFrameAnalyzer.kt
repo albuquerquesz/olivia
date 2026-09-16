@@ -27,6 +27,8 @@ public class AnalysisFailure(public val code: AnalysisFailureCode) :
 public class GeminiFrameAnalyzer(
     private val clock: OliviaClock,
     private val transport: GeminiVisualTransport,
+    private val localVisualAnalyzer: LocalVisualAnalyzer,
+    private val lumaDecoder: FrameLumaDecoder = LumaFrameDecoder,
     private val timeoutMs: Long = 2_000,
 ) : FrameAnalyzer {
     init {
@@ -37,15 +39,18 @@ public class GeminiFrameAnalyzer(
         val response = withTimeout(timeoutMs) {
             transport.classify(frame).getOrElse { throw AnalysisFailure(AnalysisFailureCode.TRANSPORT) }
         }
-        val diagnoses = VisualAnalysisSchema.decode(response)
+        val localization = WorkAreaLocalizationSchema.decode(response)
             .getOrElse { throw AnalysisFailure(AnalysisFailureCode.SCHEMA) }
+        val luma = lumaDecoder.decode(frame)
+            ?: throw AnalysisFailure(AnalysisFailureCode.SCHEMA)
+        val diagnoses = localVisualAnalyzer.analyze(luma, localization)
         val now = clock.now()
         Result.success(
             FrameAnalysis(
                 frameStamp = frame.stamp,
                 analyzedAt = if (now.monotonicMs < frame.stamp.receivedAt.monotonicMs) frame.stamp.receivedAt else now,
                 latencyMs = (now.monotonicMs - frame.stamp.receivedAt.monotonicMs).coerceAtLeast(0),
-                source = AnalyzerSource.GEMINI,
+                source = AnalyzerSource.GEMINI_ROI_LOCAL,
                 diagnoses = diagnoses,
             ),
         )

@@ -23,6 +23,12 @@ class AndroidReviewExporter(context: Context) {
     private val appContext = context.applicationContext
     private val directory = File(appContext.filesDir, "olivia-review-exports")
 
+    init {
+        // Review exports are transient handoff artifacts. The UI keeps their ownership only in
+        // memory, so anything surviving a process death has no valid owner and is discarded.
+        recoverInterruptedExports()
+    }
+
     suspend fun persist(review: SessionReview): Result<LocalReviewExport> = withContext(Dispatchers.IO) {
         runCatching {
             directory.mkdirs()
@@ -47,6 +53,21 @@ class AndroidReviewExporter(context: Context) {
         mimeType = "application/octet-stream",
         chooserTitle = "Compartilhar marcas e legendas",
     )
+
+    /** Explicitly removes the app-private review artifacts after the creator finishes sharing. */
+    suspend fun discard(export: LocalReviewExport) = withContext(Dispatchers.IO) {
+        export.reviewJson.delete()
+        export.subtitles?.delete()
+    }
+
+    private fun recoverInterruptedExports() {
+        if (!directory.isDirectory) return
+        directory.listFiles()?.forEach { file ->
+            if (file.isFile && (file.name.endsWith(".review.json") || file.name.endsWith(".srt"))) {
+                file.delete()
+            }
+        }
+    }
 
     private fun share(files: List<File>, mimeType: String, chooserTitle: String): Result<Unit> = runCatching {
         require(files.isNotEmpty() && files.all(File::isFile)) { "Arquivo local indisponível" }
