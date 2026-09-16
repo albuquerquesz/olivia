@@ -75,7 +75,7 @@ fun OliviaWelcomeScreen(onEnter: () -> Unit) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 24.dp)
+                .padding(horizontal = 16.dp, vertical = 24.dp)
                 .widthIn(max = 600.dp)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -118,7 +118,7 @@ fun OliviaHomeScreen(
     onSeeAllTakes: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
-    val recent = state.takes.filter { !it.isDemo || it.events.isNotEmpty() }.take(3)
+    val recent = state.takes.filterNot { it.isDemo }.take(3)
     OliviaPage {
         DeviceOverview(backend = state.backend, connection = state.connection)
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -141,18 +141,23 @@ fun OliviaHomeScreen(
                         .semantics { role = Role.Button },
                 )
             }
-            if (recent.isEmpty()) {
-                Text(
-                    "Depois da gravação, as timelines aparecem aqui.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                recent.forEach { take ->
-                    TakePreviewCard(take = take, onClick = { onOpenTake(take.sessionId) })
-                }
-            }
+            RecentTakes(recent, onOpenTake)
         }
+    }
+}
+
+@Composable
+private fun RecentTakes(takes: List<TakeSummary>, onOpenTake: (SessionId) -> Unit) {
+    if (takes.isEmpty()) {
+        Text(
+            "Depois da gravação, as timelines aparecem aqui.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+    takes.forEach { take ->
+        TakePreviewCard(take = take, onClick = { onOpenTake(take.sessionId) })
     }
 }
 
@@ -298,11 +303,10 @@ fun OliviaRecordingScreen(
                         shape = RoundedCornerShape(12.dp),
                     ) {
                         Text(
-                            text = if (degraded) {
-                                "A Olivia parou de ver a câmera. As marcas ficam; a gravação nativa continua."
-                            } else {
-                                "É necessário conectar os óculos para gravar."
-                            },
+                            text = recordingPanelMessage(
+                                degraded = degraded,
+                                requiresPhysicalGlasses = state.backend.requiresPhysicalGlasses,
+                            ),
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                             style = MaterialTheme.typography.labelMedium,
                         )
@@ -359,11 +363,7 @@ private fun GlassesCameraPreview(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    val description = if (simulated) {
-        "Câmera simulada dos óculos, formato vertical 720 por 1280"
-    } else {
-        "Prévia da câmera dos óculos indisponível"
-    }
+    val description = cameraPreviewDescription(simulated)
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
@@ -375,7 +375,7 @@ private fun GlassesCameraPreview(
                 val hasFramingIssue = elapsedMs in 8_000L..20_000L
                 val hasShadowIssue = elapsedMs in 28_000L..36_000L
                 val hasHorizonIssue = elapsedMs in 38_000L..48_000L
-                val subjectCenter = if (hasFramingIssue) size.width * 0.76f else size.width * 0.5f
+                val subjectCenter = subjectCenter(size.width, hasFramingIssue)
                 val skinColor = Color(0xFFD0A58C)
                 val tableColor = Color(0xFF63717A)
 
@@ -390,7 +390,7 @@ private fun GlassesCameraPreview(
                     start = Offset(0f, horizonY),
                     end = Offset(
                         size.width,
-                        horizonY + if (hasHorizonIssue) 24.dp.toPx() else 0f,
+                        horizonY + horizonOffset(hasHorizonIssue, 24.dp.toPx()),
                     ),
                     strokeWidth = 1.5.dp.toPx(),
                 )
@@ -432,7 +432,8 @@ private fun GlassesCameraPreview(
                 drawLine(guideColor, Offset(size.width - guideInset, size.height - guideInset), Offset(size.width - guideInset - guideLength, size.height - guideInset), 2.dp.toPx())
                 drawLine(guideColor, Offset(size.width - guideInset, size.height - guideInset), Offset(size.width - guideInset, size.height - guideInset - guideLength), 2.dp.toPx())
             }
-        } else {
+        }
+        if (!simulated) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = colors.surfaceVariant,
@@ -460,36 +461,67 @@ private fun GlassesCameraPreview(
     }
 }
 
+private fun recordingPanelMessage(
+    degraded: Boolean,
+    requiresPhysicalGlasses: Boolean,
+): String {
+    if (degraded) {
+        return "A Olivia parou de ver a câmera. As marcas ficam; a gravação nativa continua."
+    }
+    if (requiresPhysicalGlasses) return "É necessário conectar os óculos para gravar."
+    return "Prévia do fluxo, com óculos simulados."
+}
+
+private fun cameraPreviewDescription(simulated: Boolean): String {
+    if (simulated) return "Câmera simulada dos óculos, formato vertical 720 por 1280"
+    return "Prévia da câmera dos óculos indisponível"
+}
+
+private fun subjectCenter(width: Float, hasFramingIssue: Boolean): Float {
+    if (hasFramingIssue) return width * 0.76f
+    return width * 0.5f
+}
+
+private fun horizonOffset(hasHorizonIssue: Boolean, offset: Float): Float {
+    if (hasHorizonIssue) return offset
+    return 0f
+}
+
 @Composable
 fun OliviaSessionsScreen(takes: List<TakeSummary>, onOpenTake: (SessionId) -> Unit) {
     OliviaPage {
-        if (takes.isEmpty()) {
-            OliviaPanel {
-                Text("Seus takes", style = MaterialTheme.typography.bodyLarge)
-                Text("Nenhuma sessão ainda", style = MaterialTheme.typography.headlineMedium)
-                PanelDetail("Depois da gravação, suas timelines e cortes sugeridos aparecerão aqui.")
+        SessionTakeList(takes, onOpenTake)
+    }
+}
+
+@Composable
+private fun SessionTakeList(takes: List<TakeSummary>, onOpenTake: (SessionId) -> Unit) {
+    if (takes.isEmpty()) {
+        OliviaPanel {
+            Text("Seus takes", style = MaterialTheme.typography.bodyLarge)
+            Text("Nenhuma sessão ainda", style = MaterialTheme.typography.headlineMedium)
+            PanelDetail("Depois da gravação, suas timelines e cortes sugeridos aparecerão aqui.")
+        }
+        return
+    }
+    SectionTitle("Seus takes")
+    takes.forEach { take ->
+        OutlinedButton(
+            onClick = { onOpenTake(take.sessionId) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp),
+            shape = RoundedCornerShape(20.dp),
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(take.title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "${formatOffset(take.durationMs)} · ${take.correctionCount} correções · ${take.cutCount} cortes",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
-        } else {
-            SectionTitle("Seus takes")
-            takes.forEach { take ->
-                OutlinedButton(
-                    onClick = { onOpenTake(take.sessionId) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp),
-                    shape = RoundedCornerShape(20.dp),
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(take.title, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "${formatOffset(take.durationMs)} · ${take.correctionCount} correções · ${take.cutCount} cortes",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
-                }
-            }
+            Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
         }
     }
 }
@@ -498,29 +530,39 @@ fun OliviaSessionsScreen(takes: List<TakeSummary>, onOpenTake: (SessionId) -> Un
 fun OliviaTakeScreen(take: TakeSummary, onNavigateBack: () -> Unit) {
     OliviaPage(onNavigateBack = onNavigateBack) {
         OliviaPanel {
-            Text(if (take.isDemo) "Ensaio mock" else "Revisão", style = MaterialTheme.typography.bodyLarge)
+            Text(takeReviewTitle(take), style = MaterialTheme.typography.bodyLarge)
             Text(formatOffset(take.durationMs), style = MaterialTheme.typography.headlineMedium)
             PanelDetail("${take.correctionCount} correções · ${take.cutCount} cortes sugeridos")
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionTitle("Cortes sugeridos")
-            if (take.cutCount == 0) {
-                Text(
-                    "Nenhum corte neste take. A lista aceita o ensaio mock e o pós-processamento real.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                take.events.filter { it.type == TimelineEventType.CUT_SUGGESTED }.forEach { event ->
-                    TimelineRow(event)
-                }
-            }
+            SuggestedCuts(take)
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionTitle("Timeline")
             take.events.forEach { event -> TimelineRow(event) }
         }
+    }
+}
+
+private fun takeReviewTitle(take: TakeSummary): String {
+    if (take.isDemo) return "Ensaio mock"
+    return "Revisão"
+}
+
+@Composable
+private fun SuggestedCuts(take: TakeSummary) {
+    if (take.cutCount == 0) {
+        Text(
+            "Nenhum corte neste take. A lista aceita o ensaio mock e o pós-processamento real.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+    take.events.filter { it.type == TimelineEventType.CUT_SUGGESTED }.forEach { event ->
+        TimelineRow(event)
     }
 }
 
@@ -546,11 +588,7 @@ fun OliviaSettingsScreen(
                 }
             }
             PanelDetail(
-                if (audioMode == AudioMode.VOICE) {
-                    "Instruções curtas, faladas pela Olivia."
-                } else {
-                    "Tons locais de 80 ms para orientar a correção."
-                },
+                audioModeDescription(audioMode),
             )
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -602,9 +640,18 @@ private fun DebugActions(
                 DebugButton("Simular retorno", onRecover)
                 DebugButton("Terminar", onStop)
             }
-            else -> DebugButton("Terminar", onStop)
+            SessionState.STARTING,
+            SessionState.STOPPING,
+            SessionState.PROCESSING,
+            SessionState.READY,
+            SessionState.ERROR -> DebugButton("Terminar", onStop)
         }
     }
+}
+
+private fun audioModeDescription(audioMode: AudioMode): String {
+    if (audioMode == AudioMode.VOICE) return "Instruções curtas, faladas pela Olivia."
+    return "Tons locais de 80 ms para orientar a correção."
 }
 
 @Composable

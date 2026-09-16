@@ -61,6 +61,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.olivia.companion.session.OliviaSessionViewModel
+import com.olivia.companion.session.TakeSummary
 import com.olivia.core.SessionId
 
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
@@ -78,6 +79,19 @@ private val OliviaSideDestinations = listOf(
 
 private const val WELCOME_ROUTE = "welcome"
 private const val TAKE_ROUTE = "take/{sessionId}"
+
+private fun bottomBarPadding(showBottomBar: Boolean) =
+    80.dp.takeIf { showBottomBar } ?: 0.dp
+
+private fun pressScale(pressed: Boolean): Float {
+    if (pressed) return 0.94f
+    return 1f
+}
+
+@Composable
+private fun navigationColor(selected: Boolean) =
+    MaterialTheme.colorScheme.primary.takeIf { selected }
+        ?: MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
 fun OliviaApp(
@@ -101,7 +115,7 @@ fun OliviaApp(
                 startDestination = WELCOME_ROUTE,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = if (showBottomBar) 80.dp else 0.dp),
+                    .padding(bottom = bottomBarPadding(showBottomBar)),
                 enterTransition = {
                 fadeIn(OliviaMotion.navigation()) +
                     slideInVertically(OliviaMotion.navigation()) { travelPx }
@@ -172,14 +186,12 @@ fun OliviaApp(
                 arguments = listOf(navArgument("sessionId") { type = NavType.StringType }),
             ) { entry ->
                 val sessionId = SessionId(entry.arguments?.getString("sessionId").orEmpty())
-                val take = viewModel.take(sessionId)
-                if (take == null) {
-                    OliviaSessionsScreen(uiState.takes) { id ->
-                        navController.navigate("take/${id.value}")
-                    }
-                } else {
-                    OliviaTakeScreen(take, onNavigateBack = { navController.popBackStack() })
-                }
+                TakeRouteContent(
+                    take = viewModel.take(sessionId),
+                    takes = uiState.takes,
+                    onOpenTake = { id -> navController.navigate("take/${id.value}") },
+                    onNavigateBack = { navController.popBackStack() },
+                )
             }
             composable(OliviaDestination.SETTINGS.route) {
                 OliviaSettingsScreen(
@@ -208,6 +220,20 @@ fun OliviaApp(
             }
         }
     }
+}
+
+@Composable
+private fun TakeRouteContent(
+    take: TakeSummary?,
+    takes: List<TakeSummary>,
+    onOpenTake: (SessionId) -> Unit,
+    onNavigateBack: () -> Unit,
+) {
+    if (take != null) {
+        OliviaTakeScreen(take, onNavigateBack)
+        return
+    }
+    OliviaSessionsScreen(takes, onOpenTake)
 }
 
 @Composable
@@ -264,12 +290,12 @@ private fun OliviaNavigationItem(
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        if (pressed) 0.94f else 1f,
+        pressScale(pressed),
         OliviaMotion.press(),
         label = "navigation press",
     )
     val color by animateColorAsState(
-        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        navigationColor(selected),
         OliviaMotion.selection(),
         label = "navigation selection",
     )
@@ -312,7 +338,7 @@ private fun OliviaRecordButton(
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        if (pressed) 0.94f else 1f,
+        pressScale(pressed),
         OliviaMotion.press(),
         label = "record press",
     )
