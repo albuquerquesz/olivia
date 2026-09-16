@@ -280,7 +280,7 @@ private fun OliviaNavigationItem(
             destination.icon,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(32.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+            modifier = Modifier.size(28.dp).graphicsLayer { scaleX = scale; scaleY = scale },
         )
         Text(
             destination.label,
