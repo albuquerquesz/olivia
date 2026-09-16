@@ -66,7 +66,7 @@ import com.olivia.core.SessionId
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
     HOME("home", "Início", Icons.Outlined.Home),
     RECORD("record", "Gravar", Icons.Outlined.Add),
-    SESSIONS("sessions", "Sessões", Icons.Outlined.History),
+    SESSIONS("sessions", "Takes", Icons.Outlined.History),
     SETTINGS("settings", "Ajustes", Icons.Outlined.Settings),
 }
 

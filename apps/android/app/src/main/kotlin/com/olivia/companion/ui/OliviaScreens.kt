@@ -295,7 +295,6 @@ fun OliviaRecordingScreen(
                 onStop = onStop,
             )
         }
-        Text(PrivacyCopy, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionTitle("Modo de feedback")
             FlowRow(
@@ -451,7 +450,7 @@ private fun DebugActions(
     onStop: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle("Debug mock")
+        SectionTitle("Debug")
         when (sessionState) {
             SessionState.IDLE, SessionState.STOPPED -> DebugButton("Iniciar sessão", onStart)
             SessionState.STARTED -> {
