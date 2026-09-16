@@ -100,7 +100,9 @@
         "retomada",
         "encerramento",
         "queda de conexão",
-        "retorno da conexão"
+        "retorno da conexão",
+        "erro de comando de voz",
+        "entrada de voz indisponível"
       ],
       "purpose": "Entrega instruções e tons nos óculos."
     },

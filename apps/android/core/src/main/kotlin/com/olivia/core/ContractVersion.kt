@@ -8,5 +8,5 @@ package com.olivia.core
  * este valor, para que uma timeline gravada antes de uma mudança continue legível.
  */
 public object ContractVersion {
-    public const val CURRENT: String = "1.1.0"
+    public const val CURRENT: String = "1.2.0"
 }
