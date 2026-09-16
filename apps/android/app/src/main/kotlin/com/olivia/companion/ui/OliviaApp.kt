@@ -171,7 +171,10 @@ fun OliviaApp(
         }
     }
 
-    Scaffold { innerPadding ->
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+    ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             NavHost(
                 navController = navController,
