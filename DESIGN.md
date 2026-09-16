@@ -41,7 +41,8 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 - Welcome: tela inicial, sem barra inferior. Título `Bem vindo a OlivIA`,
   descrição curta e botão primary Entrar no rodapé, sem conta.
 - Início: painel com Dispositivo e Ray-Ban Meta; Últimos takes em cards (miniatura,
-  título, duração, data relativa, seta) e atalho ver todos para Sessões. Sem inventar takes.
+  título, duração, data relativa, marcas, seta) e atalho ver todos para Sessões.
+  Sem inventar takes.
   Sem selo Modo demonstração ou texto Óculos simulados. A indicação do backend
   continua na tela Gravar. Sem botão Gravar agora ou frase Pronta para.
 - Gravar: comando por voz e disponibilidade no painel; configurações abaixo.
