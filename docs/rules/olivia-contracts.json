@@ -226,6 +226,8 @@
     "note": "Lista fechada. A IA não deve devolver categoria fora dela."
   },
   "privacy_invariants": [
+    "Preferências pequenas (como modo de áudio) ficam em DataStore privado no Android; não carregam identidade, mídia, URI, transcrição, timeline ou credencial.",
+    "JSON/SRT de revisão só nascem após o take e permanecem privados até compartilhamento explícito pelo Android Sharesheet, com URI de leitura temporária; o vídeo original não é alterado.",
     "Frame é efêmero: classifique e descarte; não persista bytes, não escreva em log, não retenha após a análise retornar.",
     "Frame.toString() é cego ao conteúdo para que um log acidental não vaze imagem.",
     "Nenhum tipo do contrato de timeline ou de revisão carrega bytes de mídia.",

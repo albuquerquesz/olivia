@@ -27,9 +27,12 @@ import com.olivia.core.LoopMeasurementId
 import com.olivia.core.SamplingDecision
 import com.olivia.core.SessionCoordinator
 import com.olivia.core.SessionId
+import com.olivia.core.SessionReview
+import com.olivia.core.TimelineEvent
 import com.olivia.core.SessionSnapshot
 import com.olivia.core.SystemOliviaClock
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,6 +58,9 @@ enum class LocalSessionCommand { START, PAUSE, RESUME, STOP }
 interface SessionRuntime : AutoCloseable {
     val snapshot: StateFlow<SessionSnapshot?>
     suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot>
+    suspend fun setAudioMode(mode: AudioMode): Result<Unit>
+    suspend fun timelineFor(sessionId: SessionId): Result<List<TimelineEvent>>
+    suspend fun processPostTake(work: suspend (SessionId) -> Result<SessionReview>): Result<SessionReview>
 }
 
 /** The glasses flavor stays explicitly unavailable until INT-00 supplies a verified DAT adapter. */
@@ -67,6 +73,11 @@ private class UnavailableSessionRuntime : SessionRuntime {
     private val state = MutableStateFlow<SessionSnapshot?>(null)
     override val snapshot: StateFlow<SessionSnapshot?> = state.asStateFlow()
     override suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot> =
+        Result.failure(IllegalStateException("DAT ainda não está configurado"))
+    override suspend fun setAudioMode(mode: AudioMode): Result<Unit> = Result.success(Unit)
+    override suspend fun timelineFor(sessionId: SessionId): Result<List<TimelineEvent>> =
+        Result.failure(IllegalStateException("DAT ainda não está configurado"))
+    override suspend fun processPostTake(work: suspend (SessionId) -> Result<SessionReview>): Result<SessionReview> =
         Result.failure(IllegalStateException("DAT ainda não está configurado"))
     override fun close() = Unit
 }
@@ -206,6 +217,46 @@ private class MockSessionRuntime(context: Context) : SessionRuntime {
             LocalSessionCommand.PAUSE -> coordinator.pause()
             LocalSessionCommand.RESUME -> coordinator.resume()
             LocalSessionCommand.STOP -> coordinator.stop()
+        }
+    }
+
+    override suspend fun setAudioMode(mode: AudioMode): Result<Unit> = runtimeMutex.withLock {
+        val state = coordinator.snapshot.value?.state
+        if (state in setOf(
+                com.olivia.core.SessionState.STARTING,
+                com.olivia.core.SessionState.STARTED,
+                com.olivia.core.SessionState.PAUSED,
+                com.olivia.core.SessionState.DEGRADED,
+                com.olivia.core.SessionState.STOPPING,
+            )
+        ) {
+            return@withLock Result.failure(IllegalStateException("Altere o modo antes do take"))
+        }
+        audio.setMode(mode)
+        Result.success(Unit)
+    }
+
+    override suspend fun timelineFor(sessionId: SessionId): Result<List<TimelineEvent>> = runtimeMutex.withLock {
+        if (coordinator.snapshot.value?.id != sessionId) {
+            Result.failure(IllegalArgumentException("Timeline fora da sessão ativa"))
+        } else {
+            Result.success(timeline.events(sessionId))
+        }
+    }
+
+    override suspend fun processPostTake(work: suspend (SessionId) -> Result<SessionReview>): Result<SessionReview> {
+        val started = runtimeMutex.withLock { coordinator.beginPostProcessing() }
+        val sessionId = started.getOrElse { return Result.failure(it) }.id
+        return try {
+            work(sessionId).also { result ->
+                runtimeMutex.withLock {
+                    if (result.isSuccess) coordinator.completePostProcessing(sessionId)
+                    else coordinator.failPostProcessing(sessionId)
+                }
+            }
+        } catch (error: CancellationException) {
+            runtimeMutex.withLock { coordinator.cancelPostProcessing(sessionId) }
+            throw error
         }
     }
 

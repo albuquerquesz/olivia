@@ -17,7 +17,7 @@
     "O wake word e os comandos de voz continuam locais no celular. O preview inicial não inclui as voice commands da Meta como superfície de desenvolvimento.",
     "Usar apenas mwdat-core, mwdat-camera e mwdat-mockdevice no MVP. Não adicionar mwdat-display: o produto não depende de display nos óculos.",
     "Usar MockDeviceKit antes do dia 18 para validar lifecycle, frames, ausência de dispositivo e recuperação.",
-    "Fixar a versão do DAT em um version catalog, mas conferir a versão disponível no GitHub Packages no momento da implementação."
+    "Fixar a versão do DAT em um version catalog, mas conferir a versão disponível no Maven Central no momento da implementação."
   ],
   "android_setup": {
     "build_system": "Gradle Kotlin DSL com version catalog",
@@ -26,14 +26,13 @@
       "value": "0.9.0",
       "observed_at": "2026-09-04",
       "source": "README público do repositório do SDK",
-      "note": "Declarado em apps/android/gradle/libs.versions.toml; reconferir no GitHub Packages antes de subir."
+      "note": "Declarado em apps/android/gradle/libs.versions.toml; reconferir no Maven Central antes de subir."
     },
-    "private_repository": "https://maven.pkg.github.com/facebook/meta-wearables-dat-android",
-    "required_secret": {
-      "name": "GITHUB_TOKEN",
-      "alternative": "github_token em local.properties",
-      "scope": "Personal access token classic com read:packages",
-      "handling": "Nunca versionar; usar secret de CI e local.properties ignorado pelo Git."
+    "artifact_repository": "Maven Central (com.meta.wearable)",
+    "registered_integration_credentials": {
+      "names": ["MWDAT_APPLICATION_ID", "MWDAT_CLIENT_TOKEN"],
+      "alternative": "mwdat_application_id e mwdat_client_token em local.properties",
+      "handling": "Nunca versionar; usar secret de CI e local.properties ignorado pelo Git. Em Developer Mode, usar os placeholders explícitos 0/0."
     },
     "artifacts": [
       "com.meta.wearable:mwdat-core",

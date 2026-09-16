@@ -26,6 +26,7 @@ reduzem a um erro sanitizado, que o núcleo converte em indisponibilidade de an�
 liberado depois da chamada.
 
 Ainda não há uma instância Firebase configurada no runtime `glasses`, nem frame DAT ligado a esse
-adapter. Isso depende de `google-services.json` local, App Check, quotas/modelo aprovados e
+adapter. O `google-services.json` fica em `app/src/glasses/`, App Check usa Play Integrity antes
+da criação do adapter e as quotas/modelo aprovados continuam configuração externa obrigatória.
 INT-00. O mock continua deliberadamente sem Firebase. Nenhum teste Android/Firebase foi executado
 nesta entrega.

@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <!-- 0/0 is the explicit Developer Mode path; registered values are local/CI only. -->
+        <meta-data
+            android:name="com.meta.wearable.mwdat.APPLICATION_ID"
+            android:value="${mwdatApplicationId}" />
+        <meta-data
+            android:name="com.meta.wearable.mwdat.CLIENT_TOKEN"
+            android:value="${mwdatClientToken}" />
         <!-- Privacy defaults required by the DAT setup; only packaged with the glasses flavor. -->
         <meta-data
             android:name="com.meta.wearable.mwdat.ANALYTICS_OPT_OUT"

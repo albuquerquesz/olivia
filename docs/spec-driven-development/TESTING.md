@@ -37,8 +37,8 @@ BE-13/14 deverão criar exemplos sem valores reais e um carregador por allowlist
 | `OLIVIA_LIVE_AI_MAX_ESTIMATED_COST_USD` | Obrigatório em live, definido pelo operador; limite estimado complementa quotas do provedor |
 | `OLIVIA_FIREBASE_CONFIG_PATH` | Caminho local do arquivo de configuração do app/projeto de desenvolvimento; gerar/copiar só o necessário para Android |
 | `FIREBASE_APP_CHECK_DEBUG_TOKEN` | Segredo de teste Android; registrar somente no projeto dev, nunca na release |
-| `GITHUB_TOKEN` | Acesso aos pacotes DAT; somente etapa de resolução Gradle, não imagem/APK |
-| `OLIVIA_DAT_APPLICATION_ID` | Configuração do app registrado, mapeada explicitamente ao mecanismo Gradle existente |
+| `MWDAT_APPLICATION_ID` | Configuração do app registrado, injetada no manifest somente no flavor `glasses` |
+| `MWDAT_CLIENT_TOKEN` | Token da integração registrada; local/CI, nunca commit ou relatório. Ele é exigido no manifest da integração, portanto APKs de teste registrados ficam privados da equipe/canal autorizado. |
 | `PORCUPINE_ACCESS_KEY` | Configuração restrita do SDK local; não tratar chave embutida no cliente como segredo inviolável |
 | `OLIVIA_WHISPER_MODEL_PATH` | Modelo local versionado; sem API key de transcrição na baseline |
 | `GEMINI_API_KEY` | Apenas diagnóstico direto opcional em ferramenta de host, se necessário; nunca embarcar no app nem usar no lugar do gate Firebase |

@@ -33,8 +33,12 @@ import kotlin.coroutines.resume
 class AndroidAudioFeedback(
     context: Context,
     private val clock: OliviaClock,
-    override val mode: AudioMode,
+    initialMode: AudioMode,
 ) : AudioFeedback, AutoCloseable {
+    @Volatile
+    private var activeMode: AudioMode = initialMode
+
+    override val mode: AudioMode get() = activeMode
     private val mainHandler = Handler(Looper.getMainLooper())
     private val initialized: CompletableDeferred<Result<Unit>> = CompletableDeferred()
     private data class PendingUtterance(
@@ -105,6 +109,11 @@ class AndroidAudioFeedback(
         }
         pending.clear()
         mainHandler.post { textToSpeech.stop() }
+    }
+
+    /** The preference is applied between commands; no audio content is persisted. */
+    fun setMode(mode: AudioMode) {
+        activeMode = mode
     }
 
     override fun close() {

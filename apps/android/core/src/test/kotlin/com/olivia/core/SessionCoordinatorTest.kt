@@ -10,6 +10,24 @@ import kotlin.test.assertIs
 
 class SessionCoordinatorTest {
     @Test
+    fun `post take reaches ready only after an explicit successful completion`() = runBlocking {
+        val clock = MutableSessionClock()
+        val gateway = FakeGateway()
+        val coordinator = SessionCoordinator(clock, gateway, FakeAudio(clock), InMemoryTimeline())
+        val session = SessionId("take")
+
+        coordinator.start(session)
+        coordinator.onCaptureHeartbeat(gateway.emitHeartbeat(clock.now().monotonicMs))
+        coordinator.stop()
+
+        assertEquals(SessionState.STOPPED, coordinator.snapshot.value?.state)
+        coordinator.beginPostProcessing()
+        assertEquals(SessionState.PROCESSING, coordinator.snapshot.value?.state)
+        coordinator.completePostProcessing(session)
+        assertEquals(SessionState.READY, coordinator.snapshot.value?.state)
+    }
+
+    @Test
     fun `capture evidence starts the session and four seconds without a frame degrades it`() = runBlocking {
         val clock = MutableSessionClock()
         val gateway = FakeGateway()

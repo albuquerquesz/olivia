@@ -42,8 +42,8 @@ continuar subindo sem hardware.
 
 Tudo — Kotlin, Compose, AGP, SDKs e os artefatos do DAT — fica em
 [`gradle/libs.versions.toml`](gradle/libs.versions.toml). Os artefatos `mwdat` estão
-declarados mas ainda não aplicados: a autenticação no GitHub Packages, o
-`APPLICATION_ID` e o smoke test do MockDeviceKit são da task INT-00.
+resolvidos do Maven Central e exclusivos do flavor `glasses`. O registro no Wearables
+Developer Center e o smoke test do MockDeviceKit seguem pendentes na task INT-00.
 
 ## Contratos e testes do domínio
 
@@ -52,5 +52,7 @@ O [runner de integração](../../infra/testing/README.md) permite testar o mesmo
 
 ## Segredos
 
-`local.properties`, tokens, keystores e APKs são ignorados pelo Git. O token do DAT
-entra por `GITHUB_TOKEN` no ambiente ou por `github_token` em `local.properties`.
+`local.properties`, tokens, keystores e APKs são ignorados pelo Git. Para uma integração
+registrada, `mwdat_application_id` e `mwdat_client_token` entram por `local.properties`
+ou pelas variáveis de CI `MWDAT_APPLICATION_ID` e `MWDAT_CLIENT_TOKEN`. Em Developer Mode,
+os placeholders explícitos `0/0` são usados.

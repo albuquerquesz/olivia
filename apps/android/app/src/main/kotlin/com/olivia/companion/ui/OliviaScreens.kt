@@ -57,9 +57,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.GlassesBackend
 import com.olivia.companion.media.AndroidLocalRecordingSource
+import com.olivia.companion.media.AndroidReviewExporter
+import com.olivia.companion.media.LocalReviewExport
 import com.olivia.companion.session.SessionRuntime
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionState
+import com.olivia.core.SessionReview
+import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -178,8 +182,11 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val importer = remember { AndroidLocalRecordingSource(context.applicationContext) }
+    val exporter = remember { AndroidReviewExporter(context.applicationContext) }
     val snapshot by sessionRuntime.snapshot.collectAsState()
     var importMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var importedVideo by remember { mutableStateOf<File?>(null) }
+    var reviewExport by remember { mutableStateOf<LocalReviewExport?>(null) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         val stoppedSession = snapshot?.takeIf { it.state == SessionState.STOPPED }
         if (uri == null) {
@@ -197,7 +204,18 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
                     importer.fetch(asset).collect { progress ->
                         importMessage = "Importando vídeo: ${progress.transferredBytes / 1024} KB"
                     }
-                    importMessage = "Vídeo pronto para revisão local"
+                    importedVideo = importer.localPathOf(asset.id)?.let(::File)
+                    val timeline = sessionRuntime.timelineFor(asset.sessionId).getOrDefault(emptyList())
+                    reviewExport = exporter.persist(
+                        SessionReview(
+                            sessionId = asset.sessionId,
+                            recording = asset,
+                            transcript = emptyList(),
+                            suggestedCuts = emptyList(),
+                            timeline = timeline,
+                        ),
+                    ).getOrNull()
+                    importMessage = "Vídeo e marcas locais prontos. A transcrição aguarda o modelo Whisper."
                 } catch (error: CancellationException) {
                     throw error
                 } catch (_: Throwable) {
@@ -232,12 +250,44 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
         importMessage?.let { message ->
             PanelDetail(message)
         }
+        importedVideo?.let { video ->
+            OutlinedButton(
+                onClick = {
+                    importMessage = exporter.shareVideo(video).fold(
+                        onSuccess = { "Abrindo opções de edição…" },
+                        onFailure = { "Não foi possível compartilhar o vídeo local" },
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Text("Enviar vídeo para editar")
+            }
+        }
+        reviewExport?.let { export ->
+            OutlinedButton(
+                onClick = {
+                    importMessage = exporter.shareReview(export).fold(
+                        onSuccess = { "Abrindo compartilhamento das marcas…" },
+                        onFailure = { "Não foi possível compartilhar as marcas locais" },
+                    )
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Text("Compartilhar marcas do take")
+            }
+        }
     }
 }
 
 @Composable
-fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
-    var audioMode by rememberSaveable { mutableStateOf(AudioMode.VOICE.name) }
+fun OliviaSettingsScreen(
+    audioMode: AudioMode,
+    onAudioModeSelected: suspend (AudioMode) -> Unit,
+    onNavigateBack: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
 
     OliviaPage(onNavigateBack = onNavigateBack) {
         OliviaPanel {
@@ -247,15 +297,15 @@ fun OliviaSettingsScreen(onNavigateBack: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                AudioModeOption("Voz", audioMode == AudioMode.VOICE.name) {
-                    audioMode = AudioMode.VOICE.name
+                AudioModeOption("Voz", audioMode == AudioMode.VOICE) {
+                    scope.launch { onAudioModeSelected(AudioMode.VOICE) }
                 }
-                AudioModeOption("Sinal", audioMode == AudioMode.SIGNAL.name) {
-                    audioMode = AudioMode.SIGNAL.name
+                AudioModeOption("Sinal", audioMode == AudioMode.SIGNAL) {
+                    scope.launch { onAudioModeSelected(AudioMode.SIGNAL) }
                 }
             }
             PanelDetail(
-                if (audioMode == AudioMode.VOICE.name) {
+                if (audioMode == AudioMode.VOICE) {
                     "Instruções curtas, faladas pela Olivia."
                 } else {
                     "Tons locais de 80 ms para orientar a correção."

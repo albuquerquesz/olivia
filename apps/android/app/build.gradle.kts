@@ -1,9 +1,20 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+val localProperties = Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.isFile) localFile.inputStream().use(::load)
+}
+
+fun localOrEnvironment(property: String, environment: String): String? =
+    providers.environmentVariable(environment).orNull?.takeIf { it.isNotBlank() }
+        ?: localProperties.getProperty(property)?.takeIf { it.isNotBlank() }
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -17,6 +28,12 @@ android {
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
+        // Developer Mode accepts 0/0. Registered values are only supplied by ignored
+        // local.properties or CI; source control never contains either credential.
+        manifestPlaceholders["mwdatApplicationId"] =
+            localOrEnvironment("mwdat_application_id", "MWDAT_APPLICATION_ID") ?: "0"
+        manifestPlaceholders["mwdatClientToken"] =
+            localOrEnvironment("mwdat_client_token", "MWDAT_CLIENT_TOKEN") ?: "0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Live tests must be selected explicitly; default instrumentation is offline.
         testInstrumentationRunnerArguments["class"] = "com.olivia.companion.infra.InfraConfigurationIntegrationTest"
@@ -80,6 +97,7 @@ dependencies {
     "glassesImplementation"(libs.mwdat.mockdevice)
     "glassesImplementation"(platform(libs.firebase.bom))
     "glassesImplementation"(libs.firebase.ai)
+    "glassesImplementation"(libs.firebase.appcheck.playintegrity)
 
     // Test APK only: no Firebase/debug provider shipped in the product APK.
     androidTestImplementation(platform(libs.firebase.bom))
@@ -92,6 +110,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

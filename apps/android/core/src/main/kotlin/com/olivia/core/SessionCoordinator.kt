@@ -193,6 +193,46 @@ public class SessionCoordinator(
         }
     }
 
+    /** Opens the post-take phase only after the live loop has definitely stopped. */
+    public fun beginPostProcessing(): Result<SessionSnapshot> {
+        val current = _snapshot.value ?: return Result.failure(IllegalStateException("Não há sessão"))
+        if (current.state != SessionState.STOPPED) {
+            return Result.failure(IllegalStateException("O take precisa estar encerrado"))
+        }
+        setSnapshot(current.id, SessionState.PROCESSING, current.config, requireStartedAt())
+        return Result.success(requireNotNull(_snapshot.value))
+    }
+
+    /** Called only after the local transcript, alignment, and review were produced successfully. */
+    public fun completePostProcessing(sessionId: SessionId): Result<SessionSnapshot> {
+        val current = _snapshot.value ?: return Result.failure(IllegalStateException("Não há sessão"))
+        if (current.id != sessionId || current.state != SessionState.PROCESSING) {
+            return Result.failure(IllegalStateException("Revisão fora da sessão ativa"))
+        }
+        setSnapshot(current.id, SessionState.READY, current.config, requireStartedAt())
+        return Result.success(requireNotNull(_snapshot.value))
+    }
+
+    /** Cancellation preserves the completed take and lets the creator retry processing later. */
+    public fun cancelPostProcessing(sessionId: SessionId): Result<SessionSnapshot> {
+        val current = _snapshot.value ?: return Result.failure(IllegalStateException("Não há sessão"))
+        if (current.id != sessionId || current.state != SessionState.PROCESSING) {
+            return Result.failure(IllegalStateException("Não há processamento para cancelar"))
+        }
+        setSnapshot(current.id, SessionState.STOPPED, current.config, requireStartedAt())
+        return Result.success(requireNotNull(_snapshot.value))
+    }
+
+    /** A failed local provider is explicit and never yields a partial READY review. */
+    public fun failPostProcessing(sessionId: SessionId): Result<SessionSnapshot> {
+        val current = _snapshot.value ?: return Result.failure(IllegalStateException("Não há sessão"))
+        if (current.id != sessionId || current.state != SessionState.PROCESSING) {
+            return Result.failure(IllegalStateException("Revisão fora da sessão ativa"))
+        }
+        fail(current.id, current.config, requireStartedAt(), FailureCode.POST_PROCESSING_FAILED)
+        return Result.success(requireNotNull(_snapshot.value))
+    }
+
     /** Called by the capture callback independently of sampler or analyzer progress. */
     public suspend fun onCaptureHeartbeat(heartbeat: CaptureHeartbeat) {
         val current = _snapshot.value ?: return

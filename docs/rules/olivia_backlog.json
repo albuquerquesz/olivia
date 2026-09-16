@@ -68,7 +68,7 @@
           "objective": "Deixar o Meta Wearables Device Access Toolkit realmente instalável e verificável antes do hackathon: pacote Gradle privado, Application ID, políticas de telemetria e um smoke test usando MockDeviceKit. Assim, no dia 18 a equipe valida hardware, não descobre configuração de SDK.",
           "definition_of_done": [
             "Repositório Maven do DAT e os artefatos core, camera e mockdevice estão declarados no app Android.",
-            "GITHUB_TOKEN/read:packages ou github_token local funciona sem entrar no repositório.",
+            "Artefatos DAT resolvem pelo Maven Central sem PAT; Application ID/client token da integração registrada entram apenas por configuração local/CI.",
             "APPLICATION_ID do Wearables Developer Center é injetado por configuração local/CI.",
             "Manifest ativa ANALYTICS_OPT_OUT e CRASH_REPORTING_OPT_OUT para o MVP.",
             "MockDeviceKit abre uma sessão, emite frame e simula indisponibilidade sem óculos físicos."
@@ -76,6 +76,7 @@
           "notes_and_risks": "O DAT está em developer preview. Registro do app, credenciais de pacote, versão e permissões são risco de acesso; tratar qualquer bloqueio como risco explícito e guardar o diagnóstico, não como detalhe do dia 18.",
           "description": "## Objetivo\n\nDeixar o Meta Wearables Device Access Toolkit realmente instalável e verificável antes do hackathon: pacote Gradle privado, Application ID, políticas de telemetria e um smoke test usando MockDeviceKit. Assim, no dia 18 a equipe valida hardware, não descobre configuração de SDK.\n\n**Responsável:** Both\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim, sujeito à SH-01\n**Dependências:** FE-00, SH-01\n\n## Definição de pronto\n\n- Repositório Maven do DAT e os artefatos core, camera e mockdevice estão declarados no app Android.\n- GITHUB_TOKEN/read:packages ou github_token local funciona sem entrar no repositório.\n- APPLICATION_ID do Wearables Developer Center é injetado por configuração local/CI.\n- Manifest ativa ANALYTICS_OPT_OUT e CRASH_REPORTING_OPT_OUT para o MVP.\n- MockDeviceKit abre uma sessão, emite frame e simula indisponibilidade sem óculos físicos.\n\n## Notas / risco\n\nO DAT está em developer preview. Registro do app, credenciais de pacote, versão e permissões são risco de acesso; tratar qualquer bloqueio como risco explícito e guardar o diagnóstico, não como detalhe do dia 18.\n\n## Especificação e testes\n\ndocs/spec-driven-development/02-meta-wearables-sdk/spec.md\ndocs/spec-driven-development/02-meta-wearables-sdk/tasks.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
           "review_status": "reviewed_for_sdd_2026_09_12",
+          "implementation_note": "Atualização 2026-09-15: o SDK DAT passou a ser resolvido pelo Maven Central, sem GITHUB_TOKEN/read:packages. O texto histórico em description permanece como registro do plano anterior; a definição de pronto estruturada acima é a fonte vigente.",
           "sdd": {
             "module": "02-meta-wearables-sdk",
             "spec": "docs/spec-driven-development/02-meta-wearables-sdk/spec.md",

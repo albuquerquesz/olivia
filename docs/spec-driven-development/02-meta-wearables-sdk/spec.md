@@ -4,13 +4,13 @@ Status: planejado; implementação e execução de testes pendentes.
 
 Tasks canônicas: INT-00; FE-00 e SH-03 como fundação; início antecipado do spike BE-12.
 
-Dependências: FE-00, SH-01 para INT-00; SH-04 para spike/contratos. Mock local não depende de acesso ao pacote privado.
+Dependências: FE-00, SH-01 para INT-00; SH-04 para spike/contratos. Mock local não depende do SDK; os artefatos DAT são públicos no Maven Central, mas registro e hardware continuam gates separados.
 
 Escopo: Dentro do escopo para DAT e suporte necessário para setup. Nenhum uso de display ou novo canal de entrada.
 
 ## Setup e fronteira
 
-Reutilizar flavors e version catalog existentes; registrar versão fixa disponível e APIs consultadas. Resolver mwdat-core, mwdat-camera e mwdat-mockdevice por credencial local/CI. GITHUB_TOKEN não entra em logs, APK ou imagem de testes. App registrado e application ID não devem ser confundidos com applicationId Android.
+Reutilizar flavors e version catalog existentes; registrar versão fixa disponível e APIs consultadas. Resolver mwdat-core, mwdat-camera e mwdat-mockdevice pelo Maven Central. Application ID e client token da integração registrada entram apenas por configuração local/CI e não devem ser confundidos com applicationId Android; não imprimir nem versionar esses valores.
 
 Configurar permissões e opt-outs de analytics/crash reporting conforme regras DAT. Tratar rejeição de registro, permissão negada/revogada e ausência de dispositivo como resultados controlados. Não importar tipos DAT em :core.
 
@@ -25,4 +25,3 @@ Unitários: tradução de status/erros e configuração incompleta. Integração
 Pronto em modo toolkit quando a evidência inclui versão, variante, fixture e frame origin MOCK do mock; hardware real recebe DAT apenas quando efetivamente vem dos óculos. Gate físico fica INT-04/05/06. Não considerar pacote Gradle declarado como SDK integrado.
 
 Veja [subtasks](tasks.md), [diagrama](diagram.mmd), [decisões](../DECISIONS.md) e [contrato de testes](../TESTING.md). Os critérios aqui são obrigatórios para fechar as tasks associadas; nenhum resultado foi medido nesta revisão.
-

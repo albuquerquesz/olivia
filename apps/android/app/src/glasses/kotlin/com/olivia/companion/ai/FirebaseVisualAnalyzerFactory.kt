@@ -17,6 +17,7 @@ object FirebaseVisualAnalyzerFactory {
     fun create(context: Context, clock: OliviaClock): Result<FrameAnalyzer> = try {
         val app = FirebaseApp.initializeApp(context.applicationContext)
             ?: throw IllegalStateException("Firebase app configuration unavailable")
+        FirebaseAppCheckBootstrap.install(app)
         Result.success(GeminiFrameAnalyzer(clock, FirebaseGeminiVisualTransport.forFirebaseApp(app)))
     } catch (_: Throwable) {
         // Do not surface configuration/provider detail in UI, timeline, or logs.

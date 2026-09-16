@@ -9,11 +9,18 @@ degraded capture, and explicit spoken retakes; it never treats missing transcrip
 Overlaps merge deterministically, intervals are bounded, and an entire-session cut is rejected.
 No media bytes, transcript persistence, rendering, or editor integration was added.
 
-Whisper, media alignment, import, session PROCESSING/READY lifecycle, Docker, Android execution,
-and CapCut handoff remain pending.
+O importador Android agora cria um rascunho local versionado da revisão com as marcas disponíveis,
+sem inventar transcrição, silêncio ou cortes. `ReviewExporter` produz JSON e SRT apenas quando há
+segmentos locais; `AndroidReviewExporter` compartilha o vídeo privado e os artefatos por URI de
+leitura temporária no Android Sharesheet, onde CapCut pode ser escolhido se estiver instalado.
+
+O ciclo `STOPPED → PROCESSING → READY` foi implementado no coordenador e só chega a `READY` após
+o provider local devolver uma revisão válida. Falha entra em `POST_PROCESSING_FAILED`; cancelamento
+volta a `STOPPED` e preserva o take. O adapter Whisper, media alignment real, Docker e execução
+Android ainda dependem de runtime/modelo provisionado.
 
 `LocalPostProcessor` now composes an injected on-device transcript provider with an already
 imported recording, the session timeline, verified media alignment, and `CutPlanner`. Missing
 alignment returns a partial review with no automatic cuts rather than an invented offset. The
-actual Whisper provider, import lifecycle, and Android PROCESSING/READY transition remain
-unimplemented.
+actual Whisper provider and media alignment real remain unimplemented; o rascunho de importação
+não é uma alegação de transcrição concluída.

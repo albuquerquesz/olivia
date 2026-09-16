@@ -34,6 +34,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -51,6 +53,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.olivia.companion.ActiveBackend
+import com.olivia.companion.OliviaPreferences
 import com.olivia.companion.WelcomePrefs
 import com.olivia.companion.session.SessionRuntime
 
@@ -67,6 +70,9 @@ private const val SETTINGS_ROUTE = "settings"
 fun OliviaApp(sessionRuntime: SessionRuntime) {
     val context = LocalContext.current
     val welcomePrefs = remember { WelcomePrefs(context) }
+    val preferences = remember { OliviaPreferences(context) }
+    val audioMode by preferences.audioMode.collectAsState(initial = com.olivia.core.AudioMode.VOICE)
+    LaunchedEffect(audioMode) { sessionRuntime.setAudioMode(audioMode) }
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -131,7 +137,13 @@ fun OliviaApp(sessionRuntime: SessionRuntime) {
             }
             composable(OliviaDestination.SESSIONS.route) { OliviaSessionsScreen(sessionRuntime) }
             composable(SETTINGS_ROUTE) {
-                OliviaSettingsScreen(onNavigateBack = { navController.popBackStack() })
+                OliviaSettingsScreen(
+                    audioMode = audioMode,
+                    onAudioModeSelected = { mode ->
+                        preferences.setAudioMode(mode)
+                    },
+                    onNavigateBack = { navController.popBackStack() },
+                )
             }
         }
     }
