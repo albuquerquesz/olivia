@@ -117,10 +117,7 @@ fun OliviaHomeScreen(
 ) {
     val recent = state.takes.filter { !it.isDemo || it.events.isNotEmpty() }.take(3)
     OliviaPage {
-        OliviaPanel {
-            Text("Dispositivo", style = MaterialTheme.typography.bodyLarge)
-            Text("Ray-Ban Meta", style = MaterialTheme.typography.headlineMedium)
-        }
+        DeviceOverview(backend = state.backend, connection = state.connection)
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
