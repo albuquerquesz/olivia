@@ -726,24 +726,117 @@ private fun SessionTakeList(takes: List<TakeSummary>, onOpenTake: (SessionId) ->
         }
         return
     }
-    SectionTitle("Seus takes")
-    takes.forEach { take ->
-        OutlinedButton(
-            onClick = { onOpenTake(take.sessionId) },
-            modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp),
-            shape = RoundedCornerShape(20.dp),
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(take.title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "${formatOffset(take.durationMs)} · ${take.correctionCount} correções · ${take.cutCount} cortes",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(
+            "Takes",
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            modifier = Modifier.semantics { heading() },
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TakeFilterPill("Todos", selected = true)
+            TakeFilterPill("Com cortes")
+            TakeFilterPill("Hoje")
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            takes.chunked(2).forEach { rowTakes ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    rowTakes.forEach { take ->
+                        SessionTakeCard(
+                            take = take,
+                            onClick = { onOpenTake(take.sessionId) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (rowTakes.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
-            Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+        }
+    }
+}
+
+@Composable
+private fun TakeFilterPill(label: String, selected: Boolean = false) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(percent = 50),
+        color = colors.onSurface.takeIf { selected } ?: colors.surface,
+        contentColor = colors.onPrimary.takeIf { selected } ?: colors.onSurfaceVariant,
+        border = BorderStroke(1.dp, colors.outlineVariant).takeIf { !selected },
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}
+
+@Composable
+private fun SessionTakeCard(
+    take: TakeSummary,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        color = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.75f),
+            ) {
+                TakeThumbnail(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(16.dp)),
+                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(10.dp),
+                    shape = RoundedCornerShape(percent = 50),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Text(
+                        formatOffset(take.durationMs),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+            Text(
+                take.title,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val day = formatRelativeDay(take.recordedAtEpochMs)
+            val markerCount = take.correctionCount + take.cutCount
+            val markerLabel = if (markerCount == 1) "1 marca" else "$markerCount marcas"
+            Text(
+                "$day · $markerLabel",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
