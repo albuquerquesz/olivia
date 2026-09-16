@@ -2,6 +2,8 @@ package com.olivia.companion.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -357,13 +359,15 @@ private fun TakeMetaBadge(icon: ImageVector, text: String) {
 }
 
 @Composable
-private fun TakeThumbnail() {
+private fun TakeThumbnail(
+    modifier: Modifier = Modifier
+        .size(72.dp)
+        .clip(RoundedCornerShape(16.dp)),
+) {
     val stripe = MaterialTheme.colorScheme.outlineVariant
     val ground = MaterialTheme.colorScheme.surfaceVariant
     Canvas(
-        modifier = Modifier
-            .size(72.dp)
-            .clip(RoundedCornerShape(16.dp)),
+        modifier = modifier,
     ) {
         drawRect(ground)
         val step = 8.dp.toPx()
