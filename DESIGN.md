@@ -15,7 +15,8 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 
 | Papel | sRGB para Compose |
 | --- | --- |
-| Fundo, superfície e texto no azul | #FAFBFD |
+| Fundo | #F1F3F7 |
+| Superfície e texto no azul | #FAFBFD |
 | Painel principal e ação/seleção | #142C4C |
 | Texto principal | #151A21 |
 | Texto secundário no branco | #526174 |
