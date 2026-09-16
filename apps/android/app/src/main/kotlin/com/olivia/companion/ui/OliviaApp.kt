@@ -290,7 +290,7 @@ fun OliviaApp(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding()
-                        .offset(y = 8.dp)
+                        .offset(y = 12.dp)
                         .padding(start = 16.dp, end = 16.dp)
                         .widthIn(max = 600.dp)
                         .fillMaxWidth(),

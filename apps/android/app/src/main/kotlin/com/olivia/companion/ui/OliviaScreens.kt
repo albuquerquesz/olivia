@@ -197,7 +197,7 @@ private fun RecentTakesHeader(onSeeAllTakes: () -> Unit) {
                 Icon(
                     Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -251,7 +251,10 @@ private fun EmptyTakesCard(
             }
             Button(
                 onClick = onOpenRecord,
-                modifier = Modifier.fillMaxWidth(0.82f).heightIn(min = 48.dp),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .fillMaxWidth(0.7f)
+                    .heightIn(min = 48.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
