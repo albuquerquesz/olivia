@@ -152,7 +152,7 @@ internal fun DeviceOverview(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 220.dp)
+                        .heightIn(min = 260.dp)
                         .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.SpaceBetween,
                 ) {
@@ -315,9 +315,9 @@ private fun WakeWordNotice(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Text("“Oi, Olivia, gravar”", style = MaterialTheme.typography.titleMedium)
+                Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Wake word local planejado. Ainda não está ativo nesta versão.",
+                    description,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -334,7 +334,7 @@ private fun WayfarerProductImage(modifier: Modifier = Modifier) {
         modifier = modifier
             .size(width = 260.dp, height = 120.dp)
             .graphicsLayer {
-                translationY = -16.dp.toPx()
+                translationY = 8.dp.toPx()
                 clip = false
             },
         contentScale = ContentScale.Fit,
