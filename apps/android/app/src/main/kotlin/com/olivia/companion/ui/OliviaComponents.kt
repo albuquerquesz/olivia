@@ -153,10 +153,10 @@ internal fun SettingsOverline(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleSmall.copy(
-            fontSize = 16.sp,
+            fontSize = 18.sp,
             lineHeight = 24.sp,
             letterSpacing = 0.sp,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
         ),
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.95f),
     )
