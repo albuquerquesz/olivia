@@ -67,13 +67,12 @@ class OliviaSessionViewModel(
             session = null,
             connection = initialConnection(backend, null),
             elapsedMs = 0,
-            takes = listOf(demoTake()),
+            takes = emptyList(),
         ),
     )
     val uiState: StateFlow<OliviaUiState> = _uiState.asStateFlow()
 
     init {
-        timeline.replace(MockDemoTake.sessionId, MockDemoTake.events())
         frameJob = mockGateway?.let { gateway ->
             viewModelScope.launch {
                 gateway.frames.collect { frame ->
@@ -202,9 +201,7 @@ class OliviaSessionViewModel(
     }
 
     private fun buildTakes(): List<TakeSummary> {
-        val demo = demoTake()
         val live = runtime.snapshot?.id
-            ?.takeIf { it != MockDemoTake.sessionId }
             ?.let { id ->
                 takeFromEvents(
                     sessionId = id,
@@ -213,16 +210,8 @@ class OliviaSessionViewModel(
                     isDemo = false,
                 )
             }
-        return listOfNotNull(live, demo)
+        return listOfNotNull(live)
     }
-
-    private fun demoTake(): TakeSummary = takeFromEvents(
-        sessionId = MockDemoTake.sessionId,
-        title = "Ensaio mock",
-        events = MockDemoTake.events(),
-        isDemo = true,
-        review = MockDemoTake.review(),
-    )
 
     private fun initialConnection(
         backend: GlassesBackend,
