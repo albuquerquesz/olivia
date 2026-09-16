@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
@@ -36,6 +38,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -711,13 +718,24 @@ private fun horizonOffset(hasHorizonIssue: Boolean, offset: Float): Float {
 
 @Composable
 fun OliviaSessionsScreen(takes: List<TakeSummary>, onOpenTake: (SessionId) -> Unit) {
+    var selectedFilter by remember { mutableStateOf(TakeFilter.ALL) }
     OliviaPage {
-        SessionTakeList(takes, onOpenTake)
+        SessionTakeList(
+            takes = takes,
+            selectedFilter = selectedFilter,
+            onFilterSelected = { selectedFilter = it },
+            onOpenTake = onOpenTake,
+        )
     }
 }
 
 @Composable
-private fun SessionTakeList(takes: List<TakeSummary>, onOpenTake: (SessionId) -> Unit) {
+private fun SessionTakeList(
+    takes: List<TakeSummary>,
+    selectedFilter: TakeFilter,
+    onFilterSelected: (TakeFilter) -> Unit,
+    onOpenTake: (SessionId) -> Unit,
+) {
     if (takes.isEmpty()) {
         OliviaPanel {
             Text("Seus takes", style = MaterialTheme.typography.bodyLarge)
@@ -735,13 +753,31 @@ private fun SessionTakeList(takes: List<TakeSummary>, onOpenTake: (SessionId) ->
             ),
             modifier = Modifier.semantics { heading() },
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TakeFilterPill("Todos", selected = true)
-            TakeFilterPill("Com cortes")
-            TakeFilterPill("Hoje")
+        Row(
+            modifier = Modifier.selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            TakeFilterPill(
+                label = "Todos",
+                selected = selectedFilter == TakeFilter.ALL,
+                onClick = { onFilterSelected(TakeFilter.ALL) },
+            )
+            TakeFilterPill(
+                label = "Com cortes",
+                selected = selectedFilter == TakeFilter.WITH_CUTS,
+                onClick = { onFilterSelected(TakeFilter.WITH_CUTS) },
+            )
+            TakeFilterPill(
+                label = "Hoje",
+                selected = selectedFilter == TakeFilter.TODAY,
+                onClick = { onFilterSelected(TakeFilter.TODAY) },
+            )
         }
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            takes.chunked(2).forEach { rowTakes ->
+            takes
+                .filter { it.matches(selectedFilter) }
+                .chunked(2)
+                .forEach { rowTakes ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -763,20 +799,50 @@ private fun SessionTakeList(takes: List<TakeSummary>, onOpenTake: (SessionId) ->
     }
 }
 
+private enum class TakeFilter {
+    ALL,
+    WITH_CUTS,
+    TODAY,
+}
+
+private fun TakeSummary.matches(filter: TakeFilter): Boolean = when (filter) {
+    TakeFilter.ALL -> true
+    TakeFilter.WITH_CUTS -> cutCount > 0
+    TakeFilter.TODAY -> formatRelativeDay(recordedAtEpochMs) == "Hoje"
+}
+
 @Composable
-private fun TakeFilterPill(label: String, selected: Boolean = false) {
+private fun TakeFilterPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
-    Surface(
-        shape = RoundedCornerShape(percent = 50),
-        color = colors.onSurface.takeIf { selected } ?: colors.surface,
-        contentColor = colors.onPrimary.takeIf { selected } ?: colors.onSurfaceVariant,
-        border = BorderStroke(1.dp, colors.outlineVariant).takeIf { !selected },
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = Modifier
+            .heightIn(min = 48.dp)
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.RadioButton,
+                interactionSource = interactionSource,
+                indication = null,
+            ),
+        contentAlignment = Alignment.Center,
     ) {
-        Text(
-            label,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelMedium,
-        )
+        Surface(
+            shape = RoundedCornerShape(percent = 50),
+            color = colors.onSurface.takeIf { selected } ?: colors.surface,
+            contentColor = colors.onPrimary.takeIf { selected } ?: colors.onSurfaceVariant,
+            border = BorderStroke(1.dp, colors.outlineVariant).takeIf { !selected },
+        ) {
+            Text(
+                label,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
     }
 }
 
@@ -789,13 +855,16 @@ private fun SessionTakeCard(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        color = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
         shape = RoundedCornerShape(16.dp),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            modifier = Modifier.padding(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -804,7 +873,7 @@ private fun SessionTakeCard(
                 TakeThumbnail(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(16.dp)),
+                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
                 )
                 Surface(
                     modifier = Modifier
@@ -821,23 +890,49 @@ private fun SessionTakeCard(
                     )
                 }
             }
-            Text(
-                take.title,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
             val day = formatRelativeDay(take.recordedAtEpochMs)
             val markerCount = take.correctionCount + take.cutCount
             val markerLabel = if (markerCount == 1) "1 marca" else "$markerCount marcas"
-            Text(
-                "$day · $markerLabel",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
+                color = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        take.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        TakeMetaBadge(day)
+                        TakeMetaBadge(markerLabel)
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun TakeMetaBadge(text: String) {
+    Surface(
+        shape = RoundedCornerShape(percent = 50),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Text(
+            text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+        )
     }
 }
 
