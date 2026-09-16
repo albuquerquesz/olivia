@@ -61,7 +61,6 @@ import com.olivia.companion.session.eventTitle
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
 import com.olivia.companion.session.isConfirmed
-import com.olivia.companion.session.sessionStateLabel
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionId
 import com.olivia.core.SessionState
@@ -274,8 +273,6 @@ fun OliviaRecordingScreen(
                 degraded = degraded,
                 simulated = !state.backend.requiresPhysicalGlasses,
             )
-            Text("Sessão", style = MaterialTheme.typography.bodyLarge)
-            Text(sessionStateLabel(sessionState), style = MaterialTheme.typography.headlineMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
@@ -289,16 +286,16 @@ fun OliviaRecordingScreen(
                 StatusChip(connectionLabel(state.connection), inverted = !degraded)
                 StatusChip(audioModeLabel(state.audioMode), inverted = !degraded)
             }
-            PanelDetail(
-                text = if (degraded) {
-                    "A Olivia parou de ver a câmera. As marcas ficam; a gravação nativa continua."
-                } else if (state.backend.requiresPhysicalGlasses) {
-                    "É necessário conectar os óculos para gravar."
-                } else {
-                    "Prévia do fluxo, com óculos simulados. Escolha o modo antes de iniciar."
-                },
-                onPanel = !degraded,
-            )
+            if (degraded || state.backend.requiresPhysicalGlasses) {
+                PanelDetail(
+                    text = if (degraded) {
+                        "A Olivia parou de ver a câmera. As marcas ficam; a gravação nativa continua."
+                    } else {
+                        "É necessário conectar os óculos para gravar."
+                    },
+                    onPanel = !degraded,
+                )
+            }
         }
         if (!state.backend.requiresPhysicalGlasses) {
             DebugActions(
