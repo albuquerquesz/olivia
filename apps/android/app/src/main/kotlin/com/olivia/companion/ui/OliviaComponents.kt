@@ -1,7 +1,12 @@
 package com.olivia.companion.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -61,6 +66,8 @@ import com.olivia.companion.GlassesBackend
 import com.olivia.companion.session.VoiceCommandState
 import com.olivia.companion.R
 import com.olivia.core.GlassesConnection
+import kotlin.math.PI
+import kotlin.math.sin
 
 @Composable
 internal fun OliviaPage(
@@ -310,7 +317,6 @@ private fun WakeWordNotice(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            VoiceWaveform()
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -322,6 +328,7 @@ private fun WakeWordNotice(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            VoiceWaveform()
         }
     }
 }
@@ -344,8 +351,21 @@ private fun WayfarerProductImage(modifier: Modifier = Modifier) {
 @Composable
 private fun VoiceWaveform() {
     val color = MaterialTheme.colorScheme.primary
+    val transition = rememberInfiniteTransition(label = "voice waveform")
+    val progress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "voice waveform progress",
+    )
     Canvas(modifier = Modifier.size(width = 30.dp, height = 32.dp)) {
-        val heights = listOf(0.72f, 1f, 0.52f, 0.76f, 0.36f)
+        val heights = List(5) { index ->
+            val wave = ((sin((progress + index * 0.2f) * 2f * PI) + 1f) / 2f).toFloat()
+            0.36f + wave * 0.64f
+        }
         val spacing = size.width / heights.size
         heights.forEachIndexed { index, fraction ->
             val x = spacing * index + spacing / 2f
