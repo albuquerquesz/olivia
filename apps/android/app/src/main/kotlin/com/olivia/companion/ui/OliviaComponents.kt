@@ -118,7 +118,7 @@ private data class DeviceMetric(
     val label: String,
 )
 
-private val MockDeviceMetrics = listOf(
+private val OfflineDeviceMetrics = listOf(
     DeviceMetric(Icons.Outlined.BatteryFull, "78%", "bateria dos óculos"),
     DeviceMetric(Icons.Outlined.Videocam, "3K", "30 fps nativo"),
     DeviceMetric(Icons.Outlined.Storage, "12,4 GB", "livres de 32"),
@@ -147,12 +147,12 @@ internal fun DeviceOverview(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 220.dp)
-                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                    .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 DeviceIdentity(status = status, connectionDetail = connectionDetail)
                 if (simulated) {
-                    DeviceMetrics(MockDeviceMetrics)
+                    DeviceMetrics(OfflineDeviceMetrics)
                 }
             }
         }
@@ -260,11 +260,11 @@ private fun DeviceMetricInline(metric: DeviceMetric, modifier: Modifier = Modifi
         modifier = modifier.semantics(mergeDescendants = true) {
             contentDescription = "${metric.label}: ${metric.value}"
         },
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(metric.icon, contentDescription = null, modifier = Modifier.size(22.dp))
-        Text(metric.value, style = MaterialTheme.typography.titleMedium)
+        Icon(metric.icon, contentDescription = null, modifier = Modifier.size(16.dp))
+        Text(metric.value, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -303,7 +303,13 @@ private fun WayfarerProductImage(modifier: Modifier = Modifier) {
     Image(
         painter = painterResource(R.drawable.rayban_meta_wayfarer_gen2),
         contentDescription = "Ray-Ban Meta Wayfarer Gen 2",
-        modifier = modifier.size(width = 176.dp, height = 74.dp),
+        modifier = modifier
+            .size(width = 260.dp, height = 120.dp)
+            .graphicsLayer {
+                rotationZ = 0f
+                translationY = -48.dp.toPx()
+                clip = false
+            },
         contentScale = ContentScale.Fit,
     )
 }

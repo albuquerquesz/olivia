@@ -118,7 +118,7 @@ fun OliviaHomeScreen(
     onSeeAllTakes: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
-    val recent = state.takes.filterNot { it.isDemo }.take(3)
+    val recent = state.takes.take(3)
     OliviaPage {
         DeviceOverview(backend = state.backend, connection = state.connection)
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -530,7 +530,7 @@ private fun SessionTakeList(takes: List<TakeSummary>, onOpenTake: (SessionId) ->
 fun OliviaTakeScreen(take: TakeSummary, onNavigateBack: () -> Unit) {
     OliviaPage(onNavigateBack = onNavigateBack) {
         OliviaPanel {
-            Text(takeReviewTitle(take), style = MaterialTheme.typography.bodyLarge)
+            Text("Revisão", style = MaterialTheme.typography.bodyLarge)
             Text(formatOffset(take.durationMs), style = MaterialTheme.typography.headlineMedium)
             PanelDetail("${take.correctionCount} correções · ${take.cutCount} cortes sugeridos")
         }
@@ -546,16 +546,11 @@ fun OliviaTakeScreen(take: TakeSummary, onNavigateBack: () -> Unit) {
     }
 }
 
-private fun takeReviewTitle(take: TakeSummary): String {
-    if (take.isDemo) return "Ensaio mock"
-    return "Revisão"
-}
-
 @Composable
 private fun SuggestedCuts(take: TakeSummary) {
     if (take.cutCount == 0) {
         Text(
-            "Nenhum corte neste take. A lista aceita o ensaio mock e o pós-processamento real.",
+            "Nenhum corte neste take. Os cortes aparecem quando o pós-processamento terminar.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
