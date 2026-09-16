@@ -308,10 +308,9 @@ private fun WayfarerProductImage(modifier: Modifier = Modifier) {
         painter = painterResource(R.drawable.rayban_meta_wayfarer_gen2),
         contentDescription = "Ray-Ban Meta Wayfarer Gen 2",
         modifier = modifier
-            .size(width = 260.dp, height = 120.dp)
+            .size(width = 260.dp, height = 140.dp)
             .graphicsLayer {
-                rotationZ = 0f
-                translationY = -48.dp.toPx()
+                translationY = -24.dp.toPx()
                 clip = false
             },
         contentScale = ContentScale.Fit,
