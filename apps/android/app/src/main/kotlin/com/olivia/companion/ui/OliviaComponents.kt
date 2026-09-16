@@ -41,6 +41,7 @@ import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -59,12 +60,14 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
@@ -145,6 +148,35 @@ internal fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             content = content,
         )
+    }
+}
+
+@Composable
+internal fun SettingsDivider() {
+    HorizontalDivider(
+        modifier = Modifier.settingsCardEdgeToEdge(),
+        color = MaterialTheme.colorScheme.outlineVariant,
+    )
+}
+
+private fun Modifier.settingsCardEdgeToEdge(): Modifier = layout { measurable, constraints ->
+    val inset = 20.dp.roundToPx()
+    val expandedMaxWidth = if (constraints.maxWidth == Constraints.Infinity) {
+        Constraints.Infinity
+    } else {
+        constraints.maxWidth + inset * 2
+    }
+    val placeable = measurable.measure(
+        constraints.copy(
+            minWidth = constraints.minWidth + inset * 2,
+            maxWidth = expandedMaxWidth,
+        ),
+    )
+    layout(
+        width = (placeable.width - inset * 2).coerceAtLeast(0),
+        height = placeable.height,
+    ) {
+        placeable.placeRelative(-inset, 0)
     }
 }
 
@@ -251,14 +283,16 @@ internal fun SettingsMetricRow(
             Text(
                 title,
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.95f),
+                    fontWeight = FontWeight.Normal,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.88f),
                 ),
             )
             Text(
                 description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.Normal,
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
             )
         }
         trailing()
