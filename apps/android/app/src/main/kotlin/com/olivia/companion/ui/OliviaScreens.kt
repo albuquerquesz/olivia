@@ -975,21 +975,21 @@ fun OliviaSettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SettingsMetricRow(
                         title = "Amostragem",
-                        description = "1 frame a cada 2s · corta ~60x as inferências",
+                        description = "1 frame a cada 2 s · economiza bateria",
                     ) {
                         SettingsMetricValue("0,5 fps")
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsMetricRow(
                         title = "Cooldown de correção",
-                        description = "Silêncio mínimo entre duas falas",
+                        description = "Silêncio mínimo entre falas",
                     ) {
                         SettingsMetricValue("4 s")
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsMetricRow(
                         title = "Watchdog de sessão",
-                        description = "4s sem frame → tom de queda e estado degradado",
+                        description = "4 s sem frame → estado degradado",
                     ) {
                         Switch(checked = true, onCheckedChange = null)
                     }
