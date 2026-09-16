@@ -30,6 +30,14 @@ enum class AudioFeedbackStatus {
     ERROR,
 }
 
+/** Estado observável da saída local, separado da implementação Android para os testes. */
+interface AudioFeedbackController : AudioFeedback {
+    val status: StateFlow<AudioFeedbackStatus>
+    val statusMessage: StateFlow<String?>
+
+    fun close()
+}
+
 /**
  * Saída local para o headset Bluetooth ou os alto-falantes dos óculos.
  *
@@ -40,7 +48,7 @@ enum class AudioFeedbackStatus {
 class AndroidAudioFeedback(
     context: Context,
     private val modeProvider: () -> AudioMode,
-) : AudioFeedback {
+) : AudioFeedbackController {
     private val appContext = context.applicationContext
     private val audioMutex = Mutex()
     private var textToSpeech: TextToSpeech? = null
@@ -50,8 +58,8 @@ class AndroidAudioFeedback(
 
     private val _status = MutableStateFlow(AudioFeedbackStatus.INITIALIZING)
     private val _statusMessage = MutableStateFlow<String?>(null)
-    val status: StateFlow<AudioFeedbackStatus> = _status.asStateFlow()
-    val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
+    override val status: StateFlow<AudioFeedbackStatus> = _status.asStateFlow()
+    override val statusMessage: StateFlow<String?> = _statusMessage.asStateFlow()
 
     @Volatile
     private var activeTrack: AudioTrack? = null
@@ -88,7 +96,9 @@ class AndroidAudioFeedback(
     override suspend fun announce(correction: Correction) {
         audioMutex.withLock {
             if (mode == AudioMode.VOICE && textToSpeechReady) {
-                speakLocked(correction.spokenText, TextToSpeech.QUEUE_ADD)
+                if (!speakLocked(correction.spokenText, TextToSpeech.QUEUE_ADD)) {
+                    playCueLocked(cueFor(correction.direction), correction.direction)
+                }
             } else {
                 playCueLocked(cueFor(correction.direction), correction.direction)
             }
@@ -100,7 +110,9 @@ class AndroidAudioFeedback(
             if (mode == AudioMode.VOICE && textToSpeechReady) {
                 // Sinais de estado têm prioridade e limpam uma instrução antiga. Uma nova
                 // correção usa QUEUE_ADD, portanto não corta queda ou retomada crítica.
-                speakLocked(spokenTextFor(signal), TextToSpeech.QUEUE_FLUSH)
+                if (!speakLocked(spokenTextFor(signal), TextToSpeech.QUEUE_FLUSH)) {
+                    playCueLocked(cueFor(signal))
+                }
             } else {
                 playCueLocked(cueFor(signal))
             }
@@ -118,7 +130,7 @@ class AndroidAudioFeedback(
         }
     }
 
-    fun close() {
+    override fun close() {
         textToSpeech?.stop()
         textToSpeech?.shutdown()
         textToSpeech = null
@@ -132,8 +144,8 @@ class AndroidAudioFeedback(
         activeTrack = null
     }
 
-    private fun speakLocked(text: String, queueMode: Int) {
-        if (text.isBlank()) return
+    private fun speakLocked(text: String, queueMode: Int): Boolean {
+        if (text.isBlank()) return false
         val accepted = textToSpeech?.speak(
             text,
             queueMode,
@@ -143,7 +155,9 @@ class AndroidAudioFeedback(
         if (accepted == TextToSpeech.ERROR) {
             textToSpeechReady = false
             markError("O TTS do Android recusou a instrução.")
+            return false
         }
+        return true
     }
 
     private suspend fun playCueLocked(cue: AudioCue, direction: Direction? = null) {
@@ -249,12 +263,18 @@ class AndroidAudioFeedback(
             }
             offset = payload + chunkSize + (chunkSize and 1)
         }
-        require(channels > 0 && sampleRate > 0 && bitsPerSample == 16 && dataOffset >= 0) {
-            "Cue WAV sem PCM 16-bit estéreo válido"
+        require(
+            channels == 2 &&
+                sampleRate == 16_000 &&
+                bitsPerSample == 16 &&
+                dataOffset >= 0,
+        ) {
+            "Cue WAV precisa ser PCM 16-bit, estéreo e 16 kHz"
         }
         val pcm = bytes.copyOfRange(dataOffset, dataOffset + dataSize)
         val bytesPerFrame = channels * 2
-        val durationMs = (pcm.size.toLong() * 1_000L / bytesPerFrame / sampleRate).coerceIn(1L, 120L)
+        val durationMs = pcm.size.toLong() * 1_000L / bytesPerFrame / sampleRate
+        require(durationMs in 70L..90L) { "Cue WAV precisa durar aproximadamente 80 ms" }
         return Wave(sampleRate, channels, pcm, durationMs)
     }
 

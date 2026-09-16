@@ -3,6 +3,7 @@ package com.olivia.companion.session
 import com.olivia.core.Direction
 import com.olivia.core.SessionSignal
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 
@@ -26,5 +27,7 @@ class AudioCueTest {
         assertEquals(AudioCue.CONNECTION_LOST, cueFor(SessionSignal.CONNECTION_LOST))
         assertEquals(AudioCue.CONNECTION_RESTORED, cueFor(SessionSignal.CONNECTION_RESTORED))
         assertEquals("Conexão perdida", spokenTextFor(SessionSignal.CONNECTION_LOST))
+        assertNotEquals(cueFor(SessionSignal.SESSION_PAUSED), cueFor(SessionSignal.CONNECTION_LOST))
+        assertNotEquals(cueFor(SessionSignal.SESSION_PAUSED), cueFor(SessionSignal.CONNECTION_RESTORED))
     }
 }
