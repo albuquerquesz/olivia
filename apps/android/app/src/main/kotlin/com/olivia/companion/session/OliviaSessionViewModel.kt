@@ -35,6 +35,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
+private val liveSessionStates = setOf(
+    SessionState.STARTED,
+    SessionState.PAUSED,
+    SessionState.DEGRADED,
+)
+
 data class OliviaUiState(
     val backend: GlassesBackend,
     val audioMode: AudioMode,
@@ -56,12 +62,12 @@ data class OliviaUiState(
 }
 
 class OliviaSessionViewModel(
-    private val audioModeStore: AudioModeStore,
+    private val audioModeStore: AudioModeRepository,
     backend: GlassesBackend,
     private val glassesGateway: GlassesGateway?,
     private val frameAnalyzer: FrameAnalyzer?,
     private val postProcessor: PostProcessor,
-    private val audioFeedback: AndroidAudioFeedback,
+    private val audioFeedback: AudioFeedbackController,
     private val voiceCommandSource: VoiceCommandSource? = null,
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val recordingSource: RecordingSource? = null,
@@ -187,7 +193,12 @@ class OliviaSessionViewModel(
         val wasLive = runtime.snapshot?.state in setOf(SessionState.STARTED, SessionState.DEGRADED)
         val paused = runtime.pause()
         if (wasLive && paused?.state == SessionState.PAUSED) {
+            ticker?.cancel()
+            ticker = null
+            watchdog?.cancel()
+            watchdog = null
             expirePendingCorrection(paused.id, clock())
+            gatewayCommand?.cancel()
             gatewayCommand = glassesGateway?.let { gateway ->
                 viewModelScope.launch { gateway.pauseCapture() }
             }
@@ -200,6 +211,7 @@ class OliviaSessionViewModel(
         val wasPaused = runtime.snapshot?.state == SessionState.PAUSED
         val resumed = runtime.resume()
         if (wasPaused && resumed?.state == SessionState.STARTED) {
+            gatewayCommand?.cancel()
             gatewayCommand = glassesGateway?.let { gateway ->
                 viewModelScope.launch { gateway.resumeCapture() }
             }
@@ -245,6 +257,7 @@ class OliviaSessionViewModel(
         ticker = null
         watchdog?.cancel()
         watchdog = null
+        gatewayCommand?.cancel()
         gatewayCommand = glassesGateway?.let { gateway ->
             viewModelScope.launch { gateway.stopCapture() }
         }
@@ -440,16 +453,21 @@ class OliviaSessionViewModel(
     }
 
     private fun buildTakes(): List<TakeSummary> {
-        val live = runtime.snapshot?.id
-            ?.let { id ->
+        val liveSessionId = runtime.snapshot
+            ?.takeIf { it.state in liveSessionStates }
+            ?.id
+        return timeline.sessionIds()
+            .mapIndexedNotNull { index, sessionId ->
+                val events = timeline.events(sessionId)
+                if (events.isEmpty()) return@mapIndexedNotNull null
                 takeFromEvents(
-                    sessionId = id,
-                    title = "Take ao vivo",
-                    events = timeline.events(id),
-                    review = reviews[id.value],
+                    sessionId = sessionId,
+                    title = if (sessionId == liveSessionId) "Take ao vivo" else "Take ${index + 1}",
+                    events = events,
+                    review = reviews[sessionId.value],
                 )
             }
-        return listOfNotNull(live)
+            .sortedByDescending { it.recordedAtEpochMs }
     }
 
     private fun processTake(sessionId: SessionId) {
@@ -512,6 +530,7 @@ class OliviaSessionViewModel(
     }
 
     private fun requestGatewayRecovery() {
+        gatewayCommand?.cancel()
         gatewayCommand = glassesGateway?.let { gateway ->
             viewModelScope.launch { gateway.resumeCapture() }
         }

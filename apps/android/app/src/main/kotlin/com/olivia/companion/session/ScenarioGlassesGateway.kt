@@ -43,6 +43,8 @@ internal class ScenarioGlassesGateway(
     private var startedAtEpochMs = 0L
     private var pausedAtEpochMs: Long? = null
     private var nextFixtureIndex = 0
+    private var frameIntervalMs = SessionScenario.FRAME_INTERVAL_MS
+    private var degradedAfterMs = 4_000L
 
     override suspend fun startCapture(sessionId: SessionId, config: SessionConfig) {
         lock.withLock {
@@ -51,6 +53,8 @@ internal class ScenarioGlassesGateway(
             startedAtEpochMs = clock()
             pausedAtEpochMs = null
             nextFixtureIndex = 0
+            frameIntervalMs = config.analysisIntervalMs
+            degradedAfterMs = config.degradedAfterMs
             _connection.value = GlassesConnection.CONNECTED
             producer = scope.launch { emitFixtures() }
         }
@@ -66,9 +70,15 @@ internal class ScenarioGlassesGateway(
 
     override suspend fun resumeCapture() {
         lock.withLock {
-            val pausedAt = pausedAtEpochMs ?: return
-            startedAtEpochMs += clock() - pausedAt
-            pausedAtEpochMs = null
+            pausedAtEpochMs?.let { pausedAt ->
+                startedAtEpochMs += clock() - pausedAt
+                pausedAtEpochMs = null
+            }
+            if (sessionId == null) return
+            // A reconexão depois de DEGRADED não passa por pauseCapture. Reiniciar o produtor
+            // a partir do próximo fixture mantém o mesmo take e permite que o adapter real use
+            // este método como seu ponto único de tentativa de reconexão.
+            producer?.cancel()
             producer = scope.launch { emitFixtures() }
         }
     }
@@ -95,8 +105,8 @@ internal class ScenarioGlassesGateway(
                 ?.offsetMs
                 ?: fixture.offsetMs
             val gapMs = fixture.offsetMs - previousOffsetMs
-            if (gapMs > SessionScenario.FRAME_INTERVAL_MS) {
-                val disconnectAtEpochMs = startedAtEpochMs + previousOffsetMs + 4_000L
+            if (gapMs > frameIntervalMs) {
+                val disconnectAtEpochMs = startedAtEpochMs + previousOffsetMs + degradedAfterMs
                 delay((disconnectAtEpochMs - clock()).coerceAtLeast(0))
                 if (!scope.isActive) return
                 _connection.value = GlassesConnection.DISCONNECTED

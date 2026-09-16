@@ -18,6 +18,7 @@ internal object SessionScenario {
     const val FRAME_INTERVAL_MS = 2_000L
     const val DEGRADED_GAP_START_MS = 50_000L
     const val DEGRADED_GAP_END_MS = 54_000L
+    const val SCENARIO_DURATION_MS = 60_000L
 
     const val NORMAL_MARKER = 0
     const val FRAMING_MARKER = 1
@@ -25,7 +26,7 @@ internal object SessionScenario {
     const val HORIZON_MARKER = 3
 
     fun sequence(): List<ScenarioFrame> = generateSequence(0L) { it + FRAME_INTERVAL_MS }
-        .takeWhile { it <= 60_000L }
+        .takeWhile { it <= SCENARIO_DURATION_MS }
         .filterNot { it in DEGRADED_GAP_START_MS until DEGRADED_GAP_END_MS }
         .map(::frameAt)
         .toList()

@@ -125,7 +125,8 @@ class SessionRuntime(
         if (current.state != SessionState.STARTED && current.state != SessionState.DEGRADED) {
             return snapshot
         }
-        if (current.lastFrameAtEpochMs != null && capturedAtEpochMs < current.lastFrameAtEpochMs) {
+        val lastFrameAtEpochMs = current.lastFrameAtEpochMs
+        if (lastFrameAtEpochMs != null && capturedAtEpochMs < lastFrameAtEpochMs) {
             return snapshot
         }
         val elapsedMs = elapsed(capturedAtEpochMs)
