@@ -863,7 +863,7 @@ private fun SessionTakeCard(
                 )
                 Text(
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
+                        .align(Alignment.BottomEnd)
                         .padding(10.dp),
                     text = formatOffset(take.durationMs),
                     style = MaterialTheme.typography.labelSmall,
@@ -887,7 +887,7 @@ private fun SessionTakeCard(
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     TakeMetaText(Icons.Outlined.CalendarToday, day)
                     TakeMetaText(Icons.Outlined.Check, markerLabel)
