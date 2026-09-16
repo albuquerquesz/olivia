@@ -101,7 +101,7 @@ fun OliviaApp(
                 startDestination = WELCOME_ROUTE,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = if (showBottomBar) 72.dp else 0.dp),
+                    .padding(bottom = if (showBottomBar) 80.dp else 0.dp),
                 enterTransition = {
                 fadeIn(OliviaMotion.navigation()) +
                     slideInVertically(OliviaMotion.navigation()) { travelPx }
@@ -280,7 +280,7 @@ private fun OliviaNavigationItem(
             destination.icon,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+            modifier = Modifier.size(32.dp).graphicsLayer { scaleX = scale; scaleY = scale },
         )
         Text(
             destination.label,
