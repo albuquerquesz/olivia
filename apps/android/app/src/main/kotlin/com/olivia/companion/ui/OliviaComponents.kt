@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -42,19 +43,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.GlassesBackend
+import com.olivia.companion.R
 import com.olivia.core.GlassesConnection
 
 @Composable
@@ -175,7 +176,7 @@ private fun DeviceIdentity(status: String, connectionDetail: String) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                WayfarerSilhouette()
+                WayfarerProductImage()
                 DeviceIdentityCopy(connectionDetail, Modifier.weight(1f))
                 DeviceStatusBadge(status)
             }
@@ -186,7 +187,7 @@ private fun DeviceIdentity(status: String, connectionDetail: String) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    WayfarerSilhouette()
+                    WayfarerProductImage()
                     DeviceIdentityCopy(connectionDetail, Modifier.weight(1f))
                 }
                 DeviceStatusBadge(status)
@@ -280,112 +281,13 @@ private fun WakeWordNotice() {
 }
 
 @Composable
-private fun WayfarerSilhouette() {
-    val strokeColor = MaterialTheme.colorScheme.onPrimary
-    Canvas(modifier = Modifier.size(width = 80.dp, height = 40.dp)) {
-        val strokeWidth = 1.7.dp.toPx()
-        val frameStroke = Stroke(
-            width = strokeWidth,
-            cap = StrokeCap.Round,
-            join = StrokeJoin.Round,
-        )
-        val leftLens = Path().apply {
-            moveTo(size.width * 0.08f, size.height * 0.26f)
-            quadraticBezierTo(
-                size.width * 0.11f,
-                size.height * 0.13f,
-                size.width * 0.20f,
-                size.height * 0.12f,
-            )
-            lineTo(size.width * 0.39f, size.height * 0.12f)
-            quadraticBezierTo(
-                size.width * 0.46f,
-                size.height * 0.15f,
-                size.width * 0.45f,
-                size.height * 0.34f,
-            )
-            lineTo(size.width * 0.42f, size.height * 0.70f)
-            quadraticBezierTo(
-                size.width * 0.40f,
-                size.height * 0.86f,
-                size.width * 0.31f,
-                size.height * 0.87f,
-            )
-            lineTo(size.width * 0.19f, size.height * 0.87f)
-            quadraticBezierTo(
-                size.width * 0.09f,
-                size.height * 0.84f,
-                size.width * 0.08f,
-                size.height * 0.67f,
-            )
-            close()
-        }
-        val rightLens = Path().apply {
-            moveTo(size.width * 0.55f, size.height * 0.34f)
-            quadraticBezierTo(
-                size.width * 0.54f,
-                size.height * 0.15f,
-                size.width * 0.61f,
-                size.height * 0.12f,
-            )
-            lineTo(size.width * 0.80f, size.height * 0.12f)
-            quadraticBezierTo(
-                size.width * 0.89f,
-                size.height * 0.13f,
-                size.width * 0.92f,
-                size.height * 0.26f,
-            )
-            lineTo(size.width * 0.92f, size.height * 0.67f)
-            quadraticBezierTo(
-                size.width * 0.91f,
-                size.height * 0.84f,
-                size.width * 0.81f,
-                size.height * 0.87f,
-            )
-            lineTo(size.width * 0.69f, size.height * 0.87f)
-            quadraticBezierTo(
-                size.width * 0.60f,
-                size.height * 0.86f,
-                size.width * 0.58f,
-                size.height * 0.70f,
-            )
-            close()
-        }
-        drawPath(leftLens, strokeColor, style = frameStroke)
-        drawPath(rightLens, strokeColor, style = frameStroke)
-        drawLine(
-            color = strokeColor,
-            start = Offset(size.width * 0.45f, size.height * 0.31f),
-            end = Offset(size.width * 0.55f, size.height * 0.31f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = strokeColor,
-            start = Offset(size.width * 0.08f, size.height * 0.29f),
-            end = Offset(size.width * 0.01f, size.height * 0.19f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = strokeColor,
-            start = Offset(size.width * 0.92f, size.height * 0.29f),
-            end = Offset(size.width * 0.99f, size.height * 0.19f),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawCircle(
-            color = strokeColor,
-            radius = 1.8.dp.toPx(),
-            center = Offset(size.width * 0.15f, size.height * 0.27f),
-        )
-        drawCircle(
-            color = strokeColor,
-            radius = 1.5.dp.toPx(),
-            center = Offset(size.width * 0.85f, size.height * 0.27f),
-            style = Stroke(width = 1.dp.toPx()),
-        )
-    }
+private fun WayfarerProductImage() {
+    Image(
+        painter = painterResource(R.drawable.rayban_meta_wayfarer_gen2),
+        contentDescription = "Ray-Ban Meta Wayfarer Gen 2",
+        modifier = Modifier.size(width = 96.dp, height = 48.dp),
+        contentScale = ContentScale.Fit,
+    )
 }
 
 @Composable
