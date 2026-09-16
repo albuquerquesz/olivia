@@ -314,7 +314,7 @@ private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
             TakeThumbnail()
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     take.title,
