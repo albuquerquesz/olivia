@@ -43,4 +43,16 @@ class ScenarioTakeTest {
         assertEquals("00:12", formatOffset(12_000))
         assertEquals("01:00", formatOffset(60_000))
     }
+
+    @Test
+    fun reviewUsesPostProcessorCutsWhenTimelineHasNoCutEvents() {
+        val take = takeFromEvents(
+            sessionId = ScenarioTake.sessionId,
+            title = "Cenário offline",
+            events = ScenarioTake.events().filterNot { it.type == TimelineEventType.CUT_SUGGESTED },
+            review = ScenarioTake.review(),
+        )
+
+        assertEquals(3, take.cutCount)
+    }
 }

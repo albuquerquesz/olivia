@@ -15,8 +15,10 @@ import com.olivia.core.FrameAnalysis
 import com.olivia.core.FrameAnalyzer
 import com.olivia.core.GlassesConnection
 import com.olivia.core.GlassesGateway
+import com.olivia.core.PostProcessor
 import com.olivia.core.SessionConfig
 import com.olivia.core.SessionId
+import com.olivia.core.SessionReview
 import com.olivia.core.SessionSnapshot
 import com.olivia.core.SessionState
 import com.olivia.core.SessionSignal
@@ -53,6 +55,7 @@ class OliviaSessionViewModel(
     backend: GlassesBackend,
     private val glassesGateway: GlassesGateway?,
     private val frameAnalyzer: FrameAnalyzer?,
+    private val postProcessor: PostProcessor,
     private val audioFeedback: AndroidAudioFeedback,
     private val clock: () -> Long = { System.currentTimeMillis() },
 ) : ViewModel() {
@@ -64,6 +67,7 @@ class OliviaSessionViewModel(
     private var ticker: Job? = null
     private var watchdog: Job? = null
     private var pendingCorrection: Correction? = null
+    private val reviews = mutableMapOf<String, SessionReview>()
 
     private val _uiState = MutableStateFlow(
         OliviaUiState(
@@ -173,6 +177,7 @@ class OliviaSessionViewModel(
         runtime.snapshot?.id?.let { sessionId -> expirePendingCorrection(sessionId, clock()) }
         val stopped = runtime.stop()
         if (shouldSignal && stopped?.state == SessionState.STOPPED) signalAudio(SessionSignal.SESSION_STOPPED)
+        if (shouldSignal && stopped?.state == SessionState.STOPPED) processTake(stopped.id)
         ticker?.cancel()
         ticker = null
         watchdog?.cancel()
@@ -357,9 +362,25 @@ class OliviaSessionViewModel(
                     sessionId = id,
                     title = "Take ao vivo",
                     events = timeline.events(id),
+                    review = reviews[id.value],
                 )
             }
         return listOfNotNull(live)
+    }
+
+    private fun processTake(sessionId: SessionId) {
+        val events = timeline.events(sessionId)
+        viewModelScope.launch {
+            postProcessor.process(
+                sessionId = sessionId,
+                recording = null,
+                timeline = events,
+            ).getOrNull()?.let { review ->
+                timeline.replace(sessionId, review.timeline)
+                reviews[sessionId.value] = review
+                publish()
+            }
+        }
     }
 
     private fun initialConnection(
@@ -390,6 +411,7 @@ class OliviaSessionViewModel(
                 backend = ActiveBackend.current,
                 glassesGateway = ActiveBackend.createGlassesGateway(),
                 frameAnalyzer = ActiveBackend.createFrameAnalyzer(),
+                postProcessor = ActiveBackend.createPostProcessor(),
                 audioFeedback = AndroidAudioFeedback(
                     context = application,
                     modeProvider = audioModeStore::current,
