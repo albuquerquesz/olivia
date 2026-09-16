@@ -206,6 +206,11 @@ fun OliviaApp(
                 OliviaHomeScreen(
                     state = uiState,
                     voicePermissionGranted = audioPermissionGranted,
+                    onOpenRecord = {
+                        navController.navigate(OliviaDestination.RECORD.route) {
+                            launchSingleTop = true
+                        }
+                    },
                     onSeeAllTakes = {
                         navController.navigate(OliviaDestination.SESSIONS.route) {
                             popUpTo(OliviaDestination.HOME.route) { saveState = true }
@@ -266,10 +271,18 @@ fun OliviaApp(
                 OliviaBottomBar(
                     currentRoute = currentRoute,
                     onDestinationSelected = { destination ->
-                        navController.navigate(destination.route) {
-                            popUpTo(OliviaDestination.HOME.route) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                        val returningFromRecord =
+                            destination == OliviaDestination.HOME &&
+                                currentRoute == OliviaDestination.RECORD.route
+                        if (returningFromRecord) {
+                            navController.popBackStack(OliviaDestination.HOME.route, inclusive = false)
+                        }
+                        if (!returningFromRecord) {
+                            navController.navigate(destination.route) {
+                                popUpTo(OliviaDestination.HOME.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     },
                     modifier = Modifier

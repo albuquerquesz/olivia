@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -120,6 +121,7 @@ fun OliviaHomeScreen(
     state: OliviaUiState,
     voicePermissionGranted: Boolean,
     onSeeAllTakes: () -> Unit,
+    onOpenRecord: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     val recent = state.takes.take(3)
@@ -150,23 +152,78 @@ fun OliviaHomeScreen(
                         .semantics { role = Role.Button },
                 )
             }
-            RecentTakes(recent, onOpenTake)
+            RecentTakes(recent, onOpenRecord, onOpenTake)
         }
     }
 }
 
 @Composable
-private fun RecentTakes(takes: List<TakeSummary>, onOpenTake: (SessionId) -> Unit) {
+private fun RecentTakes(
+    takes: List<TakeSummary>,
+    onOpenRecord: () -> Unit,
+    onOpenTake: (SessionId) -> Unit,
+) {
     if (takes.isEmpty()) {
-        Text(
-            "Depois da gravação, as timelines aparecem aqui.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        EmptyTakesCard(onOpenRecord)
         return
     }
     takes.forEach { take ->
         TakePreviewCard(take = take, onClick = { onOpenTake(take.sessionId) })
+    }
+}
+
+@Composable
+private fun EmptyTakesCard(onOpenRecord: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 280.dp)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(
+                    Icons.Outlined.Videocam,
+                    contentDescription = "Câmera de gravação",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp),
+                )
+                Text(
+                    "Seu próximo take aparece aqui",
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    "Grave um take para ver a timeline e os cortes sugeridos.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Button(
+                onClick = onOpenRecord,
+                modifier = Modifier.fillMaxWidth(0.82f).heightIn(min = 48.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) {
+                Text("Começar a gravar", style = MaterialTheme.typography.labelLarge)
+            }
+        }
     }
 }
 
