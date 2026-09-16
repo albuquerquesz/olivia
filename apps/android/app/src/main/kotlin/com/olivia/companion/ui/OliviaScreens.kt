@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
@@ -54,9 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.olivia.companion.R
 import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.TakeSummary
-import com.olivia.companion.session.audioModeLabel
 import com.olivia.companion.session.confirmationLabel
-import com.olivia.companion.session.connectionLabel
 import com.olivia.companion.session.eventTitle
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
@@ -267,34 +265,49 @@ fun OliviaRecordingScreen(
     val degraded = sessionState == SessionState.DEGRADED
     val live = state.isLive
     OliviaPage {
-        OliviaPanel(degraded = degraded, compact = true) {
-            GlassesCameraPreview(
-                elapsedMs = state.elapsedMs,
-                degraded = degraded,
-                simulated = !state.backend.requiresPhysicalGlasses,
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+        OliviaPanel(
+            degraded = degraded,
+            compact = true,
+            contentPadding = PaddingValues(0.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 400.dp, max = 480.dp),
             ) {
-                Text(formatOffset(state.elapsedMs), style = MaterialTheme.typography.headlineSmall)
-            }
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                StatusChip(connectionLabel(state.connection), inverted = !degraded)
-                StatusChip(audioModeLabel(state.audioMode), inverted = !degraded)
-            }
-            if (degraded || state.backend.requiresPhysicalGlasses) {
-                PanelDetail(
-                    text = if (degraded) {
-                        "A Olivia parou de ver a câmera. As marcas ficam; a gravação nativa continua."
-                    } else {
-                        "É necessário conectar os óculos para gravar."
-                    },
-                    onPanel = !degraded,
+                GlassesCameraPreview(
+                    elapsedMs = state.elapsedMs,
+                    degraded = degraded,
+                    simulated = !state.backend.requiresPhysicalGlasses,
+                    modifier = Modifier.fillMaxSize(),
                 )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(20.dp),
+                ) {
+                    Text(formatOffset(state.elapsedMs), style = MaterialTheme.typography.headlineSmall)
+                }
+                if (degraded || state.backend.requiresPhysicalGlasses) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(20.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text(
+                            text = if (degraded) {
+                                "A Olivia parou de ver a câmera. As marcas ficam; a gravação nativa continua."
+                            } else {
+                                "É necessário conectar os óculos para gravar."
+                            },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
             }
         }
         if (!state.backend.requiresPhysicalGlasses) {
@@ -343,18 +356,17 @@ private fun GlassesCameraPreview(
     elapsedMs: Long,
     degraded: Boolean,
     simulated: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
     val description = if (simulated) {
-        "Prévia mock da câmera dos óculos, formato vertical 720 por 1280"
+        "Câmera simulada dos óculos, formato vertical 720 por 1280"
     } else {
         "Prévia da câmera dos óculos indisponível"
     }
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 260.dp, max = 320.dp)
-            .clip(RoundedCornerShape(16.dp))
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
             .semantics { contentDescription = description },
     ) {
         if (simulated) {
@@ -419,18 +431,6 @@ private fun GlassesCameraPreview(
                 drawLine(guideColor, Offset(guideInset, size.height - guideInset), Offset(guideInset, size.height - guideInset - guideLength), 2.dp.toPx())
                 drawLine(guideColor, Offset(size.width - guideInset, size.height - guideInset), Offset(size.width - guideInset - guideLength, size.height - guideInset), 2.dp.toPx())
                 drawLine(guideColor, Offset(size.width - guideInset, size.height - guideInset), Offset(size.width - guideInset, size.height - guideInset - guideLength), 2.dp.toPx())
-            }
-            Surface(
-                modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
-                color = colors.onSurface.copy(alpha = 0.68f),
-                contentColor = colors.onPrimary,
-                shape = CircleShape,
-            ) {
-                Text(
-                    "PRÉVIA MOCK · 0,5 FPS",
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                )
             }
         } else {
             Surface(
