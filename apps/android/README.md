@@ -34,6 +34,11 @@ adapter fica indisponível e o fallback de debug continua disponível.
 O APK sai em `app/build/outputs/apk/mock/debug/`. Os demais flavors seguem o mesmo
 padrão (`assembleGlassesDebug`).
 
+O Modo Sinal usa os WAVs curtos versionados em `app/src/main/res/raw/`; eles não são
+gerados durante a sessão. O handoff cria `olivia-markers.json` e abre o chooser do
+Android somente quando um `RecordingSource` entrega o vídeo nativo. Enquanto BE-12 não
+estiver conectado, a revisão informa que o vídeo ainda não está disponível.
+
 ## Flavors
 
 | Flavor    | applicationId              | Fonte da sessão                    |
