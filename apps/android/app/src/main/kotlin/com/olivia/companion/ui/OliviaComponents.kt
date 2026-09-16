@@ -26,7 +26,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.BatteryFull
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,12 +46,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.olivia.companion.GlassesBackend
 import com.olivia.core.GlassesConnection
 
@@ -99,14 +103,15 @@ internal fun OliviaPanel(
 }
 
 private data class DeviceMetric(
+    val icon: ImageVector,
     val value: String,
     val label: String,
 )
 
 private val MockDeviceMetrics = listOf(
-    DeviceMetric("78%", "bateria dos óculos"),
-    DeviceMetric("3K", "30 fps nativo"),
-    DeviceMetric("12,4 GB", "livres de 32"),
+    DeviceMetric(Icons.Outlined.BatteryFull, "78%", "bateria dos óculos"),
+    DeviceMetric(Icons.Outlined.Videocam, "3K", "30 fps nativo"),
+    DeviceMetric(Icons.Outlined.Storage, "12,4 GB", "livres de 32"),
 )
 
 @Composable
@@ -139,8 +144,11 @@ internal fun DeviceOverview(
             shape = RoundedCornerShape(20.dp),
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 220.dp)
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 DeviceIdentity(status = status, connectionDetail = connectionDetail)
                 if (simulated) {
@@ -212,53 +220,28 @@ private fun DeviceStatusBadge(status: String) {
 
 @Composable
 private fun DeviceMetrics(metrics: List<DeviceMetric>) {
-    val fontScale = LocalDensity.current.fontScale
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val useRow = maxWidth >= 270.dp && fontScale < 1.3f
-        if (useRow) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                metrics.forEach { metric ->
-                    DeviceMetricCard(metric, Modifier.weight(1f))
-                }
-            }
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                metrics.forEach { metric ->
-                    DeviceMetricCard(metric, Modifier.fillMaxWidth())
-                }
-            }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        metrics.forEach { metric ->
+            DeviceMetricInline(metric, Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun DeviceMetricCard(metric: DeviceMetric, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.heightIn(min = 76.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f),
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+private fun DeviceMetricInline(metric: DeviceMetric, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.semantics(mergeDescendants = true) {
+            contentDescription = "${metric.label}: ${metric.value}"
+        },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                metric.value,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 18.sp,
-                    lineHeight = 24.sp,
-                ),
-            )
-            Text(
-                metric.label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.inverseOnSurface,
-            )
-        }
+        Icon(metric.icon, contentDescription = null, modifier = Modifier.size(22.dp))
+        Text(metric.value, style = MaterialTheme.typography.titleMedium)
     }
 }
 
