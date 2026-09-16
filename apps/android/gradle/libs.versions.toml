@@ -11,6 +11,7 @@ coroutines = "1.11.0"
 navigationCompose = "2.9.8"
 lifecycle = "2.9.4"
 junit = "4.13.2"
+porcupine = "4.0.0"
 # Confira as versões publicadas no GitHub Packages antes de mudar: o DAT está em
 # developer preview e os artefatos não têm release público no GitHub.
 mwdat = "0.9.0"
@@ -32,6 +33,7 @@ androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+porcupine-android = { group = "ai.picovoice", name = "porcupine-android", version.ref = "porcupine" }
 
 # Meta Wearables Device Access Toolkit. Declarado aqui para INT-00; mwdat-display
 # fica de fora de propósito, porque a Olivia não usa display nos óculos.

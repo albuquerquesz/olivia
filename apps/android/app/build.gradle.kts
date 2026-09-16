@@ -1,4 +1,19 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use(::load)
+}
+
+fun buildConfigString(value: String): String =
+    "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
+val picovoiceAccessKey = localProperties.getProperty("picovoice_access_key")
+    ?: providers.gradleProperty("picovoiceAccessKey").orNull
+    ?: System.getenv("PICOVOICE_ACCESS_KEY").orEmpty()
+val picovoiceKeywordPath = localProperties.getProperty("picovoice_keyword_path")
+    ?: providers.gradleProperty("picovoiceKeywordPath").orNull
+    ?: "olivia_android.ppn"
 
 plugins {
     alias(libs.plugins.android.application)
@@ -17,6 +32,8 @@ android {
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "PICOVOICE_ACCESS_KEY", buildConfigString(picovoiceAccessKey))
+        buildConfigField("String", "PICOVOICE_KEYWORD_PATH", buildConfigString(picovoiceKeywordPath))
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
@@ -51,6 +68,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -69,6 +87,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.porcupine.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
