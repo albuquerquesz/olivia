@@ -14,6 +14,7 @@ import com.olivia.core.SessionSnapshot
 import com.olivia.core.SessionState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,11 +41,24 @@ data class OliviaUiState(
 class OliviaSessionViewModel(
     private val audioModeStore: AudioModeStore,
     backend: GlassesBackend,
-    clock: () -> Long = { System.currentTimeMillis() },
+    private val clock: () -> Long = { System.currentTimeMillis() },
 ) : ViewModel() {
     private val timeline = InMemoryTimeline()
     private val runtime = DebugSessionRuntime(timeline, clock)
+    private val mockGateway = if (backend.requiresPhysicalGlasses) {
+        null
+    } else {
+        MockFrameGateway(clock = clock)
+    }
+    private val mockAnalyzer = if (backend.requiresPhysicalGlasses) {
+        null
+    } else {
+        MockFrameAnalyzer(clock = clock)
+    }
+    private var frameJob: Job? = null
+    private var gatewayCommand: Job? = null
     private var ticker: Job? = null
+    private var watchdog: Job? = null
 
     private val _uiState = MutableStateFlow(
         OliviaUiState(
@@ -60,6 +74,15 @@ class OliviaSessionViewModel(
 
     init {
         timeline.replace(MockDemoTake.sessionId, MockDemoTake.events())
+        frameJob = mockGateway?.let { gateway ->
+            viewModelScope.launch {
+                gateway.frames.collect { frame ->
+                    mockAnalyzer?.analyze(frame)?.onFailure { }
+                    runtime.frameReceived(frame.capturedAtEpochMs)
+                    publish()
+                }
+            }
+        }
         publish()
     }
 
@@ -70,19 +93,31 @@ class OliviaSessionViewModel(
     }
 
     fun start() {
-        runtime.start(SessionConfig(audioMode = _uiState.value.audioMode))
+        val config = SessionConfig(audioMode = _uiState.value.audioMode)
+        val started = runtime.start(config)
+        if (started != null) {
+            startGateway(started.id, config)
+        }
         startTicker()
+        startWatchdog()
         publish()
     }
 
     fun pause() {
         runtime.pause()
+        gatewayCommand = mockGateway?.let { gateway ->
+            viewModelScope.launch { gateway.pauseCapture() }
+        }
         publish()
     }
 
     fun resume() {
         runtime.resume()
+        gatewayCommand = mockGateway?.let { gateway ->
+            viewModelScope.launch { gateway.resumeCapture() }
+        }
         startTicker()
+        startWatchdog()
         publish()
     }
 
@@ -101,6 +136,11 @@ class OliviaSessionViewModel(
         runtime.stop()
         ticker?.cancel()
         ticker = null
+        watchdog?.cancel()
+        watchdog = null
+        gatewayCommand = mockGateway?.let { gateway ->
+            viewModelScope.launch { gateway.stopCapture() }
+        }
         publish()
     }
 
@@ -115,6 +155,34 @@ class OliviaSessionViewModel(
                 val state = runtime.snapshot?.state
                 if (state != SessionState.STARTED && state != SessionState.DEGRADED) break
                 publish()
+            }
+        }
+    }
+
+    private fun startGateway(sessionId: SessionId, config: SessionConfig) {
+        gatewayCommand?.cancel()
+        gatewayCommand = mockGateway?.let { gateway ->
+            viewModelScope.launch { gateway.startCapture(sessionId, config) }
+        }
+    }
+
+    private fun startWatchdog() {
+        if (watchdog?.isActive == true) return
+        watchdog = viewModelScope.launch {
+            while (isActive) {
+                delay(250)
+                val session = runtime.snapshot ?: break
+                if (session.state != SessionState.STARTED && session.state != SessionState.DEGRADED) {
+                    break
+                }
+                val lastFrameAt = session.lastFrameAtEpochMs ?: continue
+                if (
+                    session.state == SessionState.STARTED &&
+                    clock() - lastFrameAt >= session.config.degradedAfterMs
+                ) {
+                    runtime.degrade()
+                    publish()
+                }
             }
         }
     }
@@ -163,6 +231,15 @@ class OliviaSessionViewModel(
         session?.state == SessionState.DEGRADED -> GlassesConnection.DISCONNECTED
         backend.requiresPhysicalGlasses -> GlassesConnection.UNAVAILABLE
         else -> GlassesConnection.CONNECTED
+    }
+
+    override fun onCleared() {
+        mockGateway?.close()
+        frameJob?.cancel()
+        gatewayCommand?.cancel()
+        watchdog?.cancel()
+        ticker?.cancel()
+        super.onCleared()
     }
 
     class Factory(private val application: Application) : ViewModelProvider.Factory {

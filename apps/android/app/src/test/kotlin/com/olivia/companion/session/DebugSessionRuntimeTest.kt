@@ -70,6 +70,29 @@ class DebugSessionRuntimeTest {
     }
 
     @Test
+    fun frameAfterDegradedSessionRecordsRecovery() {
+        var now = 3_000_000L
+        val timeline = InMemoryTimeline()
+        val runtime = DebugSessionRuntime(timeline) { now }
+
+        val started = runtime.start(SessionConfig())!!
+        runtime.degrade()
+        now += 4_000
+        runtime.frameReceived(now)
+
+        assertEquals(SessionState.STARTED, runtime.snapshot?.state)
+        assertEquals(now, runtime.snapshot?.lastFrameAtEpochMs)
+        assertEquals(
+            listOf(
+                TimelineEventType.SESSION_STARTED,
+                TimelineEventType.SESSION_DEGRADED,
+                TimelineEventType.SESSION_RECOVERED,
+            ),
+            timeline.events(started.id).map { it.type },
+        )
+    }
+
+    @Test
     fun invalidStartWhileLiveIsIgnored() {
         val runtime = DebugSessionRuntime(InMemoryTimeline()) { 0 }
         val first = runtime.start(SessionConfig())

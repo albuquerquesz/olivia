@@ -93,6 +93,30 @@ class DebugSessionRuntime(
         label = "Conexão restaurada",
     )
 
+    fun frameReceived(capturedAtEpochMs: Long = clock()): SessionSnapshot? {
+        val current = snapshot ?: return null
+        if (current.state != SessionState.STARTED && current.state != SessionState.DEGRADED) {
+            return snapshot
+        }
+        val elapsedMs = elapsed(capturedAtEpochMs)
+        val next = current.copy(
+            state = SessionState.STARTED,
+            elapsedMs = elapsedMs,
+            lastFrameAtEpochMs = capturedAtEpochMs,
+        )
+        snapshot = next
+        if (current.state == SessionState.DEGRADED) {
+            record(
+                sessionId = current.id,
+                at = capturedAtEpochMs,
+                offsetMs = elapsedMs,
+                type = TimelineEventType.SESSION_RECOVERED,
+                label = "Conexão restaurada",
+            )
+        }
+        return next.copy()
+    }
+
     fun stop(): SessionSnapshot? {
         val current = snapshot ?: return null
         if (current.state !in LIVE_OR_PAUSED) return snapshot
