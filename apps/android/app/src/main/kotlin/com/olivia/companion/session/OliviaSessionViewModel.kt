@@ -72,6 +72,7 @@ class OliviaSessionViewModel(
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val recordingSource: RecordingSource? = null,
     private val exportAdapter: SessionExportAdapter? = null,
+    private val initialTakes: List<TakeSummary> = emptyList(),
 ) : ViewModel() {
     private val timeline = InMemoryTimeline()
     private val runtime = SessionRuntime(timeline, clock)
@@ -85,6 +86,7 @@ class OliviaSessionViewModel(
     private var audioStatusJob: Job? = null
     private var pendingCorrection: Correction? = null
     private val reviews = mutableMapOf<String, SessionReview>()
+    private val seededTakes = initialTakes
     private var latestConnection = initialConnection(backend, null)
 
     private val _uiState = MutableStateFlow(
@@ -94,7 +96,7 @@ class OliviaSessionViewModel(
             session = null,
             connection = initialConnection(backend, null),
             elapsedMs = 0,
-            takes = emptyList(),
+            takes = seededTakes,
             voiceState = voiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
             audioStatus = audioFeedback.status.value,
             audioStatusMessage = audioFeedback.statusMessage.value,
@@ -456,7 +458,7 @@ class OliviaSessionViewModel(
         val liveSessionId = runtime.snapshot
             ?.takeIf { it.state in liveSessionStates }
             ?.id
-        return timeline.sessionIds()
+        return (seededTakes + timeline.sessionIds()
             .mapIndexedNotNull { index, sessionId ->
                 val events = timeline.events(sessionId)
                 if (events.isEmpty()) return@mapIndexedNotNull null
@@ -467,7 +469,7 @@ class OliviaSessionViewModel(
                     review = reviews[sessionId.value],
                 )
             }
-            .sortedByDescending { it.recordedAtEpochMs }
+        ).sortedByDescending { it.recordedAtEpochMs }
     }
 
     private fun processTake(sessionId: SessionId) {
@@ -580,6 +582,7 @@ class OliviaSessionViewModel(
                 postProcessor = ActiveBackend.createPostProcessor(),
                 recordingSource = ActiveBackend.createRecordingSource(application),
                 exportAdapter = AndroidSessionExportAdapter(application),
+                initialTakes = seedTakes().takeIf { ActiveBackend.current.id == "mock" }.orEmpty(),
                 audioFeedback = AndroidAudioFeedback(
                     context = application,
                     modeProvider = audioModeStore::current,
