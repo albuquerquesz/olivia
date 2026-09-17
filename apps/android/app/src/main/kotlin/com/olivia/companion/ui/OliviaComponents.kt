@@ -403,7 +403,7 @@ internal fun RecordVideoCta(
             .fillMaxWidth()
             .heightIn(min = 120.dp),
         color = RecordVideoCtaBackground,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(20.dp),
     ) {
         Row(
@@ -427,7 +427,7 @@ internal fun RecordVideoCta(
                     "Grave com os óculos.",
                     modifier = Modifier.widthIn(max = 220.dp),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.86f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.86f),
                 )
             }
             VoiceWaveform()
@@ -435,11 +435,11 @@ internal fun RecordVideoCta(
     }
 }
 
-private val RecordVideoCtaBackground = Color(0xFF315194)
+private val RecordVideoCtaBackground = Color(0xFFBFDFFD)
 
 @Composable
 private fun VoiceWaveform() {
-    val color = MaterialTheme.colorScheme.onPrimary
+    val color = LocalContentColor.current
     val transition = rememberInfiniteTransition(label = "voice waveform")
     val progress by transition.animateFloat(
         initialValue = 0f,
