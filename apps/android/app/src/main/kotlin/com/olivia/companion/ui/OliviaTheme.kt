@@ -18,6 +18,7 @@ internal object OliviaMotion {
     val travel = 8.dp
 
     fun <T> navigation() = tween<T>(durationMillis = 220, easing = EaseOut)
+    fun <T> footer() = tween<T>(durationMillis = 200, easing = EaseOut)
     fun <T> selection() = tween<T>(durationMillis = 180, easing = EaseOut)
     fun <T> press() = tween<T>(durationMillis = 150, easing = EaseOut)
 }

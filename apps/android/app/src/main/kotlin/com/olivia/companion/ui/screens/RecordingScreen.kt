@@ -23,7 +23,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.olivia.companion.session.AudioFeedbackStatus
 import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.formatOffset
@@ -73,7 +75,11 @@ fun OliviaRecordingScreen(
                         Text(
                             text = formatOffset(state.elapsedMs),
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontSize = 20.sp,
+                                lineHeight = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
                         )
                     }
                 }
@@ -113,7 +119,7 @@ fun OliviaRecordingScreen(
     }
 }
 
-private val RecordingTimerBackground = Color(0xFFFFE4E1)
+private val RecordingTimerBackground = Color(0xFFFFC7C2)
 private val RecordingTimerContent = Color(0xFF8B2D2D)
 
 @Composable
