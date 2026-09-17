@@ -48,6 +48,10 @@ Esse é o APK para instalar no celular durante o hackathon. Ele usa `glassesDebu
 `MWDAT_MOCK_DEVICE_KIT=true`, Wearables Developer e MockDeviceKit. A aba Actions continua
 mantendo o mesmo artefato para auditoria do workflow.
 
+O APK developer publicado pelo CI é empacotado somente para `arm64-v8a`, que é a ABI dos
+celulares Android modernos usados no hackathon. Builds locais continuam universais por padrão;
+o APK production do CI também continua universal para preservar compatibilidade no ensaio físico.
+
 ## App Check e assinatura
 
 O APK developer e `DEBUG`, portanto instala o Debug App Check Provider. O token de debug e gerado

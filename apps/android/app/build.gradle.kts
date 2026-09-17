@@ -28,6 +28,15 @@ fun environmentOrDotEnv(environment: String): String? =
             ?.removeSurrounding("'")
             ?.takeIf { it.isNotBlank() }
 
+// CI may narrow native packaging for a device-specific distribution artifact. Local builds
+// remain universal unless this property is explicitly supplied.
+val configuredAbiFilters = providers.gradleProperty("olivia.abiFilters").orNull
+    ?.split(',')
+    ?.map(String::trim)
+    ?.filter(String::isNotEmpty)
+    ?.toSet()
+    ?.takeIf { it.isNotEmpty() }
+
 // Release signing is injected only by the protected CI job. Local builds keep the existing
 // unsigned-release behavior unless all CI signing inputs are present.
 val ciReleaseKeystorePath = providers.environmentVariable("ANDROID_RELEASE_KEYSTORE_PATH").orNull
@@ -74,6 +83,9 @@ android {
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
+        configuredAbiFilters?.let { filters ->
+            ndk { abiFilters.addAll(filters) }
+        }
         buildConfigField("String", "PICOVOICE_ACCESS_KEY", buildConfigString(
             localOrEnvironment("picovoice_access_key", "PICOVOICE_ACCESS_KEY").orEmpty(),
         ))
