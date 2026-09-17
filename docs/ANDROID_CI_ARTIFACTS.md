@@ -36,8 +36,10 @@ obrigatorio estiver ausente.
 
 ## Download facil do APK developer
 
-Quando o job developer termina com sucesso, ele publica ou atualiza o pre-release privado
-[`developer-latest`](https://github.com/albuquerquesz/olivia/releases/tag/developer-latest) com:
+Quando o workflow principal termina com sucesso, o APK developer fica imediatamente disponivel
+como artifact do Actions. Um workflow assincrono publica ou atualiza o pre-release privado
+[`developer-latest`](https://github.com/albuquerquesz/olivia/releases/tag/developer-latest) em
+segundo plano com:
 
 - `olivia-developer-wearables-debug.apk`;
 - `SHA256SUMS`.

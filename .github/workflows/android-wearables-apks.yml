@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
+  contents: read
 
 # This is the primary artifact workflow. It intentionally does not publish the legacy mock flavor.
 # Required repository/environment secrets are documented in docs/ANDROID_CI_ARTIFACTS.md.
@@ -76,29 +76,6 @@ jobs:
           name: olivia-developer-wearables-debug
           if-no-files-found: error
           path: artifacts/developer/*
-
-      - name: Publicar developer APK como pre-release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          release_tag="developer-latest"
-          release_files=(
-            "$GITHUB_WORKSPACE/artifacts/developer/olivia-developer-wearables-debug.apk"
-            "$GITHUB_WORKSPACE/artifacts/developer/SHA256SUMS"
-          )
-          if gh release view "$release_tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$release_tag" "${release_files[@]}" \
-              --repo "$GITHUB_REPOSITORY" \
-              --clobber
-          else
-            gh release create "$release_tag" "${release_files[@]}" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "Olivia Developer APK (latest)" \
-              --notes "APK privado para demonstração com Wearables Developer e MockDeviceKit. Este artefato não comprova hardware físico." \
-              --prerelease
-          fi
 
   production-wearables-release:
     name: Wearables físico + Play Integrity (release)
