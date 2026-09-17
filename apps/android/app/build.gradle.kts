@@ -55,6 +55,8 @@ val ciReleaseSigningReady = listOf(
 ).all { it != null }
 val signDeveloperWithReleaseKey =
     providers.gradleProperty("olivia.signDeveloperWithRelease").orNull == "true"
+val debugAppCheckUsesPlayIntegrity =
+    providers.gradleProperty("olivia.debugAppCheckProvider").orNull == "play-integrity"
 
 plugins {
     alias(libs.plugins.android.application)
@@ -150,12 +152,16 @@ android {
 
     buildTypes {
         debug {
-            // The CI developer APK remains DEBUG (MockDeviceKit and Debug App Check), but can
-            // reuse the protected release certificate so successive artifacts update the same
-            // installation instead of forcing an uninstall and regenerating its debug token.
+            // The CI developer APK remains DEBUG and uses MockDeviceKit, but can reuse the
+            // protected release certificate and Play Integrity for a token-free install path.
             if (ciReleaseSigningReady && signDeveloperWithReleaseKey) {
                 signingConfig = signingConfigs.getByName("ciRelease")
             }
+            buildConfigField(
+                "boolean",
+                "OLIVIA_USE_PLAY_INTEGRITY_APP_CHECK",
+                debugAppCheckUsesPlayIntegrity.toString(),
+            )
         }
         release {
             isMinifyEnabled = false
@@ -164,6 +170,7 @@ android {
                 "proguard-rules.pro",
             )
             if (ciReleaseSigningReady) signingConfig = signingConfigs.getByName("ciRelease")
+            buildConfigField("boolean", "OLIVIA_USE_PLAY_INTEGRITY_APP_CHECK", "true")
         }
     }
 

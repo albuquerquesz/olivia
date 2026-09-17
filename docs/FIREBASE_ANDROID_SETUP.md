@@ -22,10 +22,11 @@ persistência de frames neste MVP.
    App Check ou `google-services.json` em segredo de usuário; tokens administrativos e debug
    continuam fora do repositório.
 
-O APK `release` instala Play Integrity antes de criar o adapter Firebase AI. O APK `debug` usa o
-Debug provider exclusivamente para desenvolvimento local. Se configuração, App Check, quota ou
-modelo faltarem, o adapter falha com erro sanitizado; nunca troca silenciosamente para mock nem
-envia mídia para outro serviço.
+O APK `release` e o APK developer gerado pelo CI instalam Play Integrity antes de criar o adapter
+Firebase AI. O `glassesDebug` local usa o Debug provider por padrao, exceto quando compilado com
+`-Polivia.debugAppCheckProvider=play-integrity`. Se configuração, App Check, quota ou modelo
+faltarem, o adapter falha com erro sanitizado; nunca troca silenciosamente para mock nem envia mídia
+para outro serviço.
 
 ## Probe no emulador
 

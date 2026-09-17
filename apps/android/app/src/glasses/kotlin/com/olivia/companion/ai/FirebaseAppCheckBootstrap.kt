@@ -13,7 +13,11 @@ import com.olivia.companion.BuildConfig
  */
 internal object FirebaseAppCheckBootstrap {
     fun install(app: FirebaseApp) {
-        val factory = if (BuildConfig.DEBUG) debugFactory() else PlayIntegrityAppCheckProviderFactory.getInstance()
+        val factory = if (BuildConfig.OLIVIA_USE_PLAY_INTEGRITY_APP_CHECK) {
+            PlayIntegrityAppCheckProviderFactory.getInstance()
+        } else {
+            debugFactory()
+        }
         FirebaseAppCheck.getInstance(app).installAppCheckProviderFactory(
             factory,
             true,

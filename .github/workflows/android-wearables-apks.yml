@@ -67,7 +67,7 @@ jobs:
           done
 
       - name: Build developer Wearables APK
-        run: sh gradlew assembleGlassesDebug -Polivia.abiFilters=arm64-v8a -Polivia.signDeveloperWithRelease=true --no-daemon --no-configuration-cache
+        run: sh gradlew assembleGlassesDebug -Polivia.abiFilters=arm64-v8a -Polivia.signDeveloperWithRelease=true -Polivia.debugAppCheckProvider=play-integrity --no-daemon --no-configuration-cache
 
       - name: Hash do artefato developer
         run: |
