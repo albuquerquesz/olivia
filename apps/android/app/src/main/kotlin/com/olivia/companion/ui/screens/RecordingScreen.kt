@@ -89,7 +89,7 @@ fun OliviaRecordingScreen(
                             .align(Alignment.BottomStart)
                             .padding(20.dp),
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        contentColor = MaterialTheme.colorScheme.surface,
                         shape = RoundedCornerShape(12.dp),
                     ) {
                         Text(

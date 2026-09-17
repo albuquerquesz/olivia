@@ -16,11 +16,11 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 | Papel | sRGB para Compose |
 | --- | --- |
 | Fundo | #F1F3F7 |
-| Superfície e texto no azul | #FAFBFD |
-| Painel principal e ação/seleção | #142C4C |
-| Texto principal | #151A21 |
+| Superfície | #FAFBFD |
+| Painel principal e ação/seleção | #BFDFFD |
+| Texto principal e no azul | #151A21 |
 | Texto secundário no branco | #526174 |
-| Texto secundário no azul | #DCE5F0 |
+| Texto secundário no azul | #526174 |
 | Superfície de seleção suave | #E8EEF5 |
 | Contorno funcional | #718198 |
 | Divisória decorativa | #DCE3EC |
@@ -53,7 +53,7 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
   seções abertas. A seleção continua local à tela, sem nova integração com o
   motor de áudio. Sem botão Voltar.
 - Menu: cápsula flutuante baixa com Início, Sessões e Ajustes. Gravar fica fora,
-  à direita, na mesma altura, como anel navy com disco interno, sem rótulo.
+  à direita, na mesma altura, como anel azul com disco interno, sem rótulo.
   Superfície sólida 50% de raio, margem lateral 24dp, 8dp do fundo, contorno, sem
   sombra. Círculo e abas formam alvos acessíveis; abrir Gravar não inicia take.
 
