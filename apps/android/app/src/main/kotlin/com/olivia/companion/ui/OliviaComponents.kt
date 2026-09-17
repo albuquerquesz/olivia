@@ -237,7 +237,7 @@ private fun SettingsAudioModeOption(
     )
     val contentColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.onPrimary.takeIf { selected }
-            ?: MaterialTheme.colorScheme.onSurfaceVariant,
+            ?: MaterialTheme.colorScheme.onSurface,
         animationSpec = OliviaMotion.selection(),
         label = "settings audio mode content",
     )
