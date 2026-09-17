@@ -864,10 +864,10 @@ private fun SessionTakeCard(
                 Text(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(10.dp),
+                    .padding(10.dp),
                     text = formatOffset(take.durationMs),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = Color.White,
                 )
             }
             val day = formatRelativeDay(take.recordedAtEpochMs)
