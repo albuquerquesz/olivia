@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.session.AudioFeedbackStatus
 import com.olivia.companion.session.OliviaUiState
-import com.olivia.companion.session.connectionLabel
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.ui.AudioModeOption
 import com.olivia.companion.ui.OliviaPage
@@ -95,12 +94,6 @@ fun OliviaRecordingScreen(
                         )
                     }
                 }
-                ConnectionStateBadge(
-                    label = connectionLabel(state.connection),
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(20.dp),
-                )
                 if (degraded || state.backend.requiresPhysicalGlasses) {
                     Surface(
                         modifier = Modifier
@@ -195,22 +188,6 @@ private fun AudioAvailabilityNotice(
 }
 
 @Composable
-private fun ConnectionStateBadge(label: String, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.94f),
-        contentColor = MaterialTheme.colorScheme.primary,
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Text(
-            label,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.labelMedium,
-        )
-    }
-}
-
-@Composable
 private fun GlassesCameraPreview(
     elapsedMs: Long,
     degraded: Boolean,
@@ -275,17 +252,6 @@ private fun GlassesCameraPreview(
                     )
                 }
 
-                val guideColor = colors.onPrimary.copy(alpha = 0.85f)
-                val guideLength = 18.dp.toPx()
-                val guideInset = 14.dp.toPx()
-                drawLine(guideColor, Offset(guideInset, guideInset), Offset(guideInset + guideLength, guideInset), 2.dp.toPx())
-                drawLine(guideColor, Offset(guideInset, guideInset), Offset(guideInset, guideInset + guideLength), 2.dp.toPx())
-                drawLine(guideColor, Offset(size.width - guideInset, guideInset), Offset(size.width - guideInset - guideLength, guideInset), 2.dp.toPx())
-                drawLine(guideColor, Offset(size.width - guideInset, guideInset), Offset(size.width - guideInset, guideInset + guideLength), 2.dp.toPx())
-                drawLine(guideColor, Offset(guideInset, size.height - guideInset), Offset(guideInset + guideLength, size.height - guideInset), 2.dp.toPx())
-                drawLine(guideColor, Offset(guideInset, size.height - guideInset), Offset(guideInset, size.height - guideInset - guideLength), 2.dp.toPx())
-                drawLine(guideColor, Offset(size.width - guideInset, size.height - guideInset), Offset(size.width - guideInset - guideLength, size.height - guideInset), 2.dp.toPx())
-                drawLine(guideColor, Offset(size.width - guideInset, size.height - guideInset), Offset(size.width - guideInset, size.height - guideInset - guideLength), 2.dp.toPx())
             }
         }
         if (!simulated) {
