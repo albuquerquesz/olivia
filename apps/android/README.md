@@ -23,7 +23,7 @@ Para habilitar o comando de voz no dispositivo, preencha `picovoice_access_key` 
 coloque o modelo `.ppn` customizado para “Oi, Olivia” em `app/src/main/assets/`
 (ou informe um caminho absoluto em `picovoice_keyword_path`). O reconhecimento do
 comando usa o serviço on-device do Android; sem chave, modelo ou serviço local o
-adapter fica indisponível e o fallback de debug continua disponível.
+adapter fica indisponível e o app informa essa condição.
 
 ## Build
 
@@ -35,20 +35,21 @@ O APK sai em `app/build/outputs/apk/mock/debug/`. Os demais flavors seguem o mes
 padrão (`assembleGlassesDebug`).
 
 O Modo Sinal usa os WAVs curtos versionados em `app/src/main/res/raw/`; eles não são
-gerados durante a sessão. No flavor `mock`, uma fixture local de vídeo torna o handoff
-reproduzível: o app prepara `olivia-markers.json` e abre o chooser do Android com os
-dois arquivos. O flavor `glasses` continua aguardando o `RecordingSource` nativo de
-BE-12 e informa honestamente quando o vídeo real ainda não está disponível.
+gerados durante a sessão. Na validação interna do flavor `mock`, uma fixture local de
+vídeo torna o handoff reproduzível: o app prepara `olivia-markers.json` e abre o
+chooser do Android com os dois arquivos. O flavor `glasses` continua aguardando o
+`RecordingSource` nativo de BE-12 e informa honestamente quando o vídeo real ainda não
+está disponível.
 
 ## Flavors
 
 | Flavor    | applicationId              | Fonte da sessão                    |
 | --------- | -------------------------- | ---------------------------------- |
-| `mock`    | `com.olivia.companion.mock` | Óculos simulados, sem SDK          |
+| `mock`    | `com.olivia.companion.mock` | Validação interna, sem SDK         |
 | `glasses` | `com.olivia.companion`      | Ray-Ban Meta via DAT               |
 
-Os dois flavors instalam lado a lado. O `mock` é o caminho de demo garantido e deve
-continuar subindo sem hardware.
+Os dois flavors instalam lado a lado. O `mock` existe somente para validação interna e
+deve continuar subindo sem hardware; não representa um modo do produto.
 
 ## Versões
 
