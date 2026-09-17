@@ -274,8 +274,12 @@ fun OliviaApp(
                     isLive = uiState.isLive,
                     isPaused = uiState.session?.state == SessionState.PAUSED,
                     onRecordClick = {
-                        navController.navigate(OliviaDestination.RECORD.route) {
-                            launchSingleTop = true
+                        if (currentRoute == OliviaDestination.RECORD.route) {
+                            viewModel.start()
+                        } else {
+                            navController.navigate(OliviaDestination.RECORD.route) {
+                                launchSingleTop = true
+                            }
                         }
                     },
                     onPause = viewModel::pause,
