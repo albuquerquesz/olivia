@@ -34,6 +34,18 @@ O keystore de release deve ser o mesmo certificado registrado para o app Android
 Google Cloud e canal de distribuicao escolhido. O workflow falha antes do Gradle se algum valor
 obrigatorio estiver ausente.
 
+## Download facil do APK developer
+
+Quando o job developer termina com sucesso, ele publica ou atualiza o pre-release privado
+[`developer-latest`](https://github.com/albuquerquesz/olivia/releases/tag/developer-latest) com:
+
+- `olivia-developer-wearables-debug.apk`;
+- `SHA256SUMS`.
+
+Esse é o APK para instalar no celular durante o hackathon. Ele usa `glassesDebug` com
+`MWDAT_MOCK_DEVICE_KIT=true`, Wearables Developer e MockDeviceKit. A aba Actions continua
+mantendo o mesmo artefato para auditoria do workflow.
+
 ## App Check e assinatura
 
 O APK developer e `DEBUG`, portanto instala o Debug App Check Provider. O token de debug e gerado
