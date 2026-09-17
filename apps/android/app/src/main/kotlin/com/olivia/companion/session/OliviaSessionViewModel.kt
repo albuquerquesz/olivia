@@ -51,15 +51,17 @@ class OliviaSessionViewModel(
     private val postTake: PostTakeController,
     voiceCommandSource: VoiceCommandSource? = null,
     private val voiceCommandSourceFactory: (() -> VoiceCommandSource)? = null,
+    private val initialTakes: List<TakeSummary> = emptyList(),
 ) : ViewModel() {
     private var activeVoiceCommandSource: VoiceCommandSource? = voiceCommandSource
     private val commands = Mutex()
     private val refresh = Mutex()
     private val preferencesReady = CompletableDeferred<Unit>()
     private val reviews = mutableMapOf<SessionId, SessionReview>()
+    private val seededTakes = initialTakes
     private val _uiState = MutableStateFlow(OliviaUiState(
         backend, AudioMode.VOICE, runtime.snapshot.value, runtime.connection.value,
-        0, emptyList(), activeVoiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
+        0, initialTakes, activeVoiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
     ))
     private val _voiceNavigation = MutableSharedFlow<LocalSessionCommand>(extraBufferCapacity = 8)
     val uiState: StateFlow<OliviaUiState> = _uiState.asStateFlow()
@@ -213,7 +215,7 @@ class OliviaSessionViewModel(
             if (events.isEmpty()) return@mapNotNull null
             takeFromEvents(id, if (id == active?.id && active?.state in busyStates) "Take ao vivo" else "Take ${id.value.take(8)}", events, reviews[id])
         }.sortedByDescending { it.recordedAtEpochMs }
-        _uiState.update { it.copy(takes = takes) }
+        _uiState.update { it.copy(takes = (seededTakes + takes).distinctBy { take -> take.sessionId }) }
     }
 
     private fun observeVoiceCommandSource(source: VoiceCommandSource) {
@@ -264,6 +266,7 @@ class OliviaSessionViewModel(
                 postTake = AndroidPostTakeController(application, ActiveBackend.createRecordingSource(application)),
                 voiceCommandSource = AndroidVoiceCommandSourceFactory.create(application),
                 voiceCommandSourceFactory = { AndroidVoiceCommandSourceFactory.create(application) },
+                initialTakes = seedTakes().takeIf { ActiveBackend.current.id == "mock" }.orEmpty(),
             ) as T
         }
     }

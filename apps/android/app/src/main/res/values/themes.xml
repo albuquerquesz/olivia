@@ -3,8 +3,9 @@
     <style name="Theme.Olivia" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:statusBarColor">@android:color/white</item>
-        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowBackground">@color/olivia_background</item>
+        <item name="android:statusBarColor">@color/olivia_background</item>
+        <item name="android:navigationBarColor">@color/olivia_background</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>
