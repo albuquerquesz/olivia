@@ -50,16 +50,8 @@ fun OliviaRecordingScreen(
     state: OliviaUiState,
     onOpenSettings: () -> Unit,
     onAudioMode: (AudioMode) -> Unit,
-    onStart: () -> Unit,
-    onPause: () -> Unit,
-    onResume: () -> Unit,
-    onDegrade: () -> Unit,
-    onRecover: () -> Unit,
-    onStop: () -> Unit,
 ) {
-    val session = state.session
-    val sessionState = session?.state ?: SessionState.IDLE
-    val degraded = sessionState == SessionState.DEGRADED
+    val degraded = state.session?.state == SessionState.DEGRADED
     val live = state.isLive
     OliviaPage {
         OliviaPanel(
@@ -106,7 +98,6 @@ fun OliviaRecordingScreen(
                         Text(
                             text = recordingPanelMessage(
                                 degraded = degraded,
-                                requiresPhysicalGlasses = state.backend.requiresPhysicalGlasses,
                             ),
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                             style = MaterialTheme.typography.labelMedium,
@@ -120,17 +111,6 @@ fun OliviaRecordingScreen(
             status = state.audioStatus,
             message = state.audioStatusMessage,
         )
-        if (!state.backend.requiresPhysicalGlasses) {
-            DebugActions(
-                sessionState = sessionState,
-                onStart = onStart,
-                onPause = onPause,
-                onResume = onResume,
-                onDegrade = onDegrade,
-                onRecover = onRecover,
-                onStop = onStop,
-            )
-        }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionTitle("Modo de feedback")
             FlowRow(
@@ -195,7 +175,7 @@ private fun GlassesCameraPreview(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    val description = cameraPreviewDescription(simulated)
+    val description = cameraPreviewDescription()
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
@@ -284,19 +264,15 @@ private fun GlassesCameraPreview(
 
 private fun recordingPanelMessage(
     degraded: Boolean,
-    requiresPhysicalGlasses: Boolean,
 ): String {
     if (degraded) {
         return "A Olivia parou de ver a câmera. As marcas ficam; a gravação nativa continua."
     }
-    if (requiresPhysicalGlasses) return "É necessário conectar os óculos para gravar."
-    return "Prévia do fluxo, com óculos simulados."
+    return "É necessário conectar os óculos para gravar."
 }
 
-private fun cameraPreviewDescription(simulated: Boolean): String {
-    if (simulated) return "Câmera simulada dos óculos, formato vertical 720 por 1280"
-    return "Prévia da câmera dos óculos indisponível"
-}
+private fun cameraPreviewDescription(): String =
+    "Prévia da câmera dos óculos, formato vertical 720 por 1280"
 
 private fun subjectCenter(width: Float, hasFramingIssue: Boolean): Float {
     if (hasFramingIssue) return width * 0.76f
@@ -306,52 +282,4 @@ private fun subjectCenter(width: Float, hasFramingIssue: Boolean): Float {
 private fun horizonOffset(hasHorizonIssue: Boolean, offset: Float): Float {
     if (hasHorizonIssue) return offset
     return 0f
-}
-
-@Composable
-private fun DebugActions(
-    sessionState: SessionState,
-    onStart: () -> Unit,
-    onPause: () -> Unit,
-    onResume: () -> Unit,
-    onDegrade: () -> Unit,
-    onRecover: () -> Unit,
-    onStop: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle("Debug")
-        when (sessionState) {
-            SessionState.IDLE, SessionState.STOPPED -> DebugButton("Iniciar sessão", onStart)
-            SessionState.STARTED -> {
-                DebugButton("Pausar", onPause)
-                DebugButton("Simular queda", onDegrade)
-                DebugButton("Terminar", onStop)
-            }
-            SessionState.PAUSED -> {
-                DebugButton("Retomar", onResume)
-                DebugButton("Terminar", onStop)
-            }
-            SessionState.DEGRADED -> {
-                DebugButton("Pausar", onPause)
-                DebugButton("Simular retorno", onRecover)
-                DebugButton("Terminar", onStop)
-            }
-            SessionState.STARTING,
-            SessionState.STOPPING,
-            SessionState.PROCESSING,
-            SessionState.READY,
-            SessionState.ERROR -> DebugButton("Terminar", onStop)
-        }
-    }
-}
-
-@Composable
-private fun DebugButton(label: String, onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        shape = RoundedCornerShape(20.dp),
-    ) {
-        Text(label)
-    }
 }

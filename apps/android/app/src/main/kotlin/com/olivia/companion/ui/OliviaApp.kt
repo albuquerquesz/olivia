@@ -237,12 +237,6 @@ fun OliviaApp(
                         }
                     },
                     onAudioMode = viewModel::setAudioMode,
-                    onStart = viewModel::start,
-                    onPause = viewModel::pause,
-                    onResume = viewModel::resume,
-                    onDegrade = viewModel::degrade,
-                    onRecover = viewModel::recover,
-                    onStop = viewModel::stop,
                 )
             }
             composable(OliviaDestination.SESSIONS.route) {

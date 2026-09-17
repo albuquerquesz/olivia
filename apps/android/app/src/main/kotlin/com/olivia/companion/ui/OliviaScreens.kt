@@ -38,23 +38,11 @@ fun OliviaRecordingScreen(
     state: OliviaUiState,
     onOpenSettings: () -> Unit,
     onAudioMode: (AudioMode) -> Unit,
-    onStart: () -> Unit,
-    onPause: () -> Unit,
-    onResume: () -> Unit,
-    onDegrade: () -> Unit,
-    onRecover: () -> Unit,
-    onStop: () -> Unit,
 ) {
     RecordingScreen(
         state = state,
         onOpenSettings = onOpenSettings,
         onAudioMode = onAudioMode,
-        onStart = onStart,
-        onPause = onPause,
-        onResume = onResume,
-        onDegrade = onDegrade,
-        onRecover = onRecover,
-        onStop = onStop,
     )
 }
 
