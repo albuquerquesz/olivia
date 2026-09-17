@@ -78,7 +78,6 @@ import androidx.navigation.navArgument
 import com.olivia.companion.session.OliviaSessionViewModel
 import com.olivia.companion.session.TakeSummary
 import com.olivia.companion.session.VoiceCommandState
-import com.olivia.companion.ui.screens.ConnectionBottomSheet
 import com.olivia.core.SessionId
 
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
@@ -133,7 +132,6 @@ fun OliviaApp(
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
-    var isConnectionSheetVisible by remember { mutableStateOf(false) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
@@ -277,7 +275,11 @@ fun OliviaApp(
             if (showBottomBar) {
                 OliviaBottomBar(
                     currentRoute = currentRoute,
-                    onRecordClick = { isConnectionSheetVisible = true },
+                    onRecordClick = {
+                        navController.navigate(OliviaDestination.RECORD.route) {
+                            launchSingleTop = true
+                        }
+                    },
                     onDestinationSelected = { destination ->
                         val returningFromRecord =
                             destination == OliviaDestination.HOME &&
@@ -303,18 +305,6 @@ fun OliviaApp(
                 )
             }
         }
-    }
-    if (isConnectionSheetVisible) {
-        ConnectionBottomSheet(
-            state = uiState,
-            onDismiss = { isConnectionSheetVisible = false },
-            onContinue = {
-                isConnectionSheetVisible = false
-                navController.navigate(OliviaDestination.RECORD.route) {
-                    launchSingleTop = true
-                }
-            },
-        )
     }
 }
 
