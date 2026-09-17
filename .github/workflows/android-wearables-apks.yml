@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 # This is the primary artifact workflow. It intentionally does not publish the legacy mock flavor.
 # Required repository/environment secrets are documented in docs/ANDROID_CI_ARTIFACTS.md.
