@@ -199,6 +199,7 @@ private fun OnboardingIntro() {
         }
         OnboardingHeading(
             title = "Grave com as mãos livres",
+            description = "A Olivia observa o enquadramento, a luz e o horizonte, e orienta você por áudio.",
         )
     }
 }
