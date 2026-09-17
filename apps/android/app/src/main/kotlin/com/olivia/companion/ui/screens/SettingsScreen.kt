@@ -31,7 +31,7 @@ fun OliviaSettingsScreen(
 ) {
     OliviaPage {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(
