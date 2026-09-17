@@ -18,14 +18,16 @@ fun OliviaWelcomeScreen(
     audioPermissionGranted: Boolean,
     bluetoothPermissionRequired: Boolean,
     bluetoothPermissionGranted: Boolean,
-    onRequestPermissions: () -> Unit,
+    onRequestAudioPermission: () -> Unit,
+    onRequestBluetoothPermission: () -> Unit,
     onEnter: () -> Unit,
 ) {
     WelcomeScreen(
         audioPermissionGranted = audioPermissionGranted,
         bluetoothPermissionRequired = bluetoothPermissionRequired,
         bluetoothPermissionGranted = bluetoothPermissionGranted,
-        onRequestPermissions = onRequestPermissions,
+        onRequestAudioPermission = onRequestAudioPermission,
+        onRequestBluetoothPermission = onRequestBluetoothPermission,
         onEnter = onEnter,
     )
 }

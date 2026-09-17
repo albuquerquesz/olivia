@@ -39,9 +39,10 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 - Sem títulos de página (Gravar, Sessões, Ajustes). A orientação vem do
   painel e da barra inferior.
-- Welcome/onboarding: tela inicial, sem barra inferior. Três etapas curtas explicam
-  o ciclo da Olivia, a privacidade e pedem somente microfone; no flavor de óculos,
-  também Bluetooth. Sem conta. Pareamento e autorização dos óculos ficam no Meta AI.
+- Welcome/onboarding: tela inicial, sem barra inferior. Etapas curtas explicam o ciclo
+  da Olivia, e cada permissão aparece em sua própria tela. O mock pede microfone; no
+  flavor de óculos, também Bluetooth. Sem conta. Pareamento e autorização dos óculos
+  ficam no Meta AI.
 - Início: painel com Dispositivo e Ray-Ban Meta; Últimos takes em cards (miniatura,
   título, badges de duração e data abaixo do título, seta) e atalho ver todos para Sessões.
   Sem inventar takes.
@@ -72,5 +73,5 @@ Não conclui essas tasks funcionais por si só. Contratos, hardware, IA e privac
 permanecem definidos nos JSON de docs/rules/.
 
 Compilar :app:assembleMockDebug com Java 21, instalar e reabrir no emulador.
-Conferir as quatro telas, toque central, seleção de áudio, fonte ampliada,
+Conferir as telas do onboarding, toque central, seleção de áudio, fonte ampliada,
 animações desativadas e insets. Não executar lint ou testes extras sem solicitação.

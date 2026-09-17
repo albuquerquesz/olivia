@@ -1,5 +1,6 @@
 package com.olivia.companion.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -47,19 +48,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.R
 
-private const val OnboardingPageCount = 3
+private const val IntroPage = 0
+private const val HowItWorksPage = 1
+private const val MicrophonePermissionPage = 2
+private const val BluetoothPermissionPage = 3
+
+private fun onboardingPageCount(bluetoothPermissionRequired: Boolean): Int =
+    if (bluetoothPermissionRequired) BluetoothPermissionPage + 1 else MicrophonePermissionPage + 1
 
 @Composable
 fun OliviaWelcomeScreen(
     audioPermissionGranted: Boolean,
     bluetoothPermissionRequired: Boolean,
     bluetoothPermissionGranted: Boolean,
-    onRequestPermissions: () -> Unit,
+    onRequestAudioPermission: () -> Unit,
+    onRequestBluetoothPermission: () -> Unit,
     onEnter: () -> Unit,
 ) {
     var page by rememberSaveable { mutableIntStateOf(0) }
-    val permissionsGranted = audioPermissionGranted &&
-        (!bluetoothPermissionRequired || bluetoothPermissionGranted)
+    val pageCount = onboardingPageCount(bluetoothPermissionRequired)
+    val currentPage = page.coerceIn(0, pageCount - 1)
+    val needsAudioPermission = currentPage == MicrophonePermissionPage && !audioPermissionGranted
+    val needsBluetoothPermission = currentPage == BluetoothPermissionPage && !bluetoothPermissionGranted
+
+    BackHandler(enabled = currentPage > IntroPage) {
+        page = currentPage - 1
+    }
 
     Box(
         modifier = Modifier
@@ -75,16 +89,29 @@ fun OliviaWelcomeScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             AnimatedContent(
-                targetState = page,
+                targetState = currentPage,
                 label = "onboarding page",
             ) { currentPage ->
                 when (currentPage) {
-                    0 -> OnboardingIntro()
-                    1 -> OnboardingHowItWorks()
-                    else -> OnboardingPermissions(
-                        audioPermissionGranted = audioPermissionGranted,
-                        bluetoothPermissionRequired = bluetoothPermissionRequired,
-                        bluetoothPermissionGranted = bluetoothPermissionGranted,
+                    IntroPage -> OnboardingIntro()
+                    HowItWorksPage -> OnboardingHowItWorks()
+                    MicrophonePermissionPage -> OnboardingPermissionPage(
+                        icon = Icons.Outlined.Mic,
+                        title = "Dê voz à Olivia",
+                        description = "O microfone do celular ouve “Oi, Olivia” e seus comandos locais.",
+                        permissionTitle = "Microfone do celular",
+                        permissionDescription = "Necessário para iniciar e controlar um take por voz.",
+                        granted = audioPermissionGranted,
+                        privacyNote = "O áudio do take não alimenta a IA.",
+                    )
+                    else -> OnboardingPermissionPage(
+                        icon = Icons.Outlined.Bluetooth,
+                        title = "Conecte seus óculos",
+                        description = "O celular faz a ponte com os Ray-Ban Meta durante o take.",
+                        permissionTitle = "Bluetooth",
+                        permissionDescription = "Necessário para conexão e reconexão com os óculos.",
+                        granted = bluetoothPermissionGranted,
+                        privacyNote = "O pareamento e a autorização acontecem no app Meta AI.",
                     )
                 }
             }
@@ -99,13 +126,14 @@ fun OliviaWelcomeScreen(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OnboardingPageIndicator(page)
+            OnboardingPageIndicator(page = currentPage, pageCount = pageCount)
             Button(
                 onClick = {
                     when {
-                        page < OnboardingPageCount - 1 -> page += 1
-                        permissionsGranted -> onEnter()
-                        else -> onRequestPermissions()
+                        needsAudioPermission -> onRequestAudioPermission()
+                        needsBluetoothPermission -> onRequestBluetoothPermission()
+                        currentPage < pageCount - 1 -> page = currentPage + 1
+                        else -> onEnter()
                     }
                 },
                 modifier = Modifier
@@ -118,7 +146,12 @@ fun OliviaWelcomeScreen(
                 ),
             ) {
                 Text(
-                    text = onboardingButtonLabel(page, permissionsGranted),
+                    text = onboardingButtonLabel(
+                        page = currentPage,
+                        pageCount = pageCount,
+                        audioPermissionGranted = audioPermissionGranted,
+                        bluetoothPermissionGranted = bluetoothPermissionGranted,
+                    ),
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
@@ -222,38 +255,26 @@ private fun OnboardingHowItWorks() {
 }
 
 @Composable
-private fun OnboardingPermissions(
-    audioPermissionGranted: Boolean,
-    bluetoothPermissionRequired: Boolean,
-    bluetoothPermissionGranted: Boolean,
+private fun OnboardingPermissionPage(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    permissionTitle: String,
+    permissionDescription: String,
+    granted: Boolean,
+    privacyNote: String,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         OnboardingHeading(
-            title = "Só o necessário",
-            description = "A Olivia precisa de acesso ao microfone para ouvir seus comandos. Nos óculos reais, também do Bluetooth para fazer a ponte.",
+            title = title,
+            description = description,
         )
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OnboardingPermissionRow(
-                icon = Icons.Outlined.Mic,
-                title = "Microfone do celular",
-                description = "Ouve “Oi, Olivia” e os comandos locais.",
-                granted = audioPermissionGranted,
-            )
-            if (bluetoothPermissionRequired) {
-                OnboardingPermissionRow(
-                    icon = Icons.Outlined.Bluetooth,
-                    title = "Bluetooth",
-                    description = "Conecta o celular aos Ray-Ban Meta.",
-                    granted = bluetoothPermissionGranted,
-                )
-            } else {
-                OnboardingInfoRow(
-                    icon = Icons.Outlined.Bluetooth,
-                    title = "Autorização dos óculos",
-                    description = "O pareamento e a autorização acontecem no app Meta AI.",
-                )
-            }
-        }
+        OnboardingPermissionRow(
+            icon = icon,
+            title = permissionTitle,
+            description = permissionDescription,
+            granted = granted,
+        )
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surfaceVariant,
@@ -267,7 +288,7 @@ private fun OnboardingPermissions(
             ) {
                 Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.size(20.dp))
                 Text(
-                    text = "Sem câmera do celular, localização ou notificações.",
+                    text = privacyNote,
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -383,45 +404,6 @@ private fun OnboardingPermissionRow(
 }
 
 @Composable
-private fun OnboardingInfoRow(
-    icon: ImageVector,
-    title: String,
-    description: String,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            PermissionIcon(icon)
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Text(
-                text = "Meta AI",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-}
-
-@Composable
 private fun PermissionIcon(icon: ImageVector) {
     Box(
         modifier = Modifier
@@ -461,13 +443,13 @@ private fun PermissionStatus(granted: Boolean) {
 }
 
 @Composable
-private fun OnboardingPageIndicator(page: Int) {
+private fun OnboardingPageIndicator(page: Int, pageCount: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        repeat(OnboardingPageCount) { index ->
+        repeat(pageCount) { index ->
             Box(
                 modifier = Modifier
                     .padding(horizontal = 3.dp)
@@ -485,9 +467,16 @@ private fun OnboardingPageIndicator(page: Int) {
     }
 }
 
-private fun onboardingButtonLabel(page: Int, permissionsGranted: Boolean): String = when {
-    page == 0 -> "Começar"
-    page == 1 -> "Continuar"
-    permissionsGranted -> "Entrar na Olivia"
-    else -> "Permitir e continuar"
+private fun onboardingButtonLabel(
+    page: Int,
+    pageCount: Int,
+    audioPermissionGranted: Boolean,
+    bluetoothPermissionGranted: Boolean,
+): String = when {
+    page == IntroPage -> "Começar"
+    page == HowItWorksPage -> "Continuar"
+    page == MicrophonePermissionPage && !audioPermissionGranted -> "Permitir microfone"
+    page == MicrophonePermissionPage && page < pageCount - 1 -> "Continuar"
+    page == BluetoothPermissionPage && !bluetoothPermissionGranted -> "Permitir Bluetooth"
+    else -> "Entrar na Olivia"
 }

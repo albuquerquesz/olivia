@@ -106,29 +106,15 @@ private val OliviaSideDestinations = listOf(
 private const val WELCOME_ROUTE = "welcome"
 private const val TAKE_ROUTE = "take/{sessionId}"
 
-private fun onboardingRuntimePermissions(bluetoothRequired: Boolean): List<String> = buildList {
-    add(Manifest.permission.RECORD_AUDIO)
-    if (bluetoothRequired && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        add(Manifest.permission.BLUETOOTH_CONNECT)
-        add(Manifest.permission.BLUETOOTH_SCAN)
-    }
-}
-
 private fun hasPermission(context: Context, permission: String): Boolean =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
-private fun hasAllPermissions(context: Context, permissions: List<String>): Boolean =
-    permissions.all { hasPermission(context, it) }
-
 private fun hasBluetoothPermission(context: Context, required: Boolean): Boolean {
     if (!required || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
-    return hasAllPermissions(
-        context,
-        listOf(
-            Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.BLUETOOTH_SCAN,
-        ),
-    )
+    return listOf(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_SCAN,
+    ).all { hasPermission(context, it) }
 }
 
 private fun bottomBarPadding(showBottomBar: Boolean) =
@@ -159,9 +145,6 @@ fun OliviaApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val bluetoothPermissionRequired = ActiveBackend.current.usesDatSdk
-    val runtimePermissions = remember(bluetoothPermissionRequired) {
-        onboardingRuntimePermissions(bluetoothPermissionRequired)
-    }
     var audioPermissionGranted by remember {
         mutableStateOf(hasPermission(context, Manifest.permission.RECORD_AUDIO))
     }
@@ -175,22 +158,27 @@ fun OliviaApp(
     }
     val onboardingPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
-    ) { granted ->
+    ) { _ ->
         audioPermissionGranted = hasPermission(context, Manifest.permission.RECORD_AUDIO)
         bluetoothPermissionGranted = hasBluetoothPermission(context, bluetoothPermissionRequired)
-        if (granted.isNotEmpty() && hasAllPermissions(context, runtimePermissions)) {
-            completeOnboarding()
-        }
     }
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
 
-    val requestOnboardingPermissions = {
-        val missingPermissions = runtimePermissions.filterNot { hasPermission(context, it) }
-        if (missingPermissions.isEmpty()) {
-            completeOnboarding()
-        } else {
-            onboardingPermissionLauncher.launch(missingPermissions.toTypedArray())
+    val requestAudioPermission = {
+        if (!audioPermissionGranted) {
+            onboardingPermissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
+        }
+    }
+    val requestBluetoothPermission = {
+        if (bluetoothPermissionRequired) {
+            val missingPermissions = listOf(
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN,
+            ).filterNot { hasPermission(context, it) }
+            if (missingPermissions.isNotEmpty()) {
+                onboardingPermissionLauncher.launch(missingPermissions.toTypedArray())
+            }
         }
     }
 
@@ -250,7 +238,8 @@ fun OliviaApp(
                     audioPermissionGranted = audioPermissionGranted,
                     bluetoothPermissionRequired = bluetoothPermissionRequired,
                     bluetoothPermissionGranted = bluetoothPermissionGranted,
-                    onRequestPermissions = requestOnboardingPermissions,
+                    onRequestAudioPermission = requestAudioPermission,
+                    onRequestBluetoothPermission = requestBluetoothPermission,
                     onEnter = completeOnboarding,
                 )
             }
