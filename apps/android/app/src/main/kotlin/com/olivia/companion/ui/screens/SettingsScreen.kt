@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -71,7 +72,24 @@ fun OliviaSettingsScreen(
                         title = "Watchdog de sessão",
                         description = "Após 4 s sem frame, a sessão fica em modo reduzido",
                     ) {
-                        Switch(checked = true, onCheckedChange = null)
+                        Switch(
+                            checked = true,
+                            onCheckedChange = null,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.surface,
+                                checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                checkedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surface,
+                                uncheckedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                disabledCheckedThumbColor = MaterialTheme.colorScheme.surface,
+                                disabledCheckedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                disabledCheckedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                disabledUncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
+                                disabledUncheckedTrackColor = MaterialTheme.colorScheme.surface,
+                                disabledUncheckedBorderColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        )
                     }
                 }
             }
