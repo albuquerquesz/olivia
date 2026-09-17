@@ -50,4 +50,5 @@ serão trocados amanhã. Depois do freeze, só são permitidas correções de bl
 ajustes de configuração.
 
 Checklist detalhado: [EXECUTION_CHECKLIST.md](EXECUTION_CHECKLIST.md).  
+Status das issues do quadro: [ISSUE_STATUS_2026-09-17.md](ISSUE_STATUS_2026-09-17.md).<br>
 Template de evidência: [EVIDENCE_TEMPLATE.md](EVIDENCE_TEMPLATE.md).
