@@ -1,20 +1,27 @@
 flowchart TD
-  C[00 Contratos] --> I[01 Infra e testes]
-  C --> D[02 Setup DAT]
-  D --> S[03 Captura e sessao]
-  I --> F[04 Fixtures mock sampler]
-  C --> F
-  F --> A[05 Classificacao real]
-  F --> G[06 Direcao timeline audio]
-  S --> G
-  A --> Live[Gate integrado com IA real]
-  G --> Live
-  D --> Spike[BE-12 spike nativo antecipado]
-  Spike --> R[07 Importacao e alinhamento]
-  R --> P[08 Transcricao cortes handoff]
-  G --> P
-  I --> Sec[09 Seguranca transversal]
-  Live --> E[10 Evidencias e hardware]
-  P --> E
-  Sec --> E
-  E --> O[Otimização 900 ms adiada]
+  subgraph Hoje[Hoje — freeze pré-hardware]
+    C[Contratos 2.0.0 + SH-01 draft] --> I[Infra, CI e evidências]
+    C --> D[DAT boundary + MockDeviceKit]
+    D --> S[Captura, preview e estados]
+    I --> F[Fixtures, sampler e replay]
+    C --> F
+    F --> A[ROI Firebase + visão local]
+    F --> G[Voz, direção, áudio e timeline]
+    S --> G
+    A --> G
+    G --> P[STOPPED, importação, Whisper e cortes]
+    I --> Sec[Privacidade e cleanup]
+    P --> Freeze[APK + roteiro + fallback congelados]
+    Sec --> Freeze
+  end
+  subgraph Amanha[Amanhã — H0 com hardware]
+    Freeze --> Pair[Pareamento + DAT real]
+    Pair --> Camera[A1: frame, preview e loop]
+    Camera --> Audio[INT-05: voz e tons nos óculos]
+    Camera --> Native[A2: vídeo nativo 3K simultâneo]
+    Native --> Drop[A3: queda Bluetooth sem perder take]
+    Drop --> Import[A4/A5: STOPPED, importação e alinhamento]
+    Audio --> Check[Checkpoints, bateria e pitch]
+    Import --> Check
+  end
+  Check --> O[Otimização 900 ms depois]
