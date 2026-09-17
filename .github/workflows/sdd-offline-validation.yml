@@ -75,13 +75,13 @@ jobs:
         working-directory: apps/android
         run: sh gradlew testMockDebugUnitTest testGlassesDebugUnitTest --no-daemon
 
-      - name: Compilar APK mock
+      - name: Compilar APK mock legado
         working-directory: apps/android
         run: sh gradlew assembleMockDebug --no-daemon
 
       - name: Publicar APK mock
         uses: actions/upload-artifact@v4
         with:
-          name: olivia-mock-debug-apk-sdd
+          name: olivia-legacy-developer-mock-debug-sdd
           if-no-files-found: error
           path: apps/android/app/build/outputs/apk/mock/debug/*.apk

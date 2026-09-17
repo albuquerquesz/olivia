@@ -1,10 +1,8 @@
-name: APK mock (debug)
+name: APK legacy developer mock (offline)
 
 # Não roda a cada commit na main: o APK sai sob demanda ou quando algo chega em prod.
 on:
   workflow_dispatch:
-  push:
-    branches: [prod]
 
 concurrency:
   group: android-mock-apk-${{ github.ref }}
@@ -14,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  mock-debug:
-    name: assembleMockDebug
+  legacy-developer-mock:
+    name: assembleMockDebug (legacy fallback)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -56,6 +54,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: olivia-mock-debug-apk
+          name: olivia-legacy-developer-mock-debug
           path: apps/android/app/build/outputs/apk/mock/debug/*.apk
           if-no-files-found: error

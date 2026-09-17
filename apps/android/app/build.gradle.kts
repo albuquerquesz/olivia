@@ -28,6 +28,23 @@ fun environmentOrDotEnv(environment: String): String? =
             ?.removeSurrounding("'")
             ?.takeIf { it.isNotBlank() }
 
+// Release signing is injected only by the protected CI job. Local builds keep the existing
+// unsigned-release behavior unless all CI signing inputs are present.
+val ciReleaseKeystorePath = providers.environmentVariable("ANDROID_RELEASE_KEYSTORE_PATH").orNull
+    ?.takeIf { it.isNotBlank() }
+val ciReleaseStorePassword = providers.environmentVariable("ANDROID_RELEASE_STORE_PASSWORD").orNull
+    ?.takeIf { it.isNotBlank() }
+val ciReleaseKeyAlias = providers.environmentVariable("ANDROID_RELEASE_KEY_ALIAS").orNull
+    ?.takeIf { it.isNotBlank() }
+val ciReleaseKeyPassword = providers.environmentVariable("ANDROID_RELEASE_KEY_PASSWORD").orNull
+    ?.takeIf { it.isNotBlank() }
+val ciReleaseSigningReady = listOf(
+    ciReleaseKeystorePath,
+    ciReleaseStorePassword,
+    ciReleaseKeyAlias,
+    ciReleaseKeyPassword,
+).all { it != null }
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -39,6 +56,17 @@ android {
     namespace = "com.olivia.companion"
     compileSdk = libs.versions.androidCompileSdk.get().toInt()
     buildToolsVersion = "36.0.0"
+
+    signingConfigs {
+        if (ciReleaseSigningReady) {
+            create("ciRelease") {
+                storeFile = rootProject.file(requireNotNull(ciReleaseKeystorePath))
+                storePassword = requireNotNull(ciReleaseStorePassword)
+                keyAlias = requireNotNull(ciReleaseKeyAlias)
+                keyPassword = requireNotNull(ciReleaseKeyPassword)
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.olivia.companion"
@@ -113,6 +141,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (ciReleaseSigningReady) signingConfig = signingConfigs.getByName("ciRelease")
         }
     }
 
@@ -189,6 +218,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)

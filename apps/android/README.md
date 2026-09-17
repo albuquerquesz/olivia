@@ -52,6 +52,14 @@ Ele usa a câmera do telefone como feed simulado e não substitui a validação 
 O `:core` usa contratos 2.0.0; veja a [migração](../../docs/spec-driven-development/00-contratos-e-fronteiras/implementation.md).
 O [runner de integração](../../infra/testing/README.md) permite testar o mesmo módulo em Docker/JVM sem Android SDK ou DAT, com tarefas separadas de unitários e integração. Os testes desta primeira entrega foram escritos, mas ainda não executados.
 
+## Artefatos oficiais
+
+- `olivia-developer-wearables-debug`: flavor `glassesDebug` com `MWDAT_MOCK_DEVICE_KIT=true`, usa o Wearables SDK e MockDeviceKit.
+- `olivia-production-wearables-release`: flavor `glassesRelease` com `MWDAT_MOCK_DEVICE_KIT=false`, usa DAT fisico e Play Integrity.
+- `mockDebug`: fallback offline legado; nao usa DAT nem MockDeviceKit.
+
+O workflow oficial e [android-wearables-apks.yml](../../.github/workflows/android-wearables-apks.yml). Os requisitos de secrets e assinatura estao em [ANDROID_CI_ARTIFACTS.md](../../docs/ANDROID_CI_ARTIFACTS.md).
+
 ## Segredos
 
 `local.properties`, tokens, keystores e APKs são ignorados pelo Git. Para uma integração
