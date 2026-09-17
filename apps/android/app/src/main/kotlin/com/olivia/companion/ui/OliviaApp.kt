@@ -1,7 +1,9 @@
 package com.olivia.companion.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -54,7 +56,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -83,9 +84,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.olivia.companion.ActiveBackend
 import com.olivia.companion.session.OliviaSessionViewModel
 import com.olivia.companion.session.TakeSummary
-import com.olivia.companion.session.VoiceCommandState
 import com.olivia.core.SessionId
 import com.olivia.core.SessionState
 
@@ -104,6 +105,31 @@ private val OliviaSideDestinations = listOf(
 
 private const val WELCOME_ROUTE = "welcome"
 private const val TAKE_ROUTE = "take/{sessionId}"
+
+private fun onboardingRuntimePermissions(bluetoothRequired: Boolean): List<String> = buildList {
+    add(Manifest.permission.RECORD_AUDIO)
+    if (bluetoothRequired && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        add(Manifest.permission.BLUETOOTH_CONNECT)
+        add(Manifest.permission.BLUETOOTH_SCAN)
+    }
+}
+
+private fun hasPermission(context: Context, permission: String): Boolean =
+    ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+private fun hasAllPermissions(context: Context, permissions: List<String>): Boolean =
+    permissions.all { hasPermission(context, it) }
+
+private fun hasBluetoothPermission(context: Context, required: Boolean): Boolean {
+    if (!required || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+    return hasAllPermissions(
+        context,
+        listOf(
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_SCAN,
+        ),
+    )
+}
 
 private fun bottomBarPadding(showBottomBar: Boolean) =
     80.dp.takeIf { showBottomBar } ?: 0.dp
@@ -127,38 +153,49 @@ fun OliviaApp(
     ),
 ) {
     val context = LocalContext.current
-    var audioPermissionGranted by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED,
-        )
-    }
-    val audioPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        audioPermissionGranted = granted
-    }
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val bluetoothPermissionRequired = ActiveBackend.current.usesDatSdk
+    val runtimePermissions = remember(bluetoothPermissionRequired) {
+        onboardingRuntimePermissions(bluetoothPermissionRequired)
+    }
+    var audioPermissionGranted by remember {
+        mutableStateOf(hasPermission(context, Manifest.permission.RECORD_AUDIO))
+    }
+    var bluetoothPermissionGranted by remember(bluetoothPermissionRequired) {
+        mutableStateOf(hasBluetoothPermission(context, bluetoothPermissionRequired))
+    }
+    val completeOnboarding = {
+        navController.navigate(OliviaDestination.HOME.route) {
+            popUpTo(WELCOME_ROUTE) { inclusive = true }
+        }
+    }
+    val onboardingPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        audioPermissionGranted = hasPermission(context, Manifest.permission.RECORD_AUDIO)
+        bluetoothPermissionGranted = hasBluetoothPermission(context, bluetoothPermissionRequired)
+        if (granted.isNotEmpty() && hasAllPermissions(context, runtimePermissions)) {
+            completeOnboarding()
+        }
+    }
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
 
-    LaunchedEffect(currentRoute, audioPermissionGranted) {
-        if (
-            currentRoute != null &&
-            currentRoute != WELCOME_ROUTE &&
-            !audioPermissionGranted &&
-            uiState.voiceState != VoiceCommandState.UNAVAILABLE
-        ) {
-            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    val requestOnboardingPermissions = {
+        val missingPermissions = runtimePermissions.filterNot { hasPermission(context, it) }
+        if (missingPermissions.isEmpty()) {
+            completeOnboarding()
+        } else {
+            onboardingPermissionLauncher.launch(missingPermissions.toTypedArray())
         }
     }
 
-    DisposableEffect(lifecycleOwner, audioPermissionGranted) {
-        if (!audioPermissionGranted) {
+    DisposableEffect(lifecycleOwner, currentRoute, audioPermissionGranted) {
+        if (!audioPermissionGranted || currentRoute == WELCOME_ROUTE) {
             viewModel.stopVoiceCommands()
             onDispose { }
         } else {
@@ -210,11 +247,11 @@ fun OliviaApp(
         ) {
             composable(WELCOME_ROUTE) {
                 OliviaWelcomeScreen(
-                    onEnter = {
-                        navController.navigate(OliviaDestination.HOME.route) {
-                            popUpTo(WELCOME_ROUTE) { inclusive = true }
-                        }
-                    },
+                    audioPermissionGranted = audioPermissionGranted,
+                    bluetoothPermissionRequired = bluetoothPermissionRequired,
+                    bluetoothPermissionGranted = bluetoothPermissionGranted,
+                    onRequestPermissions = requestOnboardingPermissions,
+                    onEnter = completeOnboarding,
                 )
             }
             composable(OliviaDestination.HOME.route) {

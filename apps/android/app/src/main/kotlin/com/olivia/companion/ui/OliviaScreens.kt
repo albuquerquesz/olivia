@@ -14,8 +14,20 @@ import com.olivia.core.AudioMode
 import com.olivia.core.SessionId
 
 @Composable
-fun OliviaWelcomeScreen(onEnter: () -> Unit) {
-    WelcomeScreen(onEnter = onEnter)
+fun OliviaWelcomeScreen(
+    audioPermissionGranted: Boolean,
+    bluetoothPermissionRequired: Boolean,
+    bluetoothPermissionGranted: Boolean,
+    onRequestPermissions: () -> Unit,
+    onEnter: () -> Unit,
+) {
+    WelcomeScreen(
+        audioPermissionGranted = audioPermissionGranted,
+        bluetoothPermissionRequired = bluetoothPermissionRequired,
+        bluetoothPermissionGranted = bluetoothPermissionGranted,
+        onRequestPermissions = onRequestPermissions,
+        onEnter = onEnter,
+    )
 }
 
 @Composable
