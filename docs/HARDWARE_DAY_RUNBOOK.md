@@ -37,7 +37,8 @@ Bluetooth, Gemini, Porcupine, native recording, Whisper, audio at the glasses, o
    streaming, import through Meta AI/gallery, and a sync marker (tone or clap) usable to align
    the stream clock with native media. Mark 3K as roadmap if any of these steps fails; do not
    relabel the Bluetooth stream as 3K output.
-3. Run MockDeviceKit smoke: connect, emit one 720x1280 frame, pause/resume, unavailable/recovered.
+3. Run MockDeviceKit smoke: connect, emit one portrait frame (the phone-camera feed currently
+   delivers 480x640), pause/resume, unavailable/recovered.
 4. Replace only `MockGlassesGateway` with the DAT adapter. Confirm a real frame origin before
    continuing; never relabel mock frames as DAT.
 5. Configure and compare the lowest DAT stream setting that retains usable framing (360x640,

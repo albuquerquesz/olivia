@@ -29,6 +29,14 @@ object FirebaseVisualAnalyzerFactory {
                 localizationSink = com.olivia.core.LocalizationSink { stamp, localization ->
                     hybrid.onRemoteLocalization(stamp, localization)
                 },
+                // The production guard remains 2 s. The local MockDeviceKit demo needs a
+                // longer first acquisition window because the Moto's measured remote p50 is
+                // just above that guard; this does not change the production contract.
+                timeoutMs = if (com.olivia.companion.BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) {
+                    MOCK_DEVICE_KIT_TIMEOUT_MS
+                } else {
+                    PRODUCTION_TIMEOUT_MS
+                },
             )
         hybrid = HybridVisualAnalyzer(
             remote = remote,
@@ -42,4 +50,7 @@ object FirebaseVisualAnalyzerFactory {
         // Do not surface configuration/provider detail in UI, timeline, or logs.
         Result.failure(IllegalStateException("Firebase visual analysis unavailable"))
     }
+
+    private const val PRODUCTION_TIMEOUT_MS = 2_000L
+    private const val MOCK_DEVICE_KIT_TIMEOUT_MS = 8_000L
 }

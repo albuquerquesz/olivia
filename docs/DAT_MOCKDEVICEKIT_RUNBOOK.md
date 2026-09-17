@@ -25,12 +25,14 @@ telefone como feed. Remova a flag e reinstale para voltar ao caminho de oculos p
 ## O que observar
 
 - A sessao deve sair de `STARTING` para `STARTED` quando o primeiro frame chegar.
-- Pausar nao deve encerrar a sessao DAT; retomar abre outra geracao de captura.
+- Pausar nao deve encerrar a sessao DAT; a retomada abre uma nova geracao no dominio e reanexa o
+  collector ao mesmo stream DAT.
 - Quatro segundos sem frame devem levar a `DEGRADED`.
 - A analise recebe somente frame efemero: nenhum frame ou video vai para timeline, DataStore,
   Firestore ou armazenamento em nuvem.
 
-O stream pede HIGH (720×1280) e 2 fps; o `FrameSampler` mantem a analise em 0,5 fps. Buffers
-comprimidos/de configuracao, ou que nao tenham RGBA completo, sao descartados em vez de rotulados
-como imagem invalida. Portanto, o MockDeviceKit valida a integracao e a troca de adapter, mas nao
-valida Bluetooth, hardware, consumo, latencia, qualidade de camera ou gravacao nativa.
+O stream pede HIGH e 2 fps; o `FrameSampler` mantem a analise em 0,5 fps. No feed de camera do
+MockDeviceKit o aparelho entregou `480×640` raw I420, convertido pelo gateway para NV21
+tightly-packed. O modo fisico continua usando HEVC e o decoder local. Portanto, o MockDeviceKit
+valida a integracao e a troca de adapter, mas nao valida Bluetooth, hardware, consumo, latencia,
+qualidade da camera dos oculos ou gravacao nativa.

@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.graphics.YuvImage
+import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.FirebaseAI
 import com.google.firebase.ai.type.GenerativeBackend
@@ -82,7 +83,10 @@ class FirebaseGeminiVisualTransport(
             Result.success(requireNotNull(response.text) { "Missing visual response" })
         } catch (error: CancellationException) {
             throw error
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            if (com.olivia.companion.BuildConfig.DEBUG) {
+                Log.w(TAG, "visual classify failed: ${error::class.java.simpleName}")
+            }
             // Provider details and frame-derived data must not escape into app logs or timeline.
             Result.failure(IllegalStateException("Firebase visual transport unavailable"))
         } finally {
@@ -136,6 +140,7 @@ class FirebaseGeminiVisualTransport(
     }
 
     companion object {
+        const val TAG = "OliviaFirebaseVisual"
         const val DEFAULT_MODEL = "gemini-3.5-flash-lite"
         const val DEFAULT_MAX_EDGE_PX = 512
         const val JPEG_QUALITY = 80

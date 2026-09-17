@@ -35,15 +35,17 @@ padrão (`assembleGlassesDebug`).
 | `mock`    | `com.olivia.companion.mock` | Óculos simulados, sem SDK          |
 | `glasses` | `com.olivia.companion`      | Ray-Ban Meta via DAT               |
 
-Os dois flavors instalam lado a lado. O `mock` é o caminho de demo garantido e deve
-continuar subindo sem hardware.
+Os dois flavors instalam lado a lado. O `mock` é o caminho de demo offline garantido; o
+`glasses` pode usar o MockDeviceKit com `mwdat_mock_device_kit=true` para simular a câmera dos
+óculos no telefone.
 
 ## Versões
 
 Tudo — Kotlin, Compose, AGP, SDKs e os artefatos do DAT — fica em
 [`gradle/libs.versions.toml`](gradle/libs.versions.toml). Os artefatos `mwdat` estão
 resolvidos do Maven Central e exclusivos do flavor `glasses`. O registro no Wearables
-Developer Center e o smoke test do MockDeviceKit seguem pendentes na task INT-00.
+Developer Center está configurado localmente; o smoke test do MockDeviceKit passou no Moto G60.
+Ele usa a câmera do telefone como feed simulado e não substitui a validação dos óculos físicos.
 
 ## Contratos e testes do domínio
 

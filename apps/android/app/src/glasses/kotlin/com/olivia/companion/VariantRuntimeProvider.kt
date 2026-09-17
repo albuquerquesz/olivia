@@ -26,6 +26,7 @@ object VariantRuntimeProvider : BackendRuntimeProvider {
                 CoroutineScope(SupervisorJob() + Dispatchers.Default),
             ),
             analyzer = analyzer,
+            clock = clock,
         )
     }
 }

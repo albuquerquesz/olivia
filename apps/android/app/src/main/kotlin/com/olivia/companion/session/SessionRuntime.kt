@@ -1,9 +1,11 @@
 package com.olivia.companion.session
 
 import android.content.Context
+import android.util.Log
 import com.olivia.companion.GlassesBackend
 import com.olivia.companion.audio.AndroidAudioFeedback
 import com.olivia.core.AudioMode
+import com.olivia.core.AnalysisFailure
 import com.olivia.core.CaptureHeartbeat
 import com.olivia.core.CaptureId
 import com.olivia.core.Correction
@@ -51,11 +53,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancelAndJoin
@@ -65,10 +69,28 @@ import kotlinx.coroutines.sync.withLock
 /** Commands supplied by a future on-device command recognizer; cloud speech is not accepted. */
 enum class LocalSessionCommand { START, PAUSE, RESUME, STOP }
 
+/** Content-free live status for the phone UI; it never exposes frames or model text. */
+enum class LiveGuidanceStatus {
+    IDLE,
+    PAUSED,
+    LOCATING_TARGET,
+    TARGET_NOT_FOUND,
+    TARGET_FOUND,
+    TARGET_CENTERED,
+    GUIDANCE_PENDING,
+    GUIDANCE_SENT,
+    ANALYSIS_UNAVAILABLE,
+    AUDIO_UNAVAILABLE,
+}
+
 interface SessionRuntime : AutoCloseable {
     val snapshot: StateFlow<SessionSnapshot?>
     /** Aggregate-only, process-local measurements; never contains media, model text or identifiers. */
     val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot>
+    /** Human-readable live-loop phase for the phone UI, not a substitute for audio guidance. */
+    val liveGuidanceStatus: StateFlow<LiveGuidanceStatus>
+    /** Local aggregate index used by the Sessions screen; no media or frame data is retained. */
+    val sessionHistory: StateFlow<List<SessionHistoryEntry>>
     suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot>
     suspend fun setAudioMode(mode: AudioMode): Result<Unit>
     suspend fun timelineFor(sessionId: SessionId): Result<List<TimelineEvent>>
@@ -93,8 +115,12 @@ object SessionRuntimeFactory {
 class UnavailableSessionRuntime : SessionRuntime {
     private val state = MutableStateFlow<SessionSnapshot?>(null)
     private val metrics = MutableStateFlow(LiveLoopMetrics().snapshot())
+    private val guidance = MutableStateFlow(LiveGuidanceStatus.IDLE)
     override val snapshot: StateFlow<SessionSnapshot?> = state.asStateFlow()
     override val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot> = metrics.asStateFlow()
+    override val liveGuidanceStatus: StateFlow<LiveGuidanceStatus> = guidance.asStateFlow()
+    override val sessionHistory: StateFlow<List<SessionHistoryEntry>> =
+        MutableStateFlow<List<SessionHistoryEntry>>(emptyList()).asStateFlow()
     override suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot> =
         Result.failure(IllegalStateException("DAT ainda não está configurado"))
     override suspend fun setAudioMode(mode: AudioMode): Result<Unit> = Result.success(Unit)
@@ -181,9 +207,9 @@ internal class LiveSessionRuntime(
     context: Context,
     private val gateway: GlassesGateway,
     private val analyzer: FrameAnalyzer,
+    private val clock: OliviaClock,
 ) : SessionRuntime {
     private val runtimeScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val clock = SystemOliviaClock()
     private val audio = AndroidAudioFeedback(context, clock, AudioMode.VOICE)
     private val timeline = FileTimeline(context.filesDir.toPath().resolve("olivia-timeline"))
     private val coordinator = SessionCoordinator(clock, gateway, audio, timeline)
@@ -204,6 +230,14 @@ internal class LiveSessionRuntime(
     private val metrics = LiveLoopMetrics()
     private val _liveLoopMetrics = MutableStateFlow(metrics.snapshot())
     override val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot> = _liveLoopMetrics.asStateFlow()
+    private val _liveGuidanceStatus = MutableStateFlow(LiveGuidanceStatus.IDLE)
+    override val liveGuidanceStatus: StateFlow<LiveGuidanceStatus> = _liveGuidanceStatus.asStateFlow()
+    private val historyStore = LocalSessionHistory(context)
+    override val sessionHistory: StateFlow<List<SessionHistoryEntry>> = historyStore.entries.stateIn(
+        runtimeScope,
+        SharingStarted.Eagerly,
+        emptyList(),
+    )
     /** Serializes short state transitions; provider, TTS and frame I/O never run under this lock. */
     private val runtimeMutex = Mutex()
     private val analysisFrames = Channel<Frame>(capacity = 1)
@@ -274,11 +308,12 @@ internal class LiveSessionRuntime(
             null
         }
         cancellable?.cancelAndJoin()
-        return runtimeMutex.withLock {
+        val result = runtimeMutex.withLock {
             if (command == LocalSessionCommand.START) discard(sampler.cancel())
             when (command) {
                 LocalSessionCommand.START -> {
                     (analyzer as? HybridVisualAnalyzer)?.reset()
+                    _liveGuidanceStatus.value = LiveGuidanceStatus.LOCATING_TARGET
                     coordinator.start(
                         sessionId = SessionId(UUID.randomUUID().toString()),
                         config = SessionConfig(audioMode = audioMode),
@@ -298,6 +333,21 @@ internal class LiveSessionRuntime(
                 }
             }
         }
+        if (command == LocalSessionCommand.START && result.isFailure) {
+            _liveGuidanceStatus.value = LiveGuidanceStatus.IDLE
+        }
+        if (command == LocalSessionCommand.RESUME && result.isSuccess) {
+            _liveGuidanceStatus.value = LiveGuidanceStatus.LOCATING_TARGET
+        }
+        if (command == LocalSessionCommand.STOP && result.isSuccess) {
+            val stopped = result.getOrThrow()
+            historyStore.record(stopped, timeline.events(stopped.id))
+            _liveGuidanceStatus.value = LiveGuidanceStatus.IDLE
+        }
+        if (command == LocalSessionCommand.PAUSE && result.isSuccess) {
+            _liveGuidanceStatus.value = LiveGuidanceStatus.PAUSED
+        }
+        return result
     }
 
     override suspend fun setAudioMode(mode: AudioMode): Result<Unit> = runtimeMutex.withLock {
@@ -370,10 +420,25 @@ internal class LiveSessionRuntime(
             }
             val result = analyzer.analyze(frame).also { analysisFinished = clock.now() }
             if (result.isFailure) {
+                if (com.olivia.companion.BuildConfig.DEBUG) {
+                    val code = (result.exceptionOrNull() as? AnalysisFailure)?.code?.name
+                        ?: result.exceptionOrNull()?.javaClass?.simpleName
+                        ?: "UNKNOWN"
+                    Log.w(LOG_TAG, "visual analysis unavailable: $code")
+                }
+                _liveGuidanceStatus.value = LiveGuidanceStatus.ANALYSIS_UNAVAILABLE
                 runtimeMutex.withLock { coordinator.onAnalysisUnavailable() }
                 return
             }
             val analysis = result.getOrThrow()
+            val hasTrackedTarget = (analyzer as? HybridVisualAnalyzer)?.currentTrackedRoi() != null
+            _liveGuidanceStatus.value = if (!hasTrackedTarget && analyzer is HybridVisualAnalyzer) {
+                LiveGuidanceStatus.TARGET_NOT_FOUND
+            } else if (analysis.hasDeviation) {
+                LiveGuidanceStatus.TARGET_FOUND
+            } else {
+                LiveGuidanceStatus.TARGET_CENTERED
+            }
             var correction: Correction? = null
             val stillAccepted = runtimeMutex.withLock {
                 if (!coordinator.accepts(analysis.frameStamp)) {
@@ -391,6 +456,7 @@ internal class LiveSessionRuntime(
             }
             if (stillAccepted && correction != null) {
                 val issuedCorrection = requireNotNull(correction)
+                _liveGuidanceStatus.value = LiveGuidanceStatus.GUIDANCE_PENDING
                 audioRequestedAtMs = clock.now().monotonicMs
                 val audioResult = audio.announce(issuedCorrection)
                 if (audioResult.isSuccess) {
@@ -402,11 +468,13 @@ internal class LiveSessionRuntime(
                             correctionTracker.begin(issuedCorrection, receipt)
                         ) {
                             coordinator.recordCorrectionIssued(issuedCorrection)
+                            _liveGuidanceStatus.value = LiveGuidanceStatus.GUIDANCE_SENT
                         } else {
                             guidance.onCorrectionOutcome(issuedCorrection.id, CorrectionStatus.EXPIRED)
                         }
                     }
                 } else {
+                    _liveGuidanceStatus.value = LiveGuidanceStatus.AUDIO_UNAVAILABLE
                     runtimeMutex.withLock {
                         guidance.onCorrectionOutcome(issuedCorrection.id, CorrectionStatus.EXPIRED)
                     }
@@ -440,51 +508,84 @@ internal class LiveSessionRuntime(
     ) {
         var audioRequestedAtMs: Long? = null
         var audioStartedAtMs: Long? = null
-        val analysis = result.getOrNull() ?: return
-        var correction: Correction? = null
-        val accepted = runtimeMutex.withLock {
-            if (!coordinator.accepts(analysis.frameStamp)) false
-            else {
-                coordinator.onAnalysisRestored()
-                coordinator.recordDiagnosis(analysis)
-                correctionTracker.onAnalysis(analysis, clock.now())?.let { outcome ->
-                    guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
-                    coordinator.recordCorrectionOutcome(outcome)
-                }
-                correction = guidance.onAnalysis(analysis, clock.now())
-                true
+        val analysisStartedAtMs = startedAt.monotonicMs.coerceAtLeast(stamp.receivedAt.monotonicMs)
+        var analysisFinishedAtMs: Long? = null
+        try {
+            val analysis = result.getOrNull()
+            if (analysis == null) {
+                _liveGuidanceStatus.value = LiveGuidanceStatus.ANALYSIS_UNAVAILABLE
+                return
             }
-        }
-        if (accepted && correction != null) {
-            val issued = requireNotNull(correction)
-            audioRequestedAtMs = clock.now().monotonicMs
-            val audioResult = audio.announce(issued)
-            if (audioResult.isSuccess) {
-                val receipt = audioResult.getOrThrow()
-                audioStartedAtMs = receipt.startedAt.monotonicMs
-                runtimeMutex.withLock {
-                    if (coordinator.accepts(FrameStamp(issued.capture, 0, issued.issuedAt)) &&
-                        correctionTracker.begin(issued, receipt)
-                    ) coordinator.recordCorrectionIssued(issued)
-                    else guidance.onCorrectionOutcome(issued.id, CorrectionStatus.EXPIRED)
+            var correction: Correction? = null
+            val accepted = runtimeMutex.withLock {
+                if (!coordinator.accepts(analysis.frameStamp)) false
+                else {
+                    coordinator.onAnalysisRestored()
+                    coordinator.recordDiagnosis(analysis)
+                    correctionTracker.onAnalysis(analysis, clock.now())?.let { outcome ->
+                        guidance.onCorrectionOutcome(outcome.correction.id, outcome.status)
+                        coordinator.recordCorrectionOutcome(outcome)
+                    }
+                    correction = guidance.onAnalysis(analysis, clock.now())
+                    true
                 }
-            } else {
-                runtimeMutex.withLock { guidance.onCorrectionOutcome(issued.id, CorrectionStatus.EXPIRED) }
             }
-        }
-        runtimeMutex.withLock {
-            val finished = clock.now()
-            metrics.finishFast(
-                LoopMeasurement(
-                    id = LoopMeasurementId(stamp.capture, stamp.sequence),
-                    frameReceivedAtMs = stamp.receivedAt.monotonicMs,
-                    analysisStartedAtMs = startedAt.monotonicMs.coerceAtLeast(stamp.receivedAt.monotonicMs),
-                    analysisFinishedAtMs = finished.monotonicMs.coerceAtLeast(startedAt.monotonicMs),
-                    audioRequestedAtMs = audioRequestedAtMs,
-                    audioStartedAtMs = audioStartedAtMs,
-                ),
-            )
-            publishMetrics()
+            // The fast analysis has completed before any TTS or signal request is made. Keeping
+            // this boundary explicit preserves the metric contract:
+            // analysisFinishedAt <= audioRequestedAt <= audioStartedAt.
+            analysisFinishedAtMs = clock.now().monotonicMs.coerceAtLeast(analysisStartedAtMs)
+            if (accepted) {
+                _liveGuidanceStatus.value = if (analysis.hasDeviation) {
+                    LiveGuidanceStatus.TARGET_FOUND
+                } else {
+                    LiveGuidanceStatus.TARGET_CENTERED
+                }
+            }
+            if (accepted && correction != null) {
+                val issued = requireNotNull(correction)
+                _liveGuidanceStatus.value = LiveGuidanceStatus.GUIDANCE_PENDING
+                audioRequestedAtMs = clock.now().monotonicMs
+                val audioResult = audio.announce(issued)
+                if (audioResult.isSuccess) {
+                    val receipt = audioResult.getOrThrow()
+                    audioStartedAtMs = receipt.startedAt.monotonicMs
+                    runtimeMutex.withLock {
+                        if (coordinator.accepts(FrameStamp(issued.capture, 0, issued.issuedAt)) &&
+                            correctionTracker.begin(issued, receipt)
+                        ) {
+                            coordinator.recordCorrectionIssued(issued)
+                            _liveGuidanceStatus.value = LiveGuidanceStatus.GUIDANCE_SENT
+                        }
+                        else guidance.onCorrectionOutcome(issued.id, CorrectionStatus.EXPIRED)
+                    }
+                } else {
+                    _liveGuidanceStatus.value = LiveGuidanceStatus.AUDIO_UNAVAILABLE
+                    runtimeMutex.withLock { guidance.onCorrectionOutcome(issued.id, CorrectionStatus.EXPIRED) }
+                }
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            // A diagnostic or local fast-path failure must not bring down the live session.
+            if (com.olivia.companion.BuildConfig.DEBUG) {
+                Log.e(LOG_TAG, "fast analysis unavailable", error)
+            }
+            _liveGuidanceStatus.value = LiveGuidanceStatus.ANALYSIS_UNAVAILABLE
+        } finally {
+            runtimeMutex.withLock {
+                val finished = analysisFinishedAtMs ?: clock.now().monotonicMs
+                metrics.finishFast(
+                    LoopMeasurement(
+                        id = LoopMeasurementId(stamp.capture, stamp.sequence),
+                        frameReceivedAtMs = stamp.receivedAt.monotonicMs,
+                        analysisStartedAtMs = analysisStartedAtMs,
+                        analysisFinishedAtMs = finished.coerceAtLeast(analysisStartedAtMs),
+                        audioRequestedAtMs = audioRequestedAtMs,
+                        audioStartedAtMs = audioStartedAtMs,
+                    ),
+                )
+                publishMetrics()
+            }
         }
     }
 
@@ -535,19 +636,25 @@ internal class LiveSessionRuntime(
     }
 }
 
-fun createMockSessionRuntime(context: Context): SessionRuntime = LiveSessionRuntime(
-    context = context,
-    gateway = MockGlassesGateway(
-        clock = SystemOliviaClock(),
-        scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
-    ),
-    analyzer = MockFrameAnalyzer(
-        SystemOliviaClock(),
-        mapOf(
-            4L to MockAnalysisReply.Diagnosis(MockVisualFixtures.subjectRight.expectedDiagnoses),
-            8L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
-            12L to MockAnalysisReply.Diagnosis(MockVisualFixtures.handShadow.expectedDiagnoses),
-            16L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
+private const val LOG_TAG = "OliviaSessionRuntime"
+
+fun createMockSessionRuntime(context: Context): SessionRuntime {
+    val clock = SystemOliviaClock()
+    return LiveSessionRuntime(
+        context = context,
+        gateway = MockGlassesGateway(
+            clock = clock,
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
         ),
-    ),
-)
+        analyzer = MockFrameAnalyzer(
+            clock,
+            mapOf(
+                4L to MockAnalysisReply.Diagnosis(MockVisualFixtures.subjectRight.expectedDiagnoses),
+                8L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
+                12L to MockAnalysisReply.Diagnosis(MockVisualFixtures.handShadow.expectedDiagnoses),
+                16L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
+            ),
+        ),
+        clock = clock,
+    )
+}

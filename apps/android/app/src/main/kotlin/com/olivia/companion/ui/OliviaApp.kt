@@ -126,7 +126,7 @@ fun OliviaApp(sessionRuntime: SessionRuntime) {
                 )
             }
             composable(OliviaDestination.HOME.route) {
-                OliviaHomeScreen()
+                OliviaHomeScreen(sessionRuntime)
             }
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(

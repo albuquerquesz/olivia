@@ -227,6 +227,7 @@
   },
   "privacy_invariants": [
     "Preferências pequenas (como modo de áudio) ficam em DataStore privado no Android; não carregam identidade, mídia, URI, transcrição, timeline ou credencial.",
+    "O histórico local de Sessões pode guardar somente ID técnico, duração e contagens agregadas de diagnósticos/correções; não guarda frames, áudio, vídeo, URI ou texto de modelo.",
     "JSON/SRT de revisão só nascem após o take e permanecem privados até compartilhamento explícito pelo Android Sharesheet, com URI de leitura temporária; o vídeo original não é alterado.",
     "Frame é efêmero: classifique e descarte; não persista bytes, não escreva em log, não retenha após a análise retornar.",
     "Frame.toString() é cego ao conteúdo para que um log acidental não vaze imagem.",

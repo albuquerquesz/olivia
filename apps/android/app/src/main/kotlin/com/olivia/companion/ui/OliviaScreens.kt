@@ -61,10 +61,14 @@ import com.olivia.companion.media.AndroidLocalRecordingSource
 import com.olivia.companion.media.AndroidReviewExporter
 import com.olivia.companion.media.LocalReviewExport
 import com.olivia.companion.session.LocalSessionCommand
+import com.olivia.companion.session.LiveGuidanceStatus
 import com.olivia.companion.session.SessionRuntime
+import com.olivia.companion.session.SessionHistoryEntry
 import com.olivia.core.AudioMode
+import com.olivia.core.DegradationCause
 import com.olivia.core.LinearMediaAlignment
 import com.olivia.core.LocalPostProcessor
+import com.olivia.core.SessionSnapshot
 import com.olivia.core.SessionState
 import com.olivia.core.UnavailableLocalTranscriptProvider
 import java.io.File
@@ -102,7 +106,8 @@ fun OliviaWelcomeScreen(onContinue: () -> Unit) {
 }
 
 @Composable
-fun OliviaHomeScreen() {
+fun OliviaHomeScreen(sessionRuntime: SessionRuntime) {
+    val history by sessionRuntime.sessionHistory.collectAsState()
     OliviaPage {
         OliviaPanel {
             Text("Dispositivo", style = MaterialTheme.typography.bodyLarge)
@@ -114,8 +119,12 @@ fun OliviaHomeScreen() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                OliviaStat("Sessões", "0", Modifier.weight(1f))
-                OliviaStat("Correções", "0", Modifier.weight(1f))
+                OliviaStat("Sessões", history.size.toString(), Modifier.weight(1f))
+                OliviaStat(
+                    "Correções",
+                    history.sumOf(SessionHistoryEntry::correctionCount).toString(),
+                    Modifier.weight(1f),
+                )
             }
         }
     }
@@ -128,6 +137,7 @@ fun OliviaRecordingScreen(
     onOpenSettings: () -> Unit,
 ) {
     val snapshot by sessionRuntime.snapshot.collectAsState()
+    val guidanceStatus by sessionRuntime.liveGuidanceStatus.collectAsState()
     val scope = rememberCoroutineScope()
     var commandError by rememberSaveable { mutableStateOf<String?>(null) }
     OliviaPage {
@@ -136,7 +146,8 @@ fun OliviaRecordingScreen(
             Text("Oi, Olivia, Gravar", style = MaterialTheme.typography.headlineMedium)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DeviceStatus(backend)
-                SessionStatus(snapshot?.state)
+                SessionStatus(snapshot)
+                LiveGuidanceStatusPanel(guidanceStatus, snapshot?.state)
                 PanelDetail(
                     if (backend.requiresPhysicalGlasses) {
                         "É necessário conectar os óculos para gravar."
@@ -181,12 +192,20 @@ fun OliviaRecordingScreen(
 }
 
 @Composable
-private fun SessionStatus(state: SessionState?) {
+private fun SessionStatus(snapshot: SessionSnapshot?) {
+    val state = snapshot?.state
+    val degradationCauses = snapshot?.degradationCauses.orEmpty()
     val label = when (state) {
         SessionState.STARTING -> "Preparando captura"
         SessionState.STARTED -> "Gravacao em andamento"
         SessionState.PAUSED -> "Gravacao pausada"
-        SessionState.DEGRADED -> "Conexao indisponivel"
+        SessionState.DEGRADED -> when {
+            DegradationCause.ANALYSIS_UNAVAILABLE in degradationCauses ->
+                "Analise indisponivel"
+            DegradationCause.AUDIO_UNAVAILABLE in degradationCauses ->
+                "Audio indisponivel"
+            else -> "Conexao indisponivel"
+        }
         SessionState.STOPPING -> "Encerrando"
         SessionState.STOPPED -> "Take encerrado"
         SessionState.PROCESSING -> "Preparando revisao"
@@ -198,12 +217,43 @@ private fun SessionStatus(state: SessionState?) {
 }
 
 @Composable
+private fun LiveGuidanceStatusPanel(status: LiveGuidanceStatus, state: SessionState?) {
+    val message = when (status) {
+        LiveGuidanceStatus.IDLE -> if (state == SessionState.STOPPED) {
+            "Take encerrado. Consulte Sessões para ver o resumo local."
+        } else {
+            "Inicie um take para procurar a área da peça."
+        }
+        LiveGuidanceStatus.PAUSED ->
+            "Take pausado. Retome quando quiser continuar a análise."
+        LiveGuidanceStatus.LOCATING_TARGET ->
+            "Procurando a área da peça no primeiro frame…"
+        LiveGuidanceStatus.TARGET_NOT_FOUND ->
+            "Área não identificada. Aponte os óculos para a peça e aguarde."
+        LiveGuidanceStatus.TARGET_FOUND ->
+            "Área encontrada. Avaliando enquadramento, luz e horizonte."
+        LiveGuidanceStatus.TARGET_CENTERED ->
+            "Área encontrada; sem correção neste momento."
+        LiveGuidanceStatus.GUIDANCE_PENDING ->
+            "Correção encontrada; preparando orientação por áudio."
+        LiveGuidanceStatus.GUIDANCE_SENT ->
+            "Orientação enviada por áudio."
+        LiveGuidanceStatus.ANALYSIS_UNAVAILABLE ->
+            "Análise indisponível; tentando um frame mais recente."
+        LiveGuidanceStatus.AUDIO_UNAVAILABLE ->
+            "Análise concluída, mas o áudio não pôde iniciar."
+    }
+    PanelDetail(message)
+}
+
+@Composable
 fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val importer = remember { AndroidLocalRecordingSource(context.applicationContext) }
     val exporter = remember { AndroidReviewExporter(context.applicationContext) }
     val snapshot by sessionRuntime.snapshot.collectAsState()
+    val history by sessionRuntime.sessionHistory.collectAsState()
     var importMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var importedVideo by remember { mutableStateOf<File?>(null) }
     var importedAssetId by remember { mutableStateOf<String?>(null) }
@@ -262,16 +312,26 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
         OliviaPanel {
             Text("Seus takes", style = MaterialTheme.typography.bodyLarge)
             Text(
-                if (snapshot?.state == SessionState.STOPPED) "Take encerrado" else "Nenhuma sessão pronta",
+                when (snapshot?.state) {
+                    SessionState.STOPPED -> "Take encerrado"
+                    SessionState.PROCESSING -> "Preparando revisão"
+                    SessionState.READY -> "Revisão pronta"
+                    else -> if (history.isEmpty()) "Nenhuma sessão encerrada" else "Histórico local"
+                },
                 style = MaterialTheme.typography.headlineMedium,
             )
             PanelDetail(
                 if (snapshot?.state == SessionState.STOPPED) {
-                    "Selecione o vídeo final para revisar localmente. A Olivia não altera o original."
+                    "A sessão de orientação foi registrada. O loop ao vivo não grava vídeo; selecione o arquivo final para revisar localmente."
+                } else if (history.isNotEmpty()) {
+                    "Este resumo guarda somente metadados locais. Frames e áudio de análise foram descartados."
                 } else {
-                    "Depois da gravação, suas timelines e cortes sugeridos aparecerão aqui."
+                    "Depois de encerrar um take, o resumo e as marcas aparecerão aqui."
                 },
             )
+        }
+        history.takeLast(5).asReversed().forEach { entry ->
+            SessionHistoryCard(entry)
         }
         OutlinedButton(
             onClick = { picker.launch("video/*") },
@@ -328,6 +388,29 @@ fun OliviaSessionsScreen(sessionRuntime: SessionRuntime) {
             ) {
                 Text("Descartar cópias locais")
             }
+        }
+    }
+}
+
+@Composable
+private fun SessionHistoryCard(entry: SessionHistoryEntry) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Sessão ${entry.sessionId.take(8)}", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "${entry.diagnosisCount} análises · ${entry.correctionCount} orientações",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "Resumo local salvo; nenhum frame foi armazenado.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

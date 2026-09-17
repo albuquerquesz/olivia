@@ -81,7 +81,9 @@ public class HybridVisualAnalyzer(
         framingHysteresis.reset()
     }
 
-    public fun currentTrackedRoi(): NormalizedRoi? = synchronized(lock) { tracker.currentRoi() }
+    public fun currentTrackedRoi(): NormalizedRoi? = synchronized(lock) {
+        if (tracker.currentState() == RoiTrackerState.TRACKING) tracker.currentRoi() else null
+    }
 
     private fun suppressMotionCorrections(
         diagnoses: List<VisualDiagnosis>,
