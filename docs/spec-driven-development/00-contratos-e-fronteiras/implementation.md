@@ -1,6 +1,8 @@
 # Primeira entrega — SH-04 e runner parcial BE-14
 
-Status: código e testes escritos; compilação, testes e Docker não executados. Nenhum resultado de hardware, IA ou desempenho foi medido. As regras de escopo mantiveram o trabalho no domínio local; a skill Android/Kotlin orientou o isolamento dos adapters e o relógio injetável.
+Status: código, testes e execução JVM/Docker registrados em 17/09/2026. Nenhum resultado de hardware,
+qualidade de IA ou desempenho foi promovido por esta entrega. As regras de escopo mantiveram o trabalho
+no domínio local; SH-02 fixa Firebase para visão e mantém auth/contas/CRUD fora do MVP.
 
 ## O que existe agora
 
@@ -52,4 +54,4 @@ A busca de consumidores no repositório encontrou apenas declarações dos contr
 
 As fixtures JSON estão em `apps/android/core/src/test/resources/contracts`. Não são resultados de um take real. O [runner Docker](../../../infra/testing/README.md) usa o módulo concreto em build JVM isolado, sem Android SDK, DB ou secrets. Unitários e integração têm tasks separadas. A criação da imagem compila/prepara dependências; sua execução fica offline e sem rede.
 
-SH-04 permanece pronta para validação, sem aceite concluído. BE-14 está parcialmente implementada: stub HTTP, perfis Whisper/Android/live e integração CI virão nas respectivas features. O mapa sessão→mídia é BE-12 e permanece aberto. O sampler, executor da sessão, gestão concreta de buffers e adapters DAT/Firebase/áudio ainda não foram implementados.
+SH-04 teve a execução JVM concluída em 17/09/2026; o relatório está em `../evidence/VALIDATION_RUN_2026-09-17.md`. O aceite do harness Docker/Bun continua em BE-14, e a validação de hardware permanece separada. O mapa sessão→mídia é BE-12 e permanece aberto.

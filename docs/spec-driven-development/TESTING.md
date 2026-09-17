@@ -1,6 +1,6 @@
 # Contrato de testes e ambiente
 
-Cada task funcional entrega implementação, testes unitários e pelo menos um teste de integração relevante no mesmo conjunto de alterações. Docker faz parte obrigatória do harness BE-14. Não é suficiente testar apenas mocks de todos os colaboradores. O [runner inicial de contratos](../../infra/testing/README.md) está implementado, sem execução. Os demais perfis abaixo são alvos futuros e não representam autorização para executar verificações.
+Cada task funcional entrega implementação, testes unitários e pelo menos um teste de integração relevante no mesmo conjunto de alterações. Docker faz parte obrigatória do harness BE-14. Não é suficiente testar apenas mocks de todos os colaboradores. O [runner inicial de contratos](../../infra/testing/README.md) está implementado e teve o perfil offline executado em 17/09/2026; os demais perfis continuam condicionados às pré-condições próprias.
 
 ## Camadas de evidência
 
@@ -15,13 +15,13 @@ Cada task funcional entrega implementação, testes unitários e pelo menos um t
 
 Docker não emula Bluetooth, firmware, MockDeviceKit nem Firebase AI Logic Android. O stub exercita o parser e o comportamento de rede por uma porta de teste; não prova a integração SDK real. Teste REST com uma chave Gemini pode diagnosticar acesso, mas não substitui o teste do adapter Firebase Android.
 
-## Harness a implementar em BE-14
+## Harness implementado e pendências de BE-14
 
-- Criar `infra/testing/compose.yaml`, separado de `docker-compose.yml` legado. Fixar versões/imagens; runner sem privilégios, sem socket Docker montado, filesystem somente leitura quando viável e temporários em tmpfs. Containers não armazenam mídia real.
+- `infra/testing/compose.yaml` está separado de `docker-compose.yml` legado. Imagens estão versionadas; runners são sem privilégios, sem socket Docker montado, com filesystem somente leitura quando viável e temporários em tmpfs. Containers não armazenam mídia real.
 - Perfil offline: rede interna para runner/stub, dependências previamente instaladas na imagem, fixtures sintéticas/consentidas e zero secrets. Timeout externo deve falhar se o teste tentar internet. Preparação da imagem pode precisar de rede; execução offline não.
 - Perfil Whisper: modelos com versão/hash e licença documentados, montados somente leitura; áudio de fixture temporário, apagado inclusive na falha. CPU Docker comprova integração e não a meta de 8 s no telefone.
 - Postgres não é requisito do produto. Caso o harness cubra o scaffold Elysia existente, usar perfil `legacy-api` opcional com banco descartável, rede privada e migrações reais. Nunca usar o volume `postgres_data` de desenvolvimento ou uma DATABASE_URL externa para testes.
-- Implementar entrypoints documentados para `unit`, `integration-offline`, `integration-android`, `integration-live-ai` e `integration-whisper`. CI offline roda sem secrets de nuvem; live depende de ambiente protegido e não recebe credenciais em PR de fork.
+- Entry points documentados para `unit`, `integration-offline`, `integration-android`, `integration-live-ai` e `integration-whisper` estão implementados. CI offline roda sem secrets de nuvem; live depende de ambiente protegido e não recebe credenciais em PR de fork.
 - Retornar erro e interromper seleção live sem configuração obrigatória. Quando a suíte live não foi selecionada, reportar “não executada”; nunca fallback automático para mock com selo verde de integração real.
 - Todos os recursos temporários pertencem à execução, com identificação própria e teardown limitado a esses recursos. Coletar relatório sanitizado mesmo se houver timeout e limpar em `finally`.
 

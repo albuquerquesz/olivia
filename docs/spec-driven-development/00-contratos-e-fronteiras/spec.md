@@ -1,12 +1,12 @@
 # Contratos e fronteiras do domínio
 
-Status: contratos 2.0.0 e testes implementados; validação por execução pendente. Ver [entrega e migração](implementation.md). Executor de sessão e mapa real de mídia continuam nas tasks posteriores.
+Status: contratos 2.0.0, testes e execução JVM/Docker registrados em 17/09/2026. Ver [entrega e migração](implementation.md). Executor de sessão e mapa real de mídia continuam nas tasks posteriores.
 
 Tasks canônicas: SH-01, SH-02, SH-04.
 
 Dependências: Nenhuma dependência técnica; ler as regras e o código :core antes de alterar contratos.
 
-Escopo: Suporte necessário. Consolidar uma API Kotlin que separe SDK, inferência, direção, áudio, mídia e persistência local. SH-01 permanece pendência administrativa, não autorização presumida de pré-build.
+Escopo: Suporte necessário. Consolidar uma API Kotlin que separe SDK, inferência, direção, áudio, mídia e persistência local. SH-01 permanece pendência administrativa, não autorização presumida de pré-build. SH-02 está fixada no baseline local com Firebase para visão e sem contas/CRUD, com riscos nativos separados em BE-12.
 
 ## Comportamento e contratos
 

@@ -1,6 +1,6 @@
 # Primeira entrega — fixtures, mock e sampler
 
-Status: código e testes escritos; nenhuma verificação foi executada nesta entrega.
+Status: código, testes e execução offline registrados em 17/09/2026.
 
 Esta fatia implementa BE-01.1, BE-02.1 e BE-06.1 dentro de `apps/android/core`, sem SDK
 Android, DAT, Gemini ou mídia real. `MockVisualFixtures` contém somente rótulos sintéticos
@@ -15,5 +15,8 @@ o watchdog de captura continua responsabilidade do coordenador, portanto reduzir
 análise não provoca `DEGRADED` artificialmente.
 
 Os testes unitários escritos cobrem substituição, expiração, fence inativa, cadência e respostas
-mock de sucesso/falha. A composição fonte→sampler→analisador no Docker permanece BE-02.2 e
-não foi alegada como entregue.
+mock de sucesso/falha. A composição fonte→sampler→analisador é exercitada por
+`SamplerPipelineIntegrationTest` no container `core-contracts` do perfil Docker offline. O
+relatório de proveniência sintética fica em
+`docs/spec-driven-development/evidence/FIXTURE_PROVENANCE_2026-09-17.md`; isso não promove
+fixtures sintéticas a evidência de qualidade visual real.

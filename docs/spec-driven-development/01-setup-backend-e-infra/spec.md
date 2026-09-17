@@ -1,6 +1,8 @@
 # Setup do backend, nuvem e harness de integração
 
-Status: planejado; implementação e execução de testes pendentes.
+Status: BE-13.1–13.3, BE-14.2 e BE-14.3 implementados e evidenciados em 17/09/2026. O perfil
+Whisper continua pendente por falta de modelo/fixture provisionados; hardware e qualidade Firebase
+seguem em seus gates próprios.
 
 Tasks canônicas: BE-13, BE-14; SH-03 como dependência compartilhada.
 
@@ -24,7 +26,9 @@ Unitários: parser de ambiente, allowlist, enum de modo, limites e redaction. In
 
 Gate: offline executável sem secrets, live não seleciona mock silenciosamente, nenhum serviço novo exigido para o loop. Configurações externas feitas no futuro devem ser evidenciadas sem credenciais.
 
-Referência de segurança: [Firebase](https://firebase.google.com/docs/ai-logic/security-checklist). A configuração efetiva do projeto ainda precisa de prova.
+Referência de segurança: [Firebase](https://firebase.google.com/docs/ai-logic/security-checklist). O
+smoke Android `glasses` comprovou acesso autorizado/App Check no projeto dev; retenção, qualidade e
+os cinco checkpoints ainda precisam de evidência própria.
 
-Veja [subtasks](tasks.md), [diagrama](diagram.mmd), [decisões](../DECISIONS.md) e [contrato de testes](../TESTING.md). Os critérios aqui são obrigatórios para fechar as tasks associadas; nenhum resultado foi medido nesta revisão.
+Veja [subtasks](tasks.md), [diagrama](diagram.mmd), [decisões](../DECISIONS.md) e [contrato de testes](../TESTING.md). Os critérios aqui são obrigatórios para fechar as tasks associadas; resultados sanitizados ficam em [VALIDATION_RUN_2026-09-17](../evidence/VALIDATION_RUN_2026-09-17.md).
 

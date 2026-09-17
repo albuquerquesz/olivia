@@ -31,8 +31,8 @@ direction stream only; it is cleared on pause/stop/close, is never persisted, an
 that a native 3K take was recorded or transferred. The native take gate and the explicit post-STOP
 import fallback remain unchanged.
 
-Verification: `:app:compileGlassesDebugKotlin`, `:app:testGlassesDebugUnitTest`, and
-`:app:compileGlassesDebugAndroidTestKotlin` pass after the preview integration. The
-`DatMockDeviceKitIntegrationTest` now also asserts that the runtime publishes a portrait JPEG
-preview and clears it after STOP. Executing that live test still requires an Android/device run
-with camera permission and the DAT configuration enabled.
+Verification: `:app:testGlassesDebugUnitTest`, `:app:connectedGlassesDebugAndroidTest` with
+`MWDAT_USE_MOCK_DEVICE_KIT=true`, and the mock Android instrumentation suite passed on the Moto
+G60 on 17/09/2026. `DatMockDeviceKitIntegrationTest` asserts that the runtime publishes a portrait
+JPEG preview and clears it after STOP. This closes the MockDeviceKit/preview evidence only; native
+DAT transfer, 3K recording, Bluetooth-loss continuity and physical audio remain open.

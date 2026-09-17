@@ -15,4 +15,5 @@ fecha stream, câmera, sessão e serviço.
 
 `DatMockDeviceKitIntegrationTest` comprova inicialização, frame portrait, queda por 4 s,
 `DEGRADED`, recuperação, pausa/retomada e `STOPPED` no dispositivo conectado. Esta evidência
-fecha o modo toolkit, mas não comprova Bluetooth, firmware, alto-falantes ou vídeo 3K físico.
+fecha o modo toolkit, repetido no Moto G60 em 17/09/2026, mas não comprova Bluetooth, firmware,
+alto-falantes ou vídeo 3K físico.

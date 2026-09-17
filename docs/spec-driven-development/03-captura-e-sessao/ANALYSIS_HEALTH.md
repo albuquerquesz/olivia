@@ -10,5 +10,5 @@ apenas por análise ou áudio. Uma análise posterior bem-sucedida é a única e
 for `CAPTURE_UNAVAILABLE`, a fence foi invalidada e nenhum frame é aceito até a recuperação da
 captura abrir uma geração válida.
 
-Status: lógica e teste unitário escritos; nenhuma execução de teste, Firebase ou hardware foi
-realizada.
+Status: lógica, testes JVM e validação MockDeviceKit executados em 17/09/2026. Firebase de qualidade,
+microfone físico e hardware DAT continuam fora desta evidência.

@@ -92,15 +92,19 @@ export function childEnvironment(env: Environment): Record<string, string> {
 
 export type FirebasePublicConfig = { projectId: string; applicationId: string; apiKey: string };
 
-/** Accepts only the registered mock Android app from google-services.json. */
-export function firebasePublicConfig(value: unknown, projectId: string): FirebasePublicConfig {
+/** Accepts only one of the two registered Olivia Android package names. */
+export function firebasePublicConfig(
+  value: unknown,
+  projectId: string,
+  packageName: "com.olivia.companion" | "com.olivia.companion.mock" = "com.olivia.companion.mock",
+): FirebasePublicConfig {
   try {
     const root = value as { project_info: { project_id: string }; client: Array<{
       client_info: { mobilesdk_app_id: string; android_client_info: { package_name: string } };
       api_key: Array<{ current_key: string }>;
     }> };
     if (root.project_info.project_id !== projectId) throw new Error();
-    const matches = root.client.filter(c => c.client_info.android_client_info.package_name === "com.olivia.companion.mock");
+    const matches = root.client.filter(c => c.client_info.android_client_info.package_name === packageName);
     if (matches.length !== 1) throw new Error();
     const client = matches[0]!;
     const applicationId = client.client_info.mobilesdk_app_id;

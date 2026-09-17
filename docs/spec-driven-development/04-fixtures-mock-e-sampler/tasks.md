@@ -5,7 +5,7 @@ Origem: [backlog canônico](../../rules/olivia_backlog.json). BE-01, BE-02, BE-0
 - [x] **BE-01.1** — Criar manifesto rotulado e fixtures sintéticas/consentidas positivas, negativas e ambíguas.
 - [x] **BE-06.1** — Implementar replay determinístico com relógio virtual e falhas configuráveis.
 - [x] **BE-02.1** — Implementar cadência, single-flight, substituição de frame pendente e descarte em todos os caminhos.
-- [ ] **BE-02.2** — Integrar fonte→sampler→analisador no runner Docker, incluindo fonte rápida e inferência lenta.
-- [ ] **BE-01.2** — Entregar testes unitários dos oráculos/fixtures e relatório de proveniência sem dados pessoais.
+- [x] **BE-02.2** — Integrar fonte→sampler→analisador no runner Docker, incluindo fonte rápida e inferência lenta. (`SamplerPipelineIntegrationTest` é executado pelo `core-contracts` no perfil offline; substituição pelo frame mais novo e single-flight passaram.)
+- [x] **BE-01.2** — Entregar testes unitários dos oráculos/fixtures e relatório de proveniência sem dados pessoais. (Registro sanitizado em `evidence/FIXTURE_PROVENANCE_2026-09-17.md`.)
 
 Aceite: entregar implementação e testes unitários/de integração juntos, usando os cenários da [spec](spec.md) e de [TESTING](../TESTING.md). Registrar artefatos e resultado por modo. Execução não solicitada ou ambiente ausente deixa validação pendente; nunca marcar integração real concluída por teste mock.

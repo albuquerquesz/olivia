@@ -2,7 +2,7 @@
 
 O runner reutiliza `apps/android/core` e o version catalog real, com um settings Gradle separado para não resolver AGP, SDK Android ou pacotes DAT. Inclui políticas de contratos, clocks, fence de captura e codec JSON com fixtures douradas. Os adapters de borda do ensaio são doubles identificados; não há teste de decoder de imagens ou SDK real nesta fatia.
 
-Implementado, ainda não executado. Seguindo AGENTS.md, os comandos abaixo só devem ser executados quando solicitados. Não requer `.env`, credenciais, banco ou óculos.
+Implementado. O perfil offline foi executado em 17/09/2026 com Docker Desktop, sem `.env`, credenciais, banco ou óculos; o resultado sanitizado está em `docs/spec-driven-development/evidence/VALIDATION_RUN_2026-09-17.md`.
 
 ## Docker
 
@@ -24,7 +24,7 @@ Somente integração:
 docker compose -f infra/testing/compose.yaml run --rm core-contracts :core:integrationTest --rerun-tasks
 ```
 
-O código de saída é o resultado do Gradle, sem mascarar falhas. `--rm` remove só o container dessa execução; nenhum volume externo é criado ou apagado. Relatórios JUnit/HTML ficam no filesystem descartável em `apps/android/core/build/test-results` e `build/reports/tests`. Para preservá-los em uma execução de diagnóstico, usar `run --name <nome-unico>` sem `--rm`, copiar os relatórios desse container e remover apenas esse container depois. Sanitizar relatórios antes de anexar evidência. Não há resultados reais para arquivar nesta entrega.
+O código de saída é o resultado do Gradle, sem mascarar falhas. `--rm` remove só o container dessa execução; nenhum volume externo é criado ou apagado. Relatórios JUnit/HTML ficam no filesystem descartável em `apps/android/core/build/test-results` e `build/reports/tests`. Para preservá-los em uma execução de diagnóstico, usar `run --name <nome-unico>` sem `--rm`, copiar os relatórios desse container e remover apenas esse container depois. Sanitizar relatórios antes de anexar evidência. Os resultados compartilháveis ficam no registro sanitizado da execução; relatórios brutos continuam fora do controle de versão.
 
 ## Sem Docker
 
@@ -36,4 +36,4 @@ JDK 17+ e wrapper existente, sem Android SDK. Na raiz, PowerShell:
 
 Testes unitários e integração têm tasks/relatórios separados. `check` depende de ambas. `prepareOfflineTests` resolve classpath e compila testes, sem executá-los. A imagem usa esse passo antes de desabilitar a rede na execução; não há downgrade para mock de um teste live.
 
-Ainda pendentes em BE-14: stub HTTP para BE-03, perfil Whisper, relatórios persistentes de CI, Android/MockDeviceKit e Firebase real. Docker deste módulo não comprova essas integrações. A imagem usa tag de versão explícita; pin por digest e auditoria de dependências ficam pendentes da primeira preparação autorizada.
+Ainda pendentes em BE-14: execução do perfil Whisper com modelo/fixture autorizados, relatórios persistentes de CI e auditoria de dependências. Android/MockDeviceKit e Firebase real têm entrypoints separados; Docker deste módulo não comprova essas integrações. A imagem usa tag de versão explícita; pin por digest continua pendente.

@@ -60,7 +60,11 @@ async function main(suite: Suite): Promise<void> {
       } catch {
         throw new InfraConfigError("OLIVIA_FIREBASE_CONFIG_PATH");
       }
-      const firebase = firebasePublicConfig(value, config.projectId);
+      const firebase = firebasePublicConfig(
+        value,
+        config.projectId,
+        suite === "integration-live-ai" ? "com.olivia.companion" : "com.olivia.companion.mock",
+      );
       Object.assign(env, {
         OLIVIA_LIVE_AI_ENABLED: "true",
         OLIVIA_FIREBASE_PROJECT_ID: firebase.projectId,
@@ -82,6 +86,7 @@ async function main(suite: Suite): Promise<void> {
       suite === "integration-live-ai"
         ? "FirebaseAccessIntegrationTest"
         : "InfraConfigurationIntegrationTest";
+    const androidVariant = suite === "integration-live-ai" ? "Glasses" : "Mock";
     await execute({
       cwd: join(root, "apps/android"),
       env,
@@ -93,7 +98,7 @@ async function main(suite: Suite): Promise<void> {
         "org.gradle.wrapper.GradleWrapperMain",
         "--no-daemon",
         "--no-configuration-cache",
-        ":app:connectedMockDebugAndroidTest",
+        `:app:connected${androidVariant}DebugAndroidTest`,
         `-Pandroid.testInstrumentationRunnerArguments.class=com.olivia.companion.infra.${testClass}`,
       ],
     });
@@ -101,9 +106,14 @@ async function main(suite: Suite): Promise<void> {
   }
   const project = `olivia-test-${crypto.randomUUID().replaceAll("-", "")}`;
   const temporary = await mkdtemp(join(tmpdir(), "olivia-infra-"));
+  // Bun.spawn on Windows does not discover Docker Desktop's compose plugin
+  // through `docker compose`; Docker Desktop exposes the standalone command.
+  // Keep the POSIX path compatible with CI while making local execution
+  // deterministic on both platforms.
+  const composeExecutable = process.platform === "win32" ? "docker-compose" : "docker";
+  const composePrefix = process.platform === "win32" ? [composeExecutable] : [composeExecutable, "compose"];
   const base = [
-    "docker",
-    "compose",
+    ...composePrefix,
     "--project-name",
     project,
     "--file",

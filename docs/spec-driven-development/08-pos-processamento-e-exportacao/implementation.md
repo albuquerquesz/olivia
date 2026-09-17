@@ -1,7 +1,8 @@
 # First delivery - deterministic cut planner
 
-Status: code and unit tests written; no build, test execution, Whisper runtime, media import, or
-hardware validation was run.
+Status: code and unit tests written; JVM and Android flavor unit tests passed on 17/09/2026.
+Whisper runtime/model, real media import from DAT, alignment evidence and hardware validation
+remain open.
 
 `CutPlanner` accepts only an already-aligned native-media timeline, validated transcript segments,
 and a known recording duration. It suggests exclusion intervals for uncorrected deviations,

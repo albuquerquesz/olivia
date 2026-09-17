@@ -34,7 +34,8 @@ services:
     pids_limit: 256
     mem_limit: 2g
     cpus: 2
-    tmpfs: [/tmp:rw,nosuid,nodev,size=256m]
+    tmpfs:
+      - "/tmp:rw,nosuid,nodev,size=256m"
 
   harness-unit:
     profiles: [offline]
@@ -47,7 +48,8 @@ services:
     security_opt: [no-new-privileges:true]
     pids_limit: 128
     mem_limit: 512m
-    tmpfs: [/tmp:rw,nosuid,nodev,size=64m]
+    tmpfs:
+      - "/tmp:rw,nosuid,nodev,size=64m"
 
   provider-stub:
     profiles: [offline]
@@ -97,7 +99,8 @@ services:
     pids_limit: 128
     mem_limit: 4g
     cpus: 2
-    tmpfs: [/tmp:rw,nosuid,nodev,size=512m]
+    tmpfs:
+      - "/tmp:rw,nosuid,nodev,size=512m"
     # Read-only model/fixture mounts and allowlisted env injected by run.ts.
 
 networks:

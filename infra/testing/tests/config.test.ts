@@ -41,6 +41,14 @@ describe("BE-13 configuration boundaries", () => {
     expect(() => firebasePublicConfig(value, "different-project")).toThrow();
     expect(() => firebasePublicConfig({}, "olivia-dev")).toThrow();
   });
+  test("Firebase live config accepts only the registered glasses package", () => {
+    const value = { project_info: { project_id: "olivia-dev" }, client: [{
+      client_info: { mobilesdk_app_id: "1:123:android:abcdef", android_client_info: { package_name: "com.olivia.companion" } },
+      api_key: [{ current_key: "AIza" + "x".repeat(35) }],
+    }] };
+    expect(firebasePublicConfig(value, "olivia-dev", "com.olivia.companion").projectId).toBe("olivia-dev");
+    expect(() => firebasePublicConfig(value, "olivia-dev")).toThrow();
+  });
   test("Whisper requires verified model and fixture", () => {
     const env = { OLIVIA_TEST_MODE: "whisper", OLIVIA_WHISPER_MODEL_PATH: "model.bin",
       OLIVIA_WHISPER_MODEL_SHA256: "a".repeat(64), OLIVIA_WHISPER_FIXTURE_PATH: "sample.wav",

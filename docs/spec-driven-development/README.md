@@ -1,6 +1,6 @@
 # Desenvolvimento por especificações — Olivia
 
-Revisão de planejamento em 12/09/2026. Escopo: arquitetura, infraestrutura, segurança, domínio e integrações de backend/IA. As interfaces Android entram apenas quando são fronteiras necessárias do fluxo. Implementação iniciada: [SH-04 — contratos 2.0.0 e testes](00-contratos-e-fronteiras/implementation.md), com runner Docker parcial BE-14. Validação por execução pendente.
+Revisão de planejamento em 12/09/2026. Execução de validação registrada em [17/09/2026](evidence/VALIDATION_RUN_2026-09-17.md). Escopo: arquitetura, infraestrutura, segurança, domínio e integrações de backend/IA. A otimização específica da meta de 900 ms foi adiada para depois do fechamento dos demais gates; o baseline remoto permanece documentado.
 
 Comece pela [review](REVIEW.md), pelas [decisões](DECISIONS.md) e pela [política de testes](TESTING.md). O [backlog canônico](../rules/olivia_backlog.json) preserva os IDs existentes; cada task aponta para sua especificação. O código de contratos em `apps/android/core` continua sendo a fonte da API vigente. Mudanças propostas de contrato estão identificadas como pendentes, não como implementadas.
 
@@ -39,6 +39,6 @@ Cada `tasks.md` traz subtasks locais no formato `BE-XX.n`. Elas refinam a task c
 
 As datas originais M0–M4 permanecem como referência histórica. A sequência acima e as dependências revisadas orientam a execução a partir de agora; o plano não pressupõe que os marcos passados foram concluídos. As estimativas originais foram preservadas; BE-13/14 receberam estimativa inicial de 3 cada, na mesma unidade do backlog, a refinar antes de comprometer prazo. Capacidade disponível e SH-01 determinam o que pode ser implementado antes do evento. Não foi enviado contato externo à organização.
 
-O primeiro gate é o caminho offline de 30–60 segundos com voz, duas correções confirmadas e recuperação. Em seguida, provar a mesma composição com Gemini real. A prova de hardware exige câmera DAT e áudio nos óculos, mais verificação independente da gravação nativa. Pós-processamento e exportação têm gate próprio. A demo mock permanece backup identificado; não substitui uso efetivo do toolkit/hardware.
+O primeiro gate é o caminho offline de 30–60 segundos com voz, duas correções confirmadas e recuperação. Em seguida, provar a mesma composição com Gemini real. A prova de hardware exige câmera DAT e áudio nos óculos, mais verificação independente da gravação nativa. Pós-processamento e exportação têm gate próprio. A demo mock permanece backup identificado; não substitui uso efetivo do toolkit/hardware. A latência de 900 ms será reavaliada somente depois desses gates, sem alterar agora a cadência de 0,5 fps, o preview, Porcupine/Rhino ou o caminho híbrido existente.
 
 Diagramas gerais: [arquitetura](architecture.mmd) e [dependências](execution-order.mmd). Cada feature também possui um diagrama simples de seus componentes.

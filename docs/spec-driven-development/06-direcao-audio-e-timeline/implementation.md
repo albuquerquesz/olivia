@@ -1,6 +1,7 @@
 # Primeira entrega — direção e confirmação
 
-Status: código e testes unitários escritos; nenhuma verificação foi executada.
+Status: código e testes unitários executados; o roteiro offline determinístico de cinco ciclos passou em
+`OfflineHandsFreeGateTest`. A verificação com `LiveSessionRuntime`, microfone/headset e hardware permanece pendente.
 
 `DefaultGuidanceEngine` aceita exclusivamente os diagnósticos fechados do contrato. Ele aplica
 confidence ≥0,80, severidade `MAJOR`, cooldown global de 4 s, prioridade por severidade,

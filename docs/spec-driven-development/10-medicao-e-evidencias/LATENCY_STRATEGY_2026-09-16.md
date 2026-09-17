@@ -5,6 +5,11 @@ rodada segura de implementação e medição no Moto G60; os resultados instrume
 [relatório BE-07](BE07_MOTO_G60_2026-09-16.md). As partes de concorrência do runtime, modelo local,
 WAV e validação de hardware continuam pendentes.
 
+**Prioridade atual (17/09/2026):** a otimização da meta de 900 ms fica deliberadamente por último.
+Até o fechamento dos gates offline, DAT/hardware, pós-processamento, privacidade e evidências, este
+documento é baseline de medição; não alterar agora a cadência, o preview realtime, Porcupine/Rhino
+ou o caminho híbrido existente.
+
 **Recomendação:** em um dia, corrigir agendamento/frames antigos, instrumentar estágios, preparar áudio e otimizar o transporte existente. Não prometer que isso levará a mediana de 2257 ms a 900 ms. Para sustentar essa meta com maior previsibilidade, o caminho principal precisa de um localizador de ROI no celular, validado para a peça do cenário Olivia; Gemini fica como alternativa para frames em que a localização local se abstém. Esse localizador ainda não existe no código auditado.
 
 900 ms com Gemini remoto é possível em condições favoráveis, mas **não é uma meta operacional defensável hoje neste Moto G60**, muito menos uma garantia de áudio físico nos óculos. Seria necessário reduzir cerca de 60% da mediana observada, sem perder qualidade ou esconder timeouts. Não há evidência de que configuração do SDK, streaming ou WAV entreguem essa redução.
