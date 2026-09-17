@@ -38,7 +38,6 @@ import com.olivia.companion.session.AudioFeedbackStatus
 import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.connectionLabel
 import com.olivia.companion.session.formatOffset
-import com.olivia.companion.session.sessionStateLabel
 import com.olivia.companion.ui.AudioModeOption
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.companion.ui.OliviaPanel
@@ -80,12 +79,6 @@ fun OliviaRecordingScreen(
                     degraded = degraded,
                     simulated = !state.backend.requiresPhysicalGlasses,
                     modifier = Modifier.fillMaxSize(),
-                )
-                SessionStateBadge(
-                    state = sessionState,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(20.dp),
                 )
                 ConnectionStateBadge(
                     label = connectionLabel(state.connection),
@@ -186,27 +179,6 @@ private fun AudioAvailabilityNotice(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun SessionStateBadge(state: SessionState, modifier: Modifier = Modifier) {
-    val degraded = state == SessionState.DEGRADED
-    val containerColor = MaterialTheme.colorScheme.onPrimary.takeIf { !degraded }
-        ?: MaterialTheme.colorScheme.surface
-    val contentColor = MaterialTheme.colorScheme.primary.takeIf { !degraded }
-        ?: MaterialTheme.colorScheme.onSurface
-    Surface(
-        modifier = modifier,
-        color = containerColor,
-        contentColor = contentColor,
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Text(
-            sessionStateLabel(state),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.labelLarge,
         )
     }
 }
