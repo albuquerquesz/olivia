@@ -166,7 +166,7 @@ private fun TakeFilterPill(
         Surface(
             shape = RoundedCornerShape(percent = 50),
             color = colors.onSurface.takeIf { selected } ?: colors.surface,
-            contentColor = colors.onPrimary.takeIf { selected } ?: colors.onSurfaceVariant,
+            contentColor = colors.surface.takeIf { selected } ?: colors.onSurfaceVariant,
             border = BorderStroke(1.dp, colors.outlineVariant).takeIf { !selected },
         ) {
             Text(
