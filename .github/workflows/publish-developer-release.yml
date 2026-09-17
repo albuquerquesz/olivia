@@ -52,10 +52,15 @@ jobs:
               --clobber
             gh release edit "$release_tag" \
               --repo "$GITHUB_REPOSITORY" \
+              --target "${{ github.event.workflow_run.head_sha }}" \
               --draft=false \
               --prerelease \
               --title "Olivia Developer APK (latest)" \
               --notes "Private APK for Wearables Developer and MockDeviceKit. This artifact does not prove physical hardware."
+            gh api --method PATCH \
+              "repos/$GITHUB_REPOSITORY/git/refs/tags/$release_tag" \
+              -f "sha=${{ github.event.workflow_run.head_sha }}" \
+              -F force=true >/dev/null
           else
             gh release create "$release_tag" "${release_files[@]}" \
               --repo "$GITHUB_REPOSITORY" \
