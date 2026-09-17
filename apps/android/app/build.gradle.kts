@@ -37,8 +37,8 @@ val configuredAbiFilters = providers.gradleProperty("olivia.abiFilters").orNull
     ?.toSet()
     ?.takeIf { it.isNotEmpty() }
 
-// Release signing is injected only by the protected CI job. Local builds keep the existing
-// unsigned-release behavior unless all CI signing inputs are present.
+// Protected CI builds may inject the release signing material. Local builds keep the existing
+// signing behavior unless all CI signing inputs are present.
 val ciReleaseKeystorePath = providers.environmentVariable("ANDROID_RELEASE_KEYSTORE_PATH").orNull
     ?.takeIf { it.isNotBlank() }
 val ciReleaseStorePassword = providers.environmentVariable("ANDROID_RELEASE_STORE_PASSWORD").orNull
@@ -53,6 +53,8 @@ val ciReleaseSigningReady = listOf(
     ciReleaseKeyAlias,
     ciReleaseKeyPassword,
 ).all { it != null }
+val signDeveloperWithReleaseKey =
+    providers.gradleProperty("olivia.signDeveloperWithRelease").orNull == "true"
 
 plugins {
     alias(libs.plugins.android.application)
@@ -147,6 +149,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            // The CI developer APK remains DEBUG (MockDeviceKit and Debug App Check), but can
+            // reuse the protected release certificate so successive artifacts update the same
+            // installation instead of forcing an uninstall and regenerating its debug token.
+            if (ciReleaseSigningReady && signDeveloperWithReleaseKey) {
+                signingConfig = signingConfigs.getByName("ciRelease")
+            }
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(

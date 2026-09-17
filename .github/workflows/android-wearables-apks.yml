@@ -27,6 +27,10 @@ jobs:
       MWDAT_MOCK_DEVICE_KIT: "true"
       PICOVOICE_ACCESS_KEY: ${{ secrets.PICOVOICE_ACCESS_KEY }}
       OLIVIA_GOOGLE_SERVICES_JSON_B64: ${{ secrets.OLIVIA_GOOGLE_SERVICES_JSON_B64 }}
+      ANDROID_RELEASE_KEYSTORE_B64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_B64 }}
+      ANDROID_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}
+      ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+      ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -47,11 +51,12 @@ jobs:
       - name: Injectar configuracao protegida do flavor glasses
         run: |
           set -euo pipefail
-          test -n "$MWDAT_APPLICATION_ID"
-          test -n "$MWDAT_CLIENT_TOKEN"
-          test -n "$PICOVOICE_ACCESS_KEY"
-          test -n "$OLIVIA_GOOGLE_SERVICES_JSON_B64"
+          for value in MWDAT_APPLICATION_ID MWDAT_CLIENT_TOKEN PICOVOICE_ACCESS_KEY OLIVIA_GOOGLE_SERVICES_JSON_B64 ANDROID_RELEASE_KEYSTORE_B64 ANDROID_RELEASE_STORE_PASSWORD ANDROID_RELEASE_KEY_ALIAS ANDROID_RELEASE_KEY_PASSWORD; do
+            test -n "${!value}"
+          done
           printf '%s' "$OLIVIA_GOOGLE_SERVICES_JSON_B64" | base64 --decode > app/src/glasses/google-services.json
+          printf '%s' "$ANDROID_RELEASE_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/olivia-release.keystore"
+          echo "ANDROID_RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/olivia-release.keystore" >> "$GITHUB_ENV"
           gh release download internal-assets-v1 \
             --repo "$GITHUB_REPOSITORY" \
             --pattern picovoice-assets.zip \
@@ -62,7 +67,7 @@ jobs:
           done
 
       - name: Build developer Wearables APK
-        run: sh gradlew assembleGlassesDebug -Polivia.abiFilters=arm64-v8a --no-daemon --no-configuration-cache
+        run: sh gradlew assembleGlassesDebug -Polivia.abiFilters=arm64-v8a -Polivia.signDeveloperWithRelease=true --no-daemon --no-configuration-cache
 
       - name: Hash do artefato developer
         run: |

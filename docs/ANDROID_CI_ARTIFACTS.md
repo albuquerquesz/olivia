@@ -34,6 +34,11 @@ O keystore de release deve ser o mesmo certificado registrado para o app Android
 Google Cloud e canal de distribuicao escolhido. O workflow falha antes do Gradle se algum valor
 obrigatorio estiver ausente.
 
+Temporariamente, o artefato developer do CI tambem usa esse mesmo certificado de release, embora
+continue sendo `DEBUG`, use MockDeviceKit e selecione o Debug App Check Provider. Isso permite que
+novas builds atualizem a instalacao existente sem trocar a assinatura e perder os dados locais do
+provider. O APK developer continua privado e nao deve ser tratado como uma build de producao.
+
 ## Download facil do APK developer
 
 Quando o workflow principal termina com sucesso, o APK developer fica imediatamente disponivel
@@ -57,6 +62,10 @@ o APK production do CI também continua universal para preservar compatibilidade
 O APK developer e `DEBUG`, portanto instala o Debug App Check Provider. O token de debug e gerado
 no dispositivo na primeira execucao e precisa ser registrado em Firebase Console; ele nao e
 embutido no APK nem substituido por um secret de build.
+
+Depois do primeiro cadastro no aparelho, instale novas builds com `adb install -r -d` e nao limpe
+os dados do app. A assinatura fixa evita que uma nova build exija desinstalacao. Outro aparelho,
+desinstalacao ou limpeza de dados ainda exige um novo token de debug.
 
 O APK production e `RELEASE`, portanto o codigo seleciona Play Integrity. Compilar o APK e
 assina-lo nao prova enforcement: o app Android, certificado, projeto Firebase, quota e canal de
