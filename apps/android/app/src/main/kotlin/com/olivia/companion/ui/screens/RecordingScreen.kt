@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -80,19 +79,28 @@ fun OliviaRecordingScreen(
                     simulated = !state.backend.requiresPhysicalGlasses,
                     modifier = Modifier.fillMaxSize(),
                 )
+                if (live) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 20.dp),
+                        color = RecordingTimerBackground,
+                        contentColor = RecordingTimerContent,
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Text(
+                            text = formatOffset(state.elapsedMs),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.headlineSmall,
+                        )
+                    }
+                }
                 ConnectionStateBadge(
                     label = connectionLabel(state.connection),
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(20.dp),
                 )
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(20.dp),
-                ) {
-                    Text(formatOffset(state.elapsedMs), style = MaterialTheme.typography.headlineSmall)
-                }
                 if (degraded || state.backend.requiresPhysicalGlasses) {
                     Surface(
                         modifier = Modifier
@@ -159,6 +167,9 @@ fun OliviaRecordingScreen(
         }
     }
 }
+
+private val RecordingTimerBackground = Color(0xFFFFE4E1)
+private val RecordingTimerContent = Color(0xFF8B2D2D)
 
 @Composable
 private fun AudioAvailabilityNotice(
