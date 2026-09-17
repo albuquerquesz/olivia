@@ -14,3 +14,7 @@ mwdat_client_token=
 # Somente no flavor glassesDebug: ativa MockDeviceKit com a camera traseira do telefone.
 # Nao use para demonstrar hardware real; deixe false/vazio para os oculos pareados.
 mwdat_mock_device_kit=false
+
+# Wake word local; chave e modelo customizado não são versionados.
+picovoice_access_key=
+picovoice_keyword_path=olivia_android.ppn

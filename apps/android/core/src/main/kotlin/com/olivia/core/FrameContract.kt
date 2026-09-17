@@ -71,7 +71,7 @@ public enum class GlassesConnection { CONNECTED, DISCONNECTED, UNAVAILABLE }
 /**
  * Captura e conexão com os óculos.
  *
- * É o único ponto que o DAT toca. O adapter mock e o adapter do DAT implementam esta
+ * É o único ponto que o DAT toca. O adapter de cenário offline e o adapter do DAT implementam esta
  * interface e nada além dela; trocar um pelo outro no dia 18 não deve exigir mudança
  * em sessão, sampler, IA ou UI.
  *

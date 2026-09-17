@@ -23,7 +23,8 @@ internal object OliviaMotion {
 }
 
 private val Paper = Color(0xFFFAFBFD)
-private val Navy = Color(0xFF142C4C)
+private val Canvas = Color(0xFFF1F3F7)
+private val Navy = Color(0xFF2F5298)
 private val Ink = Color(0xFF151A21)
 private val Mist = Color(0xFFE8EEF5)
 
@@ -40,7 +41,7 @@ private val OliviaLightColors = lightColorScheme(
     onTertiary = Paper,
     tertiaryContainer = Mist,
     onTertiaryContainer = Navy,
-    background = Paper,
+    background = Canvas,
     onBackground = Ink,
     surface = Paper,
     onSurface = Ink,

@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
+  "ui": "stream",
   "globalDependencies": [".env"],
   "globalEnv": [
     "BETTER_AUTH_SECRET",
@@ -32,7 +32,14 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interactive": false,
+      "passThroughEnv": [
+        "ANDROID_HOME",
+        "ANDROID_SDK_ROOT",
+        "ANDROID_USER_HOME",
+        "JAVA_HOME"
+      ]
     },
     "db:push": {
       "cache": false

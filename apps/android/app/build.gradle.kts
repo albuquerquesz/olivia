@@ -17,6 +17,9 @@ fun localOrEnvironment(property: String, environment: String): String? =
     providers.environmentVariable(environment).orNull?.takeIf { it.isNotBlank() }
         ?: localProperties.getProperty(property)?.takeIf { it.isNotBlank() }
 
+fun buildConfigString(value: String): String =
+    "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
 fun environmentOrDotEnv(environment: String): String? =
     providers.environmentVariable(environment).orNull?.trim()?.takeIf { it.isNotBlank() }
         ?: dotEnvProperties.getProperty(environment)
@@ -43,6 +46,12 @@ android {
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "PICOVOICE_ACCESS_KEY", buildConfigString(
+            localOrEnvironment("picovoice_access_key", "PICOVOICE_ACCESS_KEY").orEmpty(),
+        ))
+        buildConfigField("String", "PICOVOICE_KEYWORD_PATH", buildConfigString(
+            localProperties.getProperty("picovoice_keyword_path") ?: "olivia_android.ppn",
+        ))
         // Developer Mode accepts 0/0. Registered values are only supplied by ignored
         // local.properties or CI; source control never contains either credential.
         manifestPlaceholders["mwdatApplicationId"] =
@@ -166,10 +175,16 @@ dependencies {
     // The BOM only supplies versions. Firebase binaries remain glasses-only.
     implementation(platform(libs.firebase.bom))
 
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.porcupine.android)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -179,4 +194,11 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+tasks.register<Exec>("installMockDebugAdb") {
+    group = "install"
+    description = "Installs mock debug with adb, skipping AGP's device ABI matcher."
+    dependsOn("assembleMockDebug")
+    commandLine(rootProject.layout.projectDirectory.file("install-mock.sh").asFile.absolutePath)
 }

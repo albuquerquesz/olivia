@@ -15,7 +15,8 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 
 | Papel | sRGB para Compose |
 | --- | --- |
-| Fundo, superfície e texto no azul | #FAFBFD |
+| Fundo | #F1F3F7 |
+| Superfície e texto no azul | #FAFBFD |
 | Painel principal e ação/seleção | #142C4C |
 | Texto principal | #151A21 |
 | Texto secundário no branco | #526174 |
@@ -36,23 +37,25 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 ## Telas e componentes
 
-- Sem títulos de página (Gravar, Sessões, Configurações). A orientação vem do
-  painel e da barra inferior; Configurações mantém só o botão Voltar.
-- Welcome: primeira abertura apenas (`welcome_seen` em SharedPreferences). Painel
-  com promessa, comando `Oi, Olivia, Gravar` e nota de privacidade; CTA Continuar
-  leva ao Início e remove a welcome da stack. Sem barra inferior. Não seleciona
-  modo de áudio aqui (permanece em Configurações / FE-05).
-- Início: painel com Dispositivo e Ray-Ban Meta, resumo com duas colunas abertas.
-  Sem título Olivia, selo Modo demonstração ou texto Óculos simulados. A indicação
-  do backend continua na tela Gravar. Sem botão Gravar agora ou frase Pronta para.
+- Sem títulos de página (Gravar, Sessões, Ajustes). A orientação vem do
+  painel e da barra inferior.
+- Welcome: tela inicial, sem barra inferior. Título `Bem vindo a OlivIA`,
+  descrição curta e botão primary Entrar no rodapé, sem conta.
+- Início: painel com Dispositivo e Ray-Ban Meta; Últimos takes em cards (miniatura,
+  título, badges de duração e data abaixo do título, seta) e atalho ver todos para Sessões.
+  Sem inventar takes.
+  Sem selo Modo demonstração ou texto Óculos simulados. A indicação do backend
+  continua na tela Gravar. Sem botão Gravar agora ou frase Pronta para.
 - Gravar: comando por voz e disponibilidade no painel; configurações abaixo.
   Não alegar que o app está escutando ou que os óculos estão conectados.
 - Sessões: estado vazio no painel, sem dados inventados ou novas telas de revisão.
-- Configurações: seleção Voz/Sinal no painel, perfil e privacidade em seções abertas.
-  A seleção continua local à tela, sem nova integração com o motor de áudio.
-- Menu: Início, Gravar, Sessões; círculo central azul de 56dp com + branco de 30dp.
-  Círculo e rótulo formam um único alvo acessível; abrir a tela Gravar não inicia take.
-  Configurações mantém a navegação de retorno sem barra inferior.
+- Ajustes: aba do menu. Seleção Voz/Sinal no painel, perfil e privacidade em
+  seções abertas. A seleção continua local à tela, sem nova integração com o
+  motor de áudio. Sem botão Voltar.
+- Menu: cápsula flutuante baixa com Início, Sessões e Ajustes. Gravar fica fora,
+  à direita, na mesma altura, como anel navy com disco interno, sem rótulo.
+  Superfície sólida 50% de raio, margem lateral 24dp, 8dp do fundo, contorno, sem
+  sombra. Círculo e abas formam alvos acessíveis; abrir Gravar não inicia take.
 
 ## Movimento
 

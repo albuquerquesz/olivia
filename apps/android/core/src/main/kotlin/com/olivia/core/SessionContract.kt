@@ -43,7 +43,7 @@ public enum class SessionState {
 
 /**
  * Parâmetros do loop ao vivo. Os defaults são os valores de arquitetura; continuam
- * configuráveis porque bateria e demo exigem ajuste fino.
+ * configuráveis porque bateria e ensaio exigem ajuste fino.
  */
 public data class SessionConfig(
     val analysisIntervalMs: Long = 2_000,

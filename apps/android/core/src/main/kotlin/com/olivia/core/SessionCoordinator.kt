@@ -104,7 +104,7 @@ public class SessionCoordinator(
         if (current?.id == sessionId && current.state in setOf(SessionState.STARTING, SessionState.STARTED)) {
             return Result.success(current)
         }
-        if (current != null && current.state !in setOf(SessionState.IDLE, SessionState.STOPPED, SessionState.READY)) {
+        if (current != null && current.state !in setOf(SessionState.IDLE, SessionState.STOPPED, SessionState.READY, SessionState.ERROR)) {
             return Result.failure(IllegalStateException("Outra sessão ainda está ativa"))
         }
         val now = clock.now()
@@ -240,6 +240,8 @@ public class SessionCoordinator(
     public suspend fun onCaptureHeartbeat(heartbeat: CaptureHeartbeat) {
         val current = _snapshot.value ?: return
         if (heartbeat.capture != capture) return
+        if (DegradationCause.CAPTURE_UNAVAILABLE in current.degradationCauses &&
+            !captureFence.accepts(FrameStamp(heartbeat.capture, 0, clock.now()), SessionState.DEGRADED)) return
         lastFrameMonotonicMs = heartbeat.receivedAtMonotonicMs
         when (current.state) {
             SessionState.STARTING -> {
@@ -274,7 +276,8 @@ public class SessionCoordinator(
             fail(current.id, current.config, requireStartedAt(), FailureCode.CAPTURE_FAILED)
             return
         }
-        if (current.state != SessionState.STARTED) return
+        if (current.state !in setOf(SessionState.STARTED, SessionState.DEGRADED) ||
+            current.resumeState == SessionState.PAUSED || DegradationCause.CAPTURE_UNAVAILABLE in current.degradationCauses) return
         val lastFrameAt = gateway.heartbeat.value?.takeIf { it.capture == capture }?.receivedAtMonotonicMs
             ?: lastFrameMonotonicMs
         val elapsed = lastFrameAt?.let { now.monotonicMs - it } ?: now.elapsedSince(requireStartedAt())
@@ -296,14 +299,34 @@ public class SessionCoordinator(
             }
             GlassesConnection.DISCONNECTED, GlassesConnection.UNAVAILABLE -> {
                 if (current.state in setOf(SessionState.STARTED, SessionState.PAUSED, SessionState.DEGRADED)) {
+                    if (DegradationCause.CAPTURE_UNAVAILABLE in current.degradationCauses) return
                     captureFence.invalidate()
                     degrade(
                         DegradationCause.CAPTURE_UNAVAILABLE,
                         if (current.state == SessionState.PAUSED) SessionState.PAUSED else SessionState.STARTED,
                     )
+                    record(TimelineEventType.SESSION_DEGRADED, current.id, "conexão indisponível")
                     signal(SessionSignal.CONNECTION_LOST)
                 }
             }
+        }
+    }
+
+    /** Reconnect with a fresh generation so callbacks from before the loss remain invalid. */
+    public suspend fun retryCapture(): Result<Unit> {
+        val current = _snapshot.value ?: return Result.failure(IllegalStateException("Não há sessão"))
+        if (DegradationCause.CAPTURE_UNAVAILABLE !in current.degradationCauses) return Result.success(Unit)
+        if (current.resumeState == SessionState.PAUSED) return Result.success(Unit)
+        val next = captureFence.open(current.id)
+        capture = next
+        return try {
+            gateway.resumeCapture(next)
+            Result.success(Unit)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            captureFence.invalidate()
+            Result.failure(IllegalStateException("Captura ainda indisponível"))
         }
     }
 
@@ -391,11 +414,15 @@ public class SessionCoordinator(
 
     private fun fail(id: SessionId, config: SessionConfig, started: ClockReading, code: FailureCode) {
         val now = clock.now()
+        val current = _snapshot.value
+        val preservedElapsed = current
+            ?.takeIf { it.state in setOf(SessionState.PROCESSING, SessionState.READY, SessionState.STOPPED) }
+            ?.elapsedMs
         _snapshot.value = SessionSnapshot(
             id = id,
             state = SessionState.ERROR,
             startedAtEpochMs = started.epochMs,
-            elapsedMs = now.elapsedSince(started),
+            elapsedMs = preservedElapsed ?: now.elapsedSince(started),
             config = config,
             lastFrameAtEpochMs = null,
             failure = OliviaFailure(code, "Falha controlada na sessão"),

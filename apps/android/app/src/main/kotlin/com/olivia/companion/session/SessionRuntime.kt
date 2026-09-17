@@ -85,6 +85,9 @@ enum class LiveGuidanceStatus {
 
 interface SessionRuntime : AutoCloseable {
     val snapshot: StateFlow<SessionSnapshot?>
+    val connection: StateFlow<GlassesConnection>
+    val audioStatus: StateFlow<AudioFeedbackStatus>
+    val audioStatusMessage: StateFlow<String?>
     /** Aggregate-only, process-local measurements; never contains media, model text or identifiers. */
     val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot>
     /** Human-readable live-loop phase for the phone UI, not a substitute for audio guidance. */
@@ -93,6 +96,9 @@ interface SessionRuntime : AutoCloseable {
     val sessionHistory: StateFlow<List<SessionHistoryEntry>>
     suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot>
     suspend fun setAudioMode(mode: AudioMode): Result<Unit>
+    suspend fun signal(signal: com.olivia.core.SessionSignal): Result<com.olivia.core.ClockReading>
+    suspend fun simulateConnection(connected: Boolean): Result<Unit> =
+        Result.failure(IllegalStateException("Simulação disponível somente no mock offline"))
     suspend fun timelineFor(sessionId: SessionId): Result<List<TimelineEvent>>
     suspend fun processPostTake(work: suspend (SessionId) -> Result<SessionReview>): Result<SessionReview>
 }
@@ -113,6 +119,11 @@ object SessionRuntimeFactory {
 }
 
 class UnavailableSessionRuntime : SessionRuntime {
+    override val connection = MutableStateFlow(GlassesConnection.UNAVAILABLE).asStateFlow()
+    override val audioStatus = MutableStateFlow(AudioFeedbackStatus.ERROR).asStateFlow()
+    override val audioStatusMessage = MutableStateFlow<String?>("Runtime indisponível; confira a configuração do dispositivo.").asStateFlow()
+    override suspend fun signal(signal: com.olivia.core.SessionSignal): Result<com.olivia.core.ClockReading> =
+        Result.failure(IllegalStateException("Runtime indisponível"))
     private val state = MutableStateFlow<SessionSnapshot?>(null)
     private val metrics = MutableStateFlow(LiveLoopMetrics().snapshot())
     private val guidance = MutableStateFlow(LiveGuidanceStatus.IDLE)
@@ -131,74 +142,6 @@ class UnavailableSessionRuntime : SessionRuntime {
     override fun close() = Unit
 }
 
-/** Offline source: heartbeat is updated before each synthetic 720×1280 marker is emitted. */
-private class MockGlassesGateway(
-    private val clock: OliviaClock,
-    private val scope: CoroutineScope,
-) : GlassesGateway, AutoCloseable {
-    private val _connection = MutableStateFlow(GlassesConnection.CONNECTED)
-    private val _frames = MutableSharedFlow<Frame>(extraBufferCapacity = 1)
-    private val _heartbeat = MutableStateFlow<CaptureHeartbeat?>(null)
-    private var capture: CaptureId? = null
-    private var source: Job? = null
-    private var sequence: Long = 0
-
-    override val connection: Flow<GlassesConnection> = _connection.asStateFlow()
-    override val frames: Flow<Frame> = _frames.asSharedFlow()
-    override val heartbeat: StateFlow<CaptureHeartbeat?> = _heartbeat.asStateFlow()
-
-    override suspend fun startCapture(capture: CaptureId) {
-        stopSource()
-        this.capture = capture
-        sequence = 0
-        _heartbeat.value = null
-        _connection.value = GlassesConnection.CONNECTED
-        startSource(capture)
-    }
-
-    override suspend fun pauseCapture() { stopSource() }
-
-    override suspend fun resumeCapture(capture: CaptureId) {
-        stopSource()
-        this.capture = capture
-        _heartbeat.value = null
-        startSource(capture)
-    }
-
-    override suspend fun stopCapture() {
-        stopSource()
-        capture = null
-        _heartbeat.value = null
-    }
-
-    override fun close() { stopSource() }
-
-    private fun startSource(activeCapture: CaptureId) {
-        source = scope.launch {
-            while (isActive && capture == activeCapture) {
-                val now = clock.now()
-                _heartbeat.value = CaptureHeartbeat(activeCapture, now.monotonicMs)
-                _frames.emit(
-                    Frame(
-                        stamp = FrameStamp(activeCapture, sequence++, now),
-                        width = 720,
-                        height = 1_280,
-                        format = FrameFormat.JPEG,
-                        origin = FrameOrigin.MOCK,
-                        bytes = byteArrayOf(),
-                    ),
-                )
-                delay(500)
-            }
-        }
-    }
-
-    private fun stopSource() {
-        source?.cancel()
-        source = null
-    }
-}
-
 /**
  * Full offline demo loop. Frames are synthetic markers, analyzed locally and discarded after
  * classification; this is deliberately not a DAT, Gemini, recording, or hardware claim.
@@ -211,6 +154,10 @@ internal class LiveSessionRuntime(
 ) : SessionRuntime {
     private val runtimeScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val audio = AndroidAudioFeedback(context, clock, AudioMode.VOICE)
+    override val audioStatus = audio.status
+    override val audioStatusMessage = audio.statusMessage
+    private val _connection = MutableStateFlow(GlassesConnection.UNAVAILABLE)
+    override val connection = _connection.asStateFlow()
     private val timeline = FileTimeline(context.filesDir.toPath().resolve("olivia-timeline"))
     private val coordinator = SessionCoordinator(clock, gateway, audio, timeline)
     private val fastProcessor = analyzer as? FastFrameProcessor
@@ -240,6 +187,7 @@ internal class LiveSessionRuntime(
     )
     /** Serializes short state transitions; provider, TTS and frame I/O never run under this lock. */
     private val runtimeMutex = Mutex()
+    private var lastRecoveryAttemptMs = Long.MIN_VALUE
     private val analysisFrames = Channel<Frame>(capacity = 1)
     private var activeAnalysisJob: Job? = null
     private val analysisWorker: Job = runtimeScope.launch {
@@ -260,6 +208,7 @@ internal class LiveSessionRuntime(
     }
     private val connectionObserver: Job = runtimeScope.launch {
         gateway.connection.collect { connection ->
+            _connection.value = connection
             runtimeMutex.withLock {
                 coordinator.onConnectionChanged(connection)
                 expireIfDegraded()
@@ -288,6 +237,13 @@ internal class LiveSessionRuntime(
             runtimeMutex.withLock {
                 coordinator.checkCaptureHealth()
                 expireIfDegraded()
+                val current = coordinator.snapshot.value
+                if (current != null && com.olivia.core.DegradationCause.CAPTURE_UNAVAILABLE in current.degradationCauses &&
+                    (lastRecoveryAttemptMs == Long.MIN_VALUE || clock.now().monotonicMs - lastRecoveryAttemptMs >= 4_000)
+                ) {
+                    lastRecoveryAttemptMs = clock.now().monotonicMs
+                    coordinator.retryCapture()
+                }
             }
             delay(250)
         }
@@ -312,6 +268,9 @@ internal class LiveSessionRuntime(
             if (command == LocalSessionCommand.START) discard(sampler.cancel())
             when (command) {
                 LocalSessionCommand.START -> {
+                    expirePendingCorrection()
+                    guidance = createGuidance(audioMode)
+                    lastRecoveryAttemptMs = Long.MIN_VALUE
                     (analyzer as? HybridVisualAnalyzer)?.reset()
                     _liveGuidanceStatus.value = LiveGuidanceStatus.LOCATING_TARGET
                     coordinator.start(
@@ -369,11 +328,20 @@ internal class LiveSessionRuntime(
     }
 
     override suspend fun timelineFor(sessionId: SessionId): Result<List<TimelineEvent>> = runtimeMutex.withLock {
-        if (coordinator.snapshot.value?.id != sessionId) {
+        if (coordinator.snapshot.value?.id != sessionId && sessionHistory.value.none { it.sessionId == sessionId.value }) {
             Result.failure(IllegalArgumentException("Timeline fora da sessão ativa"))
         } else {
             Result.success(timeline.events(sessionId))
         }
+    }
+
+    override suspend fun signal(signal: com.olivia.core.SessionSignal): Result<com.olivia.core.ClockReading> = audio.signal(signal)
+
+    override suspend fun simulateConnection(connected: Boolean): Result<Unit> = runtimeMutex.withLock {
+        val mock = gateway as? ScenarioGlassesGateway
+            ?: return@withLock Result.failure(IllegalStateException("Simulação disponível somente no mock offline"))
+        mock.setConnected(connected)
+        Result.success(Unit)
     }
 
     override suspend fun processPostTake(work: suspend (SessionId) -> Result<SessionReview>): Result<SessionReview> {
@@ -383,12 +351,17 @@ internal class LiveSessionRuntime(
             work(sessionId).also { result ->
                 runtimeMutex.withLock {
                     if (result.isSuccess) coordinator.completePostProcessing(sessionId)
-                    else coordinator.failPostProcessing(sessionId)
+                    else coordinator.cancelPostProcessing(sessionId)
                 }
             }
         } catch (error: CancellationException) {
-            runtimeMutex.withLock { coordinator.cancelPostProcessing(sessionId) }
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                runtimeMutex.withLock { coordinator.cancelPostProcessing(sessionId) }
+            }
             throw error
+        } catch (error: Exception) {
+            runtimeMutex.withLock { coordinator.cancelPostProcessing(sessionId) }
+            Result.failure(IllegalStateException("Pós-processamento indisponível"))
         }
     }
 
@@ -640,21 +613,5 @@ private const val LOG_TAG = "OliviaSessionRuntime"
 
 fun createMockSessionRuntime(context: Context): SessionRuntime {
     val clock = SystemOliviaClock()
-    return LiveSessionRuntime(
-        context = context,
-        gateway = MockGlassesGateway(
-            clock = clock,
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
-        ),
-        analyzer = MockFrameAnalyzer(
-            clock,
-            mapOf(
-                4L to MockAnalysisReply.Diagnosis(MockVisualFixtures.subjectRight.expectedDiagnoses),
-                8L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
-                12L to MockAnalysisReply.Diagnosis(MockVisualFixtures.handShadow.expectedDiagnoses),
-                16L to MockAnalysisReply.Diagnosis(MockVisualFixtures.centered.expectedDiagnoses),
-            ),
-        ),
-        clock = clock,
-    )
+    return LiveSessionRuntime(context, ScenarioGlassesGateway(clock), ScenarioFrameAnalyzer(clock), clock)
 }
