@@ -6,39 +6,20 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.olivia.companion.ActiveBackend
 import com.olivia.companion.GlassesBackend
-import com.olivia.core.AudioMode
-import com.olivia.core.Correction
-import com.olivia.core.CorrectionStatus
-import com.olivia.core.DiagnosisKind
-import com.olivia.core.FrameAnalysis
-import com.olivia.core.FrameAnalyzer
-import com.olivia.core.GlassesConnection
-import com.olivia.core.GlassesGateway
-import com.olivia.core.PostProcessor
-import com.olivia.core.RecordingSource
-import com.olivia.core.SessionConfig
-import com.olivia.core.SessionId
-import com.olivia.core.SessionReview
-import com.olivia.core.SessionSnapshot
-import com.olivia.core.SessionState
-import com.olivia.core.SessionSignal
-import com.olivia.core.TimelineEvent
-import com.olivia.core.TimelineEventType
-import kotlinx.coroutines.Job
+import com.olivia.companion.OliviaPreferences
+import com.olivia.core.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-private val liveSessionStates = setOf(
-    SessionState.STARTED,
-    SessionState.PAUSED,
-    SessionState.DEGRADED,
+private val busyStates = setOf(
+    SessionState.STARTING, SessionState.STARTED, SessionState.PAUSED,
+    SessionState.DEGRADED, SessionState.STOPPING, SessionState.PROCESSING,
 )
 
 data class OliviaUiState(
@@ -52,539 +33,237 @@ data class OliviaUiState(
     val audioStatus: AudioFeedbackStatus = AudioFeedbackStatus.INITIALIZING,
     val audioStatusMessage: String? = null,
     val exportState: ExportState = ExportState(),
+    val guidanceStatus: LiveGuidanceStatus = LiveGuidanceStatus.IDLE,
+    val livePreview: LivePreviewFrame? = null,
+    val guidanceDirection: Direction? = null,
+    val commandError: String? = null,
+    val working: Boolean = false,
 ) {
-    val isLive: Boolean
-        get() = session?.state in setOf(
-            SessionState.STARTED,
-            SessionState.PAUSED,
-            SessionState.DEGRADED,
-        )
+    val isLive: Boolean get() = session?.state in busyStates || working
 }
 
+/** Presentation only: capture, health, analysis and audio belong to SessionRuntime. */
 class OliviaSessionViewModel(
-    private val audioModeStore: AudioModeRepository,
+    private val runtime: SessionRuntime,
     backend: GlassesBackend,
-    private val glassesGateway: GlassesGateway?,
-    private val frameAnalyzer: FrameAnalyzer?,
-    private val postProcessor: PostProcessor,
-    private val audioFeedback: AudioFeedbackController,
-    private val voiceCommandSource: VoiceCommandSource? = null,
-    private val clock: () -> Long = { System.currentTimeMillis() },
-    private val recordingSource: RecordingSource? = null,
-    private val exportAdapter: SessionExportAdapter? = null,
+    audioModes: Flow<AudioMode>,
+    private val saveAudioMode: suspend (AudioMode) -> Unit,
+    private val postTake: PostTakeController,
+    voiceCommandSource: VoiceCommandSource? = null,
+    private val voiceCommandSourceFactory: (() -> VoiceCommandSource)? = null,
 ) : ViewModel() {
-    private val timeline = InMemoryTimeline()
-    private val runtime = SessionRuntime(timeline, clock)
-    private val guidance = ThresholdGuidanceEngine(SessionConfig().correctionCooldownMs)
-    private var frameJob: Job? = null
-    private var gatewayCommand: Job? = null
-    private var ticker: Job? = null
-    private var watchdog: Job? = null
-    private var voiceCommandJob: Job? = null
-    private var connectionJob: Job? = null
-    private var audioStatusJob: Job? = null
-    private var pendingCorrection: Correction? = null
-    private val reviews = mutableMapOf<String, SessionReview>()
-    private var latestConnection = initialConnection(backend, null)
-
-    private val _uiState = MutableStateFlow(
-        OliviaUiState(
-            backend = backend,
-            audioMode = audioModeStore.current(),
-            session = null,
-            connection = initialConnection(backend, null),
-            elapsedMs = 0,
-            takes = emptyList(),
-            voiceState = voiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
-            audioStatus = audioFeedback.status.value,
-            audioStatusMessage = audioFeedback.statusMessage.value,
-        ),
-    )
+    private var activeVoiceCommandSource: VoiceCommandSource? = voiceCommandSource
+    private val commands = Mutex()
+    private val refresh = Mutex()
+    private val preferencesReady = CompletableDeferred<Unit>()
+    private val reviews = mutableMapOf<SessionId, SessionReview>()
+    private val _uiState = MutableStateFlow(OliviaUiState(
+        backend, AudioMode.VOICE, runtime.snapshot.value, runtime.connection.value,
+        0, emptyList(), activeVoiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
+    ))
+    private val _voiceNavigation = MutableSharedFlow<LocalSessionCommand>(extraBufferCapacity = 8)
     val uiState: StateFlow<OliviaUiState> = _uiState.asStateFlow()
+    val voiceNavigation: Flow<LocalSessionCommand> = _voiceNavigation.asSharedFlow()
 
     init {
-        glassesGateway?.let { gateway ->
-            connectionJob = viewModelScope.launch {
-                gateway.connection.collect { connection ->
-                    latestConnection = connection
-                    publish()
+        viewModelScope.launch {
+            audioModes.catch { emit(AudioMode.VOICE) }.collect { mode ->
+                commands.withLock {
+                    if (runtime.setAudioMode(mode).isSuccess) _uiState.update { it.copy(audioMode = mode) }
+                    preferencesReady.complete(Unit)
                 }
             }
         }
-        frameJob = glassesGateway?.let { gateway ->
-            viewModelScope.launch {
-                gateway.frames.collect { frame ->
-                    if (!runtime.canProcessFrame(frame.sessionId, frame.capturedAtEpochMs)) return@collect
-                    val wasDegraded = runtime.snapshot?.state == SessionState.DEGRADED
-                    frameAnalyzer?.analyze(frame)?.getOrNull()
-                        ?.takeIf { it.sessionId == frame.sessionId }
-                        ?.let { analysis ->
-                            if (!runtime.canProcessFrame(frame.sessionId, frame.capturedAtEpochMs)) return@collect
-                            handleAnalysis(analysis)
-                        }
-                    if (!runtime.canProcessFrame(frame.sessionId, frame.capturedAtEpochMs)) return@collect
-                    runtime.frameReceived(frame.capturedAtEpochMs)
-                    if (wasDegraded) signalAudio(SessionSignal.CONNECTION_RESTORED)
-                    publish()
-                }
+        viewModelScope.launch {
+            runtime.snapshot.collect { snapshot ->
+                val previous = _uiState.value.session
+                _uiState.update { it.copy(session = snapshot, elapsedMs = snapshot?.elapsedMs ?: 0) }
+                if (previous?.id != snapshot?.id || previous?.state != snapshot?.state) refreshTakes()
             }
         }
-        audioStatusJob = viewModelScope.launch {
-            audioFeedback.status.collect {
-                publish()
+        viewModelScope.launch { runtime.connection.collect { value -> _uiState.update { it.copy(connection = value) } } }
+        viewModelScope.launch { runtime.liveGuidanceStatus.collect { value -> _uiState.update { it.copy(guidanceStatus = value) } } }
+        viewModelScope.launch { runtime.livePreview.collect { value -> _uiState.update { it.copy(livePreview = value) } } }
+        viewModelScope.launch {
+            runtime.liveGuidanceDirection.collect { value -> _uiState.update { it.copy(guidanceDirection = value) } }
+        }
+        viewModelScope.launch { runtime.audioStatus.collect { value -> _uiState.update { it.copy(audioStatus = value) } } }
+        viewModelScope.launch { runtime.audioStatusMessage.collect { value -> _uiState.update { it.copy(audioStatusMessage = value) } } }
+        viewModelScope.launch { runtime.sessionHistory.collect { refreshTakes() } }
+        viewModelScope.launch {
+            while (isActive) {
+                delay(2_000)
+                if (_uiState.value.isLive) refreshTakes()
             }
         }
-        voiceCommandSource?.let { source ->
-            voiceCommandJob = viewModelScope.launch {
-                launch {
-                    source.commands.collect(::handleVoiceCommand)
-                }
-                launch {
-                    source.errors.collect(::handleVoiceCommandError)
-                }
-                source.state.collect {
-                    publish()
-                }
-            }
-        }
-        publish()
+        activeVoiceCommandSource?.let(::observeVoiceCommandSource)
     }
 
+    /** Recreates an unavailable source after the user installs an offline speech provider. */
     fun startVoiceCommands() {
-        if (voiceCommandSource?.state?.value == VoiceCommandState.UNAVAILABLE) return
-        voiceCommandSource?.start()
-        publish()
+        val current = activeVoiceCommandSource
+        val factory = voiceCommandSourceFactory
+        if (current?.state?.value == VoiceCommandState.UNAVAILABLE && factory != null) {
+            val replacement = runCatching { factory.invoke() }.getOrNull()
+            if (replacement != null) {
+                current.close()
+                activeVoiceCommandSource = replacement
+                observeVoiceCommandSource(replacement)
+            }
+        }
+        activeVoiceCommandSource?.start()
     }
 
-    fun stopVoiceCommands() {
-        voiceCommandSource?.stop()
-        publish()
+    fun stopVoiceCommands() { activeVoiceCommandSource?.stop() }
+    fun start() = dispatch(LocalSessionCommand.START)
+    fun pause() = dispatch(LocalSessionCommand.PAUSE)
+    fun resume() = dispatch(LocalSessionCommand.RESUME)
+    fun stop() = dispatch(LocalSessionCommand.STOP)
+
+    private fun dispatch(command: LocalSessionCommand, fromVoice: Boolean = false) {
+        launchOperation {
+            val state = runtime.snapshot.value?.state
+            val allowed = when (command) {
+                LocalSessionCommand.START -> state == null || state in setOf(SessionState.IDLE, SessionState.STOPPED, SessionState.READY, SessionState.ERROR)
+                LocalSessionCommand.PAUSE -> state in setOf(SessionState.STARTED, SessionState.DEGRADED)
+                LocalSessionCommand.RESUME -> state == SessionState.PAUSED
+                LocalSessionCommand.STOP -> state in setOf(SessionState.STARTING, SessionState.STARTED, SessionState.PAUSED, SessionState.DEGRADED)
+            }
+            if (!allowed) {
+                if (fromVoice) runtime.signal(SessionSignal.VOICE_COMMAND_ERROR)
+                error("Comando indisponível neste estado da sessão.")
+            }
+            runtime.handle(command).getOrThrow()
+            if (fromVoice) _voiceNavigation.tryEmit(command)
+            if (command == LocalSessionCommand.STOP) {
+                val stopped = requireNotNull(runtime.snapshot.value)
+                val events = runtime.timelineFor(stopped.id).getOrThrow()
+                if (postTake.hasDemoRecording) {
+                    val review = runtime.processPostTake { postTake.prepareDemo(stopped, events) }.getOrThrow()
+                    reviews[stopped.id] = review
+                }
+                refreshTakes()
+            }
+        }
     }
 
     fun setAudioMode(mode: AudioMode) {
         if (_uiState.value.isLive) return
-        audioModeStore.set(mode)
-        publish()
-    }
-
-    fun start() {
-        val config = SessionConfig(audioMode = _uiState.value.audioMode)
-        val canStart = runtime.snapshot?.state == null || runtime.snapshot?.state in setOf(
-            SessionState.IDLE,
-            SessionState.STOPPED,
-        )
-        if (!canStart) {
-            publish()
-            return
-        }
-        val started = runtime.start(config)
-        if (started != null) {
-            guidance.reset()
-            pendingCorrection = null
-            startGateway(started.id, config)
-            signalAudio(SessionSignal.SESSION_STARTED)
-        }
-        startTicker()
-        startWatchdog()
-        publish()
-    }
-
-    fun pause() {
-        val wasLive = runtime.snapshot?.state in setOf(SessionState.STARTED, SessionState.DEGRADED)
-        val paused = runtime.pause()
-        if (wasLive && paused?.state == SessionState.PAUSED) {
-            ticker?.cancel()
-            ticker = null
-            watchdog?.cancel()
-            watchdog = null
-            expirePendingCorrection(paused.id, clock())
-            gatewayCommand?.cancel()
-            gatewayCommand = glassesGateway?.let { gateway ->
-                viewModelScope.launch { gateway.pauseCapture() }
-            }
-            signalAudio(SessionSignal.SESSION_PAUSED)
-        }
-        publish()
-    }
-
-    fun resume() {
-        val wasPaused = runtime.snapshot?.state == SessionState.PAUSED
-        val resumed = runtime.resume()
-        if (wasPaused && resumed?.state == SessionState.STARTED) {
-            gatewayCommand?.cancel()
-            gatewayCommand = glassesGateway?.let { gateway ->
-                viewModelScope.launch { gateway.resumeCapture() }
-            }
-            signalAudio(SessionSignal.SESSION_RESUMED)
-        }
-        startTicker()
-        startWatchdog()
-        publish()
-    }
-
-    fun degrade() {
-        val degraded = runtime.degrade()
-        if (degraded?.state == SessionState.DEGRADED) {
-            expirePendingCorrection(degraded.id, clock())
-            signalAudio(SessionSignal.CONNECTION_LOST)
-            requestGatewayRecovery()
-        }
-        publish()
-    }
-
-    fun recover() {
-        val wasDegraded = runtime.snapshot?.state == SessionState.DEGRADED
-        val recovered = runtime.recover()
-        if (wasDegraded && recovered?.state == SessionState.STARTED) {
-            signalAudio(SessionSignal.CONNECTION_RESTORED)
-        }
-        if (wasDegraded) requestGatewayRecovery()
-        startTicker()
-        publish()
-    }
-
-    fun stop() {
-        val shouldSignal = runtime.snapshot?.state in setOf(
-            SessionState.STARTED,
-            SessionState.PAUSED,
-            SessionState.DEGRADED,
-        )
-        runtime.snapshot?.id?.let { sessionId -> expirePendingCorrection(sessionId, clock()) }
-        val stopped = runtime.stop()
-        if (shouldSignal && stopped?.state == SessionState.STOPPED) signalAudio(SessionSignal.SESSION_STOPPED)
-        if (shouldSignal && stopped?.state == SessionState.STOPPED) processTake(stopped.id)
-        ticker?.cancel()
-        ticker = null
-        watchdog?.cancel()
-        watchdog = null
-        gatewayCommand?.cancel()
-        gatewayCommand = glassesGateway?.let { gateway ->
-            viewModelScope.launch { gateway.stopCapture() }
-        }
-        publish()
-    }
-
-    fun take(sessionId: SessionId): TakeSummary? =
-        _uiState.value.takes.firstOrNull { it.sessionId == sessionId }
-
-    private fun startTicker() {
-        if (ticker?.isActive == true) return
-        ticker = viewModelScope.launch {
-            while (isActive) {
-                delay(250)
-                val state = runtime.snapshot?.state
-                if (state != SessionState.STARTED && state != SessionState.DEGRADED) break
-                publish()
-            }
+        launchOperation {
+            runtime.setAudioMode(mode).getOrThrow()
+            saveAudioMode(mode)
+            _uiState.update { it.copy(audioMode = mode) }
         }
     }
 
-    private fun startGateway(sessionId: SessionId, config: SessionConfig) {
-        gatewayCommand?.cancel()
-        gatewayCommand = glassesGateway?.let { gateway ->
-            viewModelScope.launch { gateway.startCapture(sessionId, config) }
-        }
+    fun degrade() = simulateConnection(false)
+    fun recover() = simulateConnection(true)
+    private fun simulateConnection(connected: Boolean) = launchOperation {
+        runtime.simulateConnection(connected).getOrThrow()
     }
 
-    private suspend fun handleAnalysis(analysis: FrameAnalysis) {
-        recordDiagnoses(analysis)
-        val pending = pendingCorrection
-        if (pending != null && !analysis.hasDeviation) {
-            guidance.onCorrectionOutcome(pending.id, CorrectionStatus.OBEYED)
-            recordCorrectionOutcome(pending, CorrectionStatus.OBEYED, analysis.analyzedAtEpochMs)
-            pendingCorrection = null
-        }
-        guidance.onAnalysis(analysis, analysis.analyzedAtEpochMs)?.let { correction ->
-            pendingCorrection?.let { previous ->
-                guidance.onCorrectionOutcome(previous.id, CorrectionStatus.SUPERSEDED)
-                recordCorrectionOutcome(previous, CorrectionStatus.SUPERSEDED, correction.issuedAtEpochMs)
-            }
-            pendingCorrection = correction
-            recordCorrectionIssued(correction)
-            audioFeedback.announce(correction)
-        }
+    fun take(sessionId: SessionId): TakeSummary? = _uiState.value.takes.firstOrNull { it.sessionId == sessionId }
+
+    fun importTake(sessionId: SessionId, uri: String) = launchOperation {
+        val stopped = runtime.snapshot.value?.takeIf { it.id == sessionId && it.state == SessionState.STOPPED }
+            ?: error("Encerre o take antes de importar o vídeo.")
+        val events = runtime.timelineFor(sessionId).getOrThrow()
+        val review = runtime.processPostTake { postTake.importRecording(stopped, uri, events) }.getOrThrow()
+        reviews[sessionId] = review
+        _uiState.update { it.copy(exportState = ExportState(message = "Vídeo e marcas prontos. A transcrição aguarda o modelo Whisper local.")) }
+        refreshTakes()
     }
 
-    private fun recordDiagnoses(analysis: FrameAnalysis) {
-        analysis.diagnoses.forEach { diagnosis ->
-            timeline.record(
-                TimelineEvent(
-                    id = "${analysis.sessionId.value}-diagnosis-${analysis.frameCapturedAtEpochMs}-${diagnosis.kind}",
-                    sessionId = analysis.sessionId,
-                    atEpochMs = analysis.analyzedAtEpochMs,
-                    offsetMs = sessionOffset(analysis.frameCapturedAtEpochMs),
-                    type = TimelineEventType.DIAGNOSIS,
-                    diagnosis = diagnosis,
-                    direction = diagnosis.direction,
-                    confidence = diagnosis.confidence,
-                    label = diagnosisLabel(diagnosis.kind),
-                ),
-            )
-        }
+    fun exportTake(sessionId: SessionId) = share(sessionId, marksOnly = false)
+    fun exportMarks(sessionId: SessionId) = share(sessionId, marksOnly = true)
+    private fun share(sessionId: SessionId, marksOnly: Boolean) = launchOperation {
+        val review = take(sessionId)?.review ?: error("Take indisponível.")
+        _uiState.update { it.copy(exportState = ExportState(ExportStatus.SHARING)) }
+        val result = postTake.share(review, marksOnly)
+        _uiState.update { it.copy(exportState = result) }
     }
 
-    private fun recordCorrectionIssued(correction: Correction) {
-        timeline.record(
-            TimelineEvent(
-                id = "${correction.sessionId.value}-correction-${correction.id}",
-                sessionId = correction.sessionId,
-                atEpochMs = correction.issuedAtEpochMs,
-                offsetMs = sessionOffset(correction.issuedAtEpochMs),
-                type = TimelineEventType.CORRECTION_ISSUED,
-                diagnosis = correction.diagnosis,
-                direction = correction.direction,
-                confidence = correction.confidence,
-                correctionStatus = CorrectionStatus.PENDING,
-                correctionId = correction.id,
-                label = correction.spokenText,
-            ),
-        )
+    fun discardMedia(sessionId: SessionId) = launchOperation {
+        reviews.remove(sessionId)?.let { postTake.discard(it) }
+        _uiState.update { it.copy(exportState = ExportState(message = "Cópias locais temporárias descartadas.")) }
+        refreshTakes()
     }
 
-    private fun recordCorrectionOutcome(
-        correction: Correction,
-        status: CorrectionStatus,
-        atEpochMs: Long,
-    ) {
-        timeline.record(
-            TimelineEvent(
-                id = "${correction.sessionId.value}-outcome-${correction.id}-$status",
-                sessionId = correction.sessionId,
-                atEpochMs = atEpochMs,
-                offsetMs = sessionOffset(atEpochMs),
-                type = TimelineEventType.CORRECTION_RESOLVED,
-                diagnosis = correction.diagnosis,
-                direction = correction.direction,
-                confidence = correction.confidence,
-                correctionStatus = status,
-                correctionId = correction.id,
-                label = correctionOutcomeLabel(status),
-            ),
-        )
-    }
-
-    private fun expirePendingCorrection(sessionId: SessionId, atEpochMs: Long) {
-        val pending = pendingCorrection ?: return
-        if (pending.sessionId != sessionId) return
-        guidance.onCorrectionOutcome(pending.id, CorrectionStatus.EXPIRED)
-        recordCorrectionOutcome(pending, CorrectionStatus.EXPIRED, atEpochMs)
-        pendingCorrection = null
-    }
-
-    private fun signalAudio(signal: SessionSignal) {
-        viewModelScope.launch { audioFeedback.signal(signal) }
-    }
-
-    private fun handleVoiceCommand(command: VoiceCommand) {
-        val stateBefore = runtime.snapshot?.state
-        when (command) {
-            VoiceCommand.START -> start()
-            VoiceCommand.PAUSE -> pause()
-            VoiceCommand.RESUME -> resume()
-            VoiceCommand.STOP -> stop()
-        }
-        if (runtime.snapshot?.state == stateBefore) {
-            signalAudio(SessionSignal.VOICE_COMMAND_ERROR)
-        }
-    }
-
-    private fun handleVoiceCommandError(error: VoiceCommandError) {
-        when (error) {
-            VoiceCommandError.COMMAND_NOT_RECOGNIZED,
-            VoiceCommandError.ENGINE_ERROR -> signalAudio(SessionSignal.VOICE_COMMAND_ERROR)
-            VoiceCommandError.INPUT_UNAVAILABLE -> signalAudio(SessionSignal.VOICE_INPUT_UNAVAILABLE)
-        }
-    }
-
-    private fun sessionOffset(atEpochMs: Long): Long =
-        (atEpochMs - (runtime.snapshot?.startedAtEpochMs ?: atEpochMs)).coerceAtLeast(0)
-
-    private fun diagnosisLabel(kind: DiagnosisKind): String = when (kind) {
-        DiagnosisKind.FRAMING -> "Desvio de enquadramento"
-        DiagnosisKind.LIGHT -> "Sombra ou baixa luz"
-        DiagnosisKind.HORIZON -> "Horizonte inclinado"
-    }
-
-    private fun correctionOutcomeLabel(status: CorrectionStatus): String = when (status) {
-        CorrectionStatus.OBEYED -> "Correção confirmada"
-        CorrectionStatus.PENDING -> "Correção pendente"
-        CorrectionStatus.IGNORED -> "Correção não confirmada"
-        CorrectionStatus.EXPIRED -> "Correção expirada"
-        CorrectionStatus.SUPERSEDED -> "Correção substituída"
-    }
-
-    private fun startWatchdog() {
-        if (watchdog?.isActive == true) return
-        watchdog = viewModelScope.launch {
-            while (isActive) {
-                delay(250)
-                val session = runtime.snapshot ?: break
-                if (session.state != SessionState.STARTED && session.state != SessionState.DEGRADED) {
-                    break
-                }
-                if (runtime.shouldDegrade(clock())) {
-                    val degraded = runtime.degrade()
-                    if (degraded?.state == SessionState.DEGRADED) {
-                        expirePendingCorrection(degraded.id, clock())
-                        signalAudio(SessionSignal.CONNECTION_LOST)
-                        requestGatewayRecovery()
-                        publish()
-                    }
-                }
-            }
-        }
-    }
-
-    private fun publish() {
-        val session = runtime.view()
-        val audioMode = audioModeStore.current()
-        _uiState.update {
-            it.copy(
-                audioMode = audioMode,
-                session = session,
-                connection = currentConnection(it.backend, session),
-                elapsedMs = session?.elapsedMs ?: 0,
-                takes = buildTakes(),
-                voiceState = voiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
-                audioStatus = audioFeedback.status.value,
-                audioStatusMessage = audioFeedback.statusMessage.value,
-            )
-        }
-    }
-
-    private fun buildTakes(): List<TakeSummary> {
-        val liveSessionId = runtime.snapshot
-            ?.takeIf { it.state in liveSessionStates }
-            ?.id
-        return timeline.sessionIds()
-            .mapIndexedNotNull { index, sessionId ->
-                val events = timeline.events(sessionId)
-                if (events.isEmpty()) return@mapIndexedNotNull null
-                takeFromEvents(
-                    sessionId = sessionId,
-                    title = if (sessionId == liveSessionId) "Take ao vivo" else "Take ${index + 1}",
-                    events = events,
-                    review = reviews[sessionId.value],
-                )
-            }
-            .sortedByDescending { it.recordedAtEpochMs }
-    }
-
-    private fun processTake(sessionId: SessionId) {
-        val events = timeline.events(sessionId)
+    private fun launchOperation(work: suspend () -> Unit) {
         viewModelScope.launch {
-            val recording = recordingSource?.let { source ->
-                try {
-                    val asset = source.listTakes(sessionId).firstOrNull()
-                    if (asset != null) {
-                        source.fetch(asset).collect { }
-                    }
-                    asset
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (_: Exception) {
-                    null
+            preferencesReady.await()
+            commands.withLock {
+                _uiState.update { it.copy(working = true, commandError = null) }
+                try { work() }
+                catch (error: CancellationException) { throw error }
+                catch (_: Exception) {
+                    _uiState.update { it.copy(commandError = "Não foi possível concluir a operação. Confira o estado da sessão e tente novamente.",
+                        exportState = it.exportState.takeUnless { value -> value.status == ExportStatus.SHARING } ?: ExportState(ExportStatus.ERROR)) }
+                } finally { _uiState.update { it.copy(working = false) } }
+            }
+        }
+    }
+
+    private suspend fun refreshTakes() = refresh.withLock {
+        val history = runtime.sessionHistory.value
+        val active = runtime.snapshot.value
+        val ids = (history.map { SessionId(it.sessionId) } + listOfNotNull(active?.id)).distinct()
+        val takes = ids.mapNotNull { id ->
+            val events = runtime.timelineFor(id).getOrNull() ?: return@mapNotNull null
+            if (events.isEmpty()) return@mapNotNull null
+            takeFromEvents(id, if (id == active?.id && active?.state in busyStates) "Take ao vivo" else "Take ${id.value.take(8)}", events, reviews[id])
+        }.sortedByDescending { it.recordedAtEpochMs }
+        _uiState.update { it.copy(takes = takes) }
+    }
+
+    private fun observeVoiceCommandSource(source: VoiceCommandSource) {
+        viewModelScope.launch {
+            source.state.collect { value ->
+                if (activeVoiceCommandSource === source) {
+                    _uiState.update { it.copy(voiceState = value) }
                 }
             }
-            postProcessor.process(
-                sessionId = sessionId,
-                recording = recording,
-                timeline = events,
-            ).getOrNull()?.let { review ->
-                timeline.replace(sessionId, review.timeline)
-                reviews[sessionId.value] = review
-                publish()
-            }
         }
-    }
-
-    fun exportTake(sessionId: SessionId) {
-        val take = take(sessionId)
-        val review = take?.review
-        val recording = review?.recording
-        val source = recordingSource
-        val adapter = exportAdapter
-        if (review == null || recording == null || source == null || adapter == null) {
-            _uiState.update {
-                it.copy(
-                    exportState = ExportState(
-                        status = ExportStatus.UNAVAILABLE,
-                        message = "O vídeo nativo ainda não está disponível neste ambiente.",
-                    ),
-                )
-            }
-            return
-        }
-        _uiState.update { it.copy(exportState = ExportState(status = ExportStatus.SHARING)) }
         viewModelScope.launch {
-            val path = try {
-                source.localPathOf(recording.id)
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (_: Exception) {
-                null
+            source.commands.collect {
+                if (activeVoiceCommandSource === source) {
+                    dispatch(LocalSessionCommand.valueOf(it.name), fromVoice = true)
+                }
             }
-            val result = adapter.share(review, path)
-            _uiState.update { it.copy(exportState = result) }
         }
-    }
-
-    private fun requestGatewayRecovery() {
-        gatewayCommand?.cancel()
-        gatewayCommand = glassesGateway?.let { gateway ->
-            viewModelScope.launch { gateway.resumeCapture() }
+        viewModelScope.launch {
+            source.errors.collect { error ->
+                if (activeVoiceCommandSource === source) {
+                    runtime.signal(
+                        if (error == VoiceCommandError.INPUT_UNAVAILABLE) {
+                            SessionSignal.VOICE_INPUT_UNAVAILABLE
+                        } else {
+                            SessionSignal.VOICE_COMMAND_ERROR
+                        },
+                    )
+                }
+            }
         }
-    }
-
-    private fun currentConnection(
-        backend: GlassesBackend,
-        session: SessionSnapshot?,
-    ): GlassesConnection {
-        if (session?.state == SessionState.DEGRADED) return GlassesConnection.DISCONNECTED
-        return latestConnection.takeIf { glassesGateway != null }
-            ?: initialConnection(backend, session)
-    }
-
-    private fun initialConnection(
-        backend: GlassesBackend,
-        session: SessionSnapshot?,
-    ): GlassesConnection {
-        if (session?.state == SessionState.DEGRADED) return GlassesConnection.DISCONNECTED
-        if (backend.requiresPhysicalGlasses) return GlassesConnection.UNAVAILABLE
-        return GlassesConnection.CONNECTED
     }
 
     override fun onCleared() {
-        audioFeedback.close()
-        if (glassesGateway is AutoCloseable) glassesGateway.close()
-        frameJob?.cancel()
-        connectionJob?.cancel()
-        audioStatusJob?.cancel()
-        gatewayCommand?.cancel()
-        watchdog?.cancel()
-        ticker?.cancel()
-        voiceCommandSource?.close()
-        voiceCommandJob?.cancel()
+        activeVoiceCommandSource?.close()
+        runtime.close()
         super.onCleared()
     }
 
     class Factory(private val application: Application) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            val audioModeStore = AudioModeStore(application)
+            val preferences = OliviaPreferences(application)
             return OliviaSessionViewModel(
-                audioModeStore = audioModeStore,
+                runtime = SessionRuntimeFactory.create(application, ActiveBackend.current),
                 backend = ActiveBackend.current,
-                glassesGateway = ActiveBackend.createGlassesGateway(),
-                frameAnalyzer = ActiveBackend.createFrameAnalyzer(),
-                postProcessor = ActiveBackend.createPostProcessor(),
-                recordingSource = ActiveBackend.createRecordingSource(application),
-                exportAdapter = AndroidSessionExportAdapter(application),
-                audioFeedback = AndroidAudioFeedback(
-                    context = application,
-                    modeProvider = audioModeStore::current,
-                ),
+                audioModes = preferences.audioMode,
+                saveAudioMode = preferences::setAudioMode,
+                postTake = AndroidPostTakeController(application, ActiveBackend.createRecordingSource(application)),
                 voiceCommandSource = AndroidVoiceCommandSourceFactory.create(application),
+                voiceCommandSourceFactory = { AndroidVoiceCommandSourceFactory.create(application) },
             ) as T
         }
     }

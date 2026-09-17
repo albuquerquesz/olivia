@@ -1,5 +1,6 @@
 package com.olivia.companion.session
 
+
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -114,11 +115,14 @@ internal class LocalVoiceCommandSource(
                 return@launch
             }
             runCatching { commandRecognizer.stop() }
-            candidates.asSequence()
+            val recognized = candidates.asSequence()
                 .mapNotNull(::parseVoiceCommand)
                 .firstOrNull()
-                ?.let { _commands.tryEmit(it) }
-                ?: _errors.tryEmit(VoiceCommandError.COMMAND_NOT_RECOGNIZED)
+            if (recognized != null) {
+                _commands.tryEmit(recognized)
+            } else {
+                _errors.tryEmit(VoiceCommandError.COMMAND_NOT_RECOGNIZED)
+            }
             restartWakeWord()
         }
     }
@@ -154,7 +158,9 @@ internal class LocalVoiceCommandSource(
 
     private fun startWakeWord() {
         runCatching { wakeWordDetector.start() }
-            .onSuccess { _state.value = VoiceCommandState.LISTENING_FOR_WAKE_WORD }
+            .onSuccess {
+                _state.value = VoiceCommandState.LISTENING_FOR_WAKE_WORD
+            }
             .onFailure { handleEngineError() }
     }
 
@@ -183,9 +189,14 @@ internal class UnavailableVoiceCommandSource : VoiceCommandSource {
     override val state: StateFlow<VoiceCommandState> = _state.asStateFlow()
     override val errors: Flow<VoiceCommandError> = _errors.asSharedFlow()
 
-    override fun start() {
-        if (!closed) _errors.tryEmit(VoiceCommandError.INPUT_UNAVAILABLE)
-    }
+    /**
+     * Starting the listener is a lifecycle operation (the UI does it when a destination is
+     * resumed), not a user request to issue a voice command. Do not publish an error here: the
+     * view model maps INPUT_UNAVAILABLE to an audible alert, which would otherwise sound on
+     * every tab change while voice support is not provisioned. The UNAVAILABLE state is already
+     * exposed to the UI; an explicit voice action can report an error when that action exists.
+     */
+    override fun start() = Unit
 
     override fun stop() = Unit
 

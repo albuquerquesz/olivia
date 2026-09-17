@@ -1,9 +1,17 @@
 package com.olivia.companion.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.provider.Settings
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -59,6 +67,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -67,6 +77,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.navigation.compose.NavHost
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -76,6 +87,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.olivia.companion.session.OliviaSessionViewModel
+import com.olivia.companion.session.LocalSessionCommand
 import com.olivia.companion.session.TakeSummary
 import com.olivia.companion.session.VoiceCommandState
 import com.olivia.core.SessionId
@@ -95,6 +107,16 @@ private val OliviaSideDestinations = listOf(
 
 private const val WELCOME_ROUTE = "welcome"
 private const val TAKE_ROUTE = "take/{sessionId}"
+
+private fun openVoiceSettings(context: android.content.Context) {
+    val voiceSettings = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)
+    val settingsIntent = if (voiceSettings.resolveActivity(context.packageManager) != null) {
+        voiceSettings
+    } else {
+        Intent(Settings.ACTION_SETTINGS)
+    }
+    context.startActivity(settingsIntent)
+}
 
 private fun bottomBarPadding(showBottomBar: Boolean) =
     80.dp.takeIf { showBottomBar } ?: 0.dp
@@ -141,6 +163,37 @@ fun OliviaApp(
     LaunchedEffect(uiState.commandError) {
         uiState.commandError?.let { snackbar.showSnackbar(it) }
     }
+    LaunchedEffect(uiState.voiceState) {
+        if (uiState.voiceState == VoiceCommandState.UNAVAILABLE) {
+            val result = snackbar.showSnackbar(
+                message = "Comandos de voz desativados neste dispositivo.",
+                actionLabel = "Configurar",
+                duration = androidx.compose.material3.SnackbarDuration.Long,
+            )
+            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                openVoiceSettings(context)
+            }
+        }
+    }
+    LaunchedEffect(viewModel) {
+        viewModel.voiceNavigation.collect { command ->
+            val destination = if (command == LocalSessionCommand.STOP) {
+                OliviaDestination.HOME.route
+            } else {
+                OliviaDestination.RECORD.route
+            }
+            val routeAtEvent = navController.currentDestination?.route
+            navController.navigate(destination) {
+                if (routeAtEvent == WELCOME_ROUTE) {
+                    popUpTo(WELCOME_ROUTE) { inclusive = true }
+                } else {
+                    popUpTo(OliviaDestination.HOME.route) { saveState = true }
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
 
     LaunchedEffect(currentRoute, audioPermissionGranted) {
         if (
@@ -154,8 +207,11 @@ fun OliviaApp(
         }
     }
 
-    DisposableEffect(lifecycleOwner, audioPermissionGranted, currentRoute) {
-        if (!audioPermissionGranted || currentRoute == null || currentRoute == WELCOME_ROUTE) {
+    // Voice listening follows the activity lifecycle, not the navigation destination. Re-keying
+    // this effect by currentRoute would stop/start the detector on every tab change; an unavailable
+    // provider could then report an audible error even though the user never asked for voice input.
+    DisposableEffect(lifecycleOwner, audioPermissionGranted) {
+        if (!audioPermissionGranted) {
             viewModel.stopVoiceCommands()
             onDispose { }
         } else {
@@ -239,6 +295,7 @@ fun OliviaApp(
                             restoreState = true
                         }
                     },
+                    onOpenVoiceSettings = { openVoiceSettings(context) },
                     onAudioMode = viewModel::setAudioMode,
                     onStart = viewModel::start,
                     onPause = viewModel::pause,
@@ -307,9 +364,82 @@ fun OliviaApp(
                         .offset(y = 12.dp)
                         .padding(start = 16.dp, end = 16.dp)
                         .widthIn(max = 600.dp)
-                        .fillMaxWidth(),
+                    .fillMaxWidth(),
                 )
             }
+            VoiceListeningOverlay(
+                state = uiState.voiceState,
+                modifier = Modifier.matchParentSize().zIndex(2f),
+            )
+        }
+    }
+}
+
+/**
+ * Assistant-style, non-interactive feedback for the local command window.
+ *
+ * Porcupine's wake-word listening remains silent; this overlay is deliberately driven by Rhino's
+ * command-window state. It therefore appears only after the wake word and never claims that a
+ * command is being captured while permission is missing, the activity is paused, or the engine
+ * has failed. The overlay has no pointer input and does not alter navigation.
+ */
+@Composable
+private fun VoiceListeningOverlay(
+    state: VoiceCommandState,
+    modifier: Modifier = Modifier,
+) {
+    // Porcupine remains silently armed for the wake word. The visible Assistant-like affordance
+    // starts only after the wake word opens Rhino's short command window.
+    if (state != VoiceCommandState.LISTENING_FOR_COMMAND) return
+
+    val transition = rememberInfiniteTransition(label = "voice-listening-edge")
+    val alpha by transition.animateFloat(
+        initialValue = 0.62f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "voice-listening-alpha",
+    )
+    val colors = listOf(
+        Color(0xFF8B5CF6),
+        MaterialTheme.colorScheme.primary,
+        Color(0xFF22C55E),
+        Color(0xFF8B5CF6),
+    )
+    val message = "Ouvindo comando"
+
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(4.dp)
+                .graphicsLayer {
+                    this.alpha = alpha
+                }
+                .border(
+                    BorderStroke(3.dp, Brush.sweepGradient(colors)),
+                    RoundedCornerShape(24.dp),
+                )
+                .semantics {
+                    contentDescription = message
+                },
+        )
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 8.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shape = RoundedCornerShape(50),
+            tonalElevation = 3.dp,
+        ) {
+            Text(
+                text = message,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                style = MaterialTheme.typography.labelMedium,
+            )
         }
     }
 }

@@ -45,7 +45,12 @@ class AndroidAudioFeedback(
     private val clock: OliviaClock,
     initialMode: AudioMode,
     private val timingSink: AudioTimingSink = AudioTimingSink { _, _ -> },
-) : AudioFeedback, AutoCloseable {
+) : com.olivia.companion.session.AudioFeedbackController, AutoCloseable {
+    private val audioStatus = kotlinx.coroutines.flow.MutableStateFlow(com.olivia.companion.session.AudioFeedbackStatus.INITIALIZING)
+    private val audioMessage = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    override val status: kotlinx.coroutines.flow.StateFlow<com.olivia.companion.session.AudioFeedbackStatus> = audioStatus
+    override val statusMessage: kotlinx.coroutines.flow.StateFlow<String?> = audioMessage
+
     @Volatile
     private var activeMode: AudioMode = initialMode
 
@@ -67,7 +72,7 @@ class AndroidAudioFeedback(
         textToSpeech = TextToSpeech(context.applicationContext) { status ->
             if (status != TextToSpeech.SUCCESS) {
                 emitTiming(AudioTimingStage.TTS_INIT, elapsedMs(ttsInitStartedNanos))
-                initialized.complete(Result.failure(IllegalStateException("TTS indisponível")))
+                markInitialized(Result.failure(IllegalStateException("TTS indisponível")))
             } else {
                 // The init callback can theoretically arrive while the property assignment is
                 // still unwinding. Posting guarantees the instance is fully assigned first.
@@ -75,10 +80,10 @@ class AndroidAudioFeedback(
                     val availability = textToSpeech.setLanguage(Locale("pt", "BR"))
                     if (availability < TextToSpeech.LANG_AVAILABLE) {
                         emitTiming(AudioTimingStage.TTS_INIT, elapsedMs(ttsInitStartedNanos))
-                        initialized.complete(Result.failure(IllegalStateException("Voz pt-BR indisponível")))
+                        markInitialized(Result.failure(IllegalStateException("Voz pt-BR indisponível")))
                     } else {
                         emitTiming(AudioTimingStage.TTS_INIT, elapsedMs(ttsInitStartedNanos))
-                        initialized.complete(Result.success(Unit))
+                        markInitialized(Result.success(Unit))
                     }
                 }
             }
@@ -114,11 +119,32 @@ class AndroidAudioFeedback(
         })
     }
 
+    private fun markInitialized(result: Result<Unit>) {
+        initialized.complete(result)
+        audioStatus.value = if (result.isSuccess) com.olivia.companion.session.AudioFeedbackStatus.READY
+            else com.olivia.companion.session.AudioFeedbackStatus.ERROR
+        audioMessage.value = if (result.isFailure) "Voz indisponível; as orientações usam sinais locais." else null
+    }
+
     override suspend fun announce(correction: Correction): Result<AudioReceipt> = when (mode) {
         AudioMode.SIGNAL -> playSignal(SignalTone.directionFor(correction.direction)).map {
             AudioReceipt(correction.id, correction.capture, it)
         }
-        AudioMode.VOICE -> speak(correction)
+        AudioMode.VOICE -> {
+            val spoken = kotlinx.coroutines.withTimeoutOrNull(5_000) { speak(correction) }
+                ?: Result.failure(IllegalStateException("TTS não iniciou a fala"))
+            if (spoken.isSuccess) {
+                audioStatus.value = com.olivia.companion.session.AudioFeedbackStatus.READY
+                audioMessage.value = null
+                spoken
+            } else {
+                audioStatus.value = com.olivia.companion.session.AudioFeedbackStatus.ERROR
+                audioMessage.value = "Voz indisponível; as orientações usam sinais locais."
+                playSignal(SignalTone.directionFor(correction.direction)).map {
+                    AudioReceipt(correction.id, correction.capture, it)
+                }
+            }
+        }
     }
 
     override suspend fun signal(signal: SessionSignal): Result<ClockReading> =
@@ -148,13 +174,15 @@ class AndroidAudioFeedback(
     }
 
     private suspend fun speak(correction: Correction): Result<AudioReceipt> {
-        val ready = initialized.await()
+        val ready = kotlinx.coroutines.withTimeoutOrNull(5_000) { initialized.await() }
+            ?: return Result.failure(IllegalStateException("TTS indisponível"))
         if (ready.isFailure) return Result.failure(ready.exceptionOrNull()!!)
         if (correction.spokenText.isBlank()) return Result.failure(IllegalArgumentException("Correção sem frase"))
         return suspendCancellableCoroutine { continuation ->
             val id = correction.id
             pending[id] = PendingUtterance(correction.capture, continuation, System.nanoTime())
             mainHandler.post {
+                if (!continuation.isActive) return@post
                 val status = textToSpeech.speak(correction.spokenText, TextToSpeech.QUEUE_FLUSH, null, id)
                 if (status == TextToSpeech.ERROR) {
                     pending.remove(id)?.continuation?.resume(Result.failure(IllegalStateException("TTS recusou a fala")))
@@ -178,6 +206,7 @@ class AndroidAudioFeedback(
         suspendCancellableCoroutine { continuation ->
             val requestedAt = System.nanoTime()
             mainHandler.post {
+                if (!continuation.isActive) return@post
                 try {
                     val track = signalTracks.getOrPut(direction) { SignalTone.create(direction) }
                     if (track.playState == AudioTrack.PLAYSTATE_PLAYING) track.stop()
@@ -219,6 +248,7 @@ private object SignalTone {
         SessionSignal.SESSION_PAUSED -> SignalDirection.SESSION_PAUSED
         SessionSignal.SESSION_STOPPED -> SignalDirection.SESSION_STOPPED
         SessionSignal.SESSION_RESUMED -> SignalDirection.SESSION_RESUMED
+        SessionSignal.VOICE_COMMAND_ERROR, SessionSignal.VOICE_INPUT_UNAVAILABLE,
         SessionSignal.CONNECTION_LOST, SessionSignal.ANALYSIS_UNAVAILABLE, SessionSignal.AUDIO_UNAVAILABLE -> SignalDirection.ALERT
         SessionSignal.CONNECTION_RESTORED, SessionSignal.ANALYSIS_RESTORED, SessionSignal.AUDIO_RESTORED -> SignalDirection.RECOVERED
     }

@@ -68,6 +68,21 @@ class GeminiFrameAnalyzerTest {
     }
 
     @Test
+    fun `preserves a transport configuration failure for the setup warning`() = runBlocking {
+        val clock = AnalyzerTestClock(2_000)
+        val analyzer = GeminiFrameAnalyzer(clock, object : GeminiVisualTransport {
+            override suspend fun classify(frame: Frame): Result<String> = Result.failure(
+                VisualTransportFailure(VisualTransportFailureCode.CONFIGURATION),
+            )
+        }, DeterministicLocalVisualAnalyzer())
+
+        val result = analyzer.analyze(frame(clock))
+
+        assertFalse(result.isSuccess)
+        assertEquals(AnalysisFailureCode.CONFIGURATION, (result.exceptionOrNull() as AnalysisFailure).code)
+    }
+
+    @Test
     fun `times out rather than retrying the same frame`() = runBlocking {
         val clock = AnalyzerTestClock(2_000)
         val analyzer = GeminiFrameAnalyzer(clock, object : GeminiVisualTransport {

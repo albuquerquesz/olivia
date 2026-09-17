@@ -1,7 +1,8 @@
 # First delivery - fixture recording source and media alignment
 
-Status: fixture source, alignment contract, and Android local-import adapter written; no build,
-test execution, DAT transfer, native recording, or hardware validation was run.
+Status: fixture source, alignment contract, Android local-import adapter, and an ephemeral live
+stream preview are implemented. Unit/build verification is covered below; DAT transfer, native
+recording, and hardware validation remain open.
 
 `FixtureRecordingSource` models a completed local fixture transfer using metadata only. It does
 not carry bytes, upload media, use a network URL, or make any statement about DAT capabilities.
@@ -23,3 +24,15 @@ live, paused, degraded, or unavailable.
 
 Native start/stop, simultaneous streaming, Bluetooth-loss preservation, physical evidence, and
 Android execution remain open in BE-12 and INT-06.
+
+The recording screen now mirrors the latest frame received by the DAT/MockDeviceKit gateway when
+available, with local red direction overlays. This is a bounded in-memory preview of the 720x1280
+direction stream only; it is cleared on pause/stop/close, is never persisted, and does not claim
+that a native 3K take was recorded or transferred. The native take gate and the explicit post-STOP
+import fallback remain unchanged.
+
+Verification: `:app:compileGlassesDebugKotlin`, `:app:testGlassesDebugUnitTest`, and
+`:app:compileGlassesDebugAndroidTestKotlin` pass after the preview integration. The
+`DatMockDeviceKitIntegrationTest` now also asserts that the runtime publishes a portrait JPEG
+preview and clears it after STOP. Executing that live test still requires an Android/device run
+with camera permission and the DAT configuration enabled.

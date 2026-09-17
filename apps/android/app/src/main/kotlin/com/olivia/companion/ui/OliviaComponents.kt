@@ -251,6 +251,7 @@ private fun DeviceLabel() {
 @Composable
 internal fun RecordVideoCta(
     onClick: () -> Unit,
+    waveformActive: Boolean = false,
 ) {
     Surface(
         onClick = onClick,
@@ -271,7 +272,7 @@ internal fun RecordVideoCta(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    "Olá, Olivia, gravar",
+                    "Oi, Olivia, Gravar",
                     modifier = Modifier.widthIn(max = 220.dp),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontSize = 24.sp,
@@ -285,24 +286,29 @@ internal fun RecordVideoCta(
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.86f),
                 )
             }
-            VoiceWaveform()
+            VoiceWaveform(active = waveformActive)
         }
     }
 }
 
 @Composable
-private fun VoiceWaveform() {
+private fun VoiceWaveform(active: Boolean) {
     val color = MaterialTheme.colorScheme.onPrimary
-    val transition = rememberInfiniteTransition(label = "voice waveform")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 900),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "voice waveform progress",
-    )
+    val progress = if (active) {
+        val transition = rememberInfiniteTransition(label = "voice waveform")
+        val animatedProgress by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 900),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "voice waveform progress",
+        )
+        animatedProgress
+    } else {
+        0.5f
+    }
     Canvas(modifier = Modifier.size(width = 42.dp, height = 44.dp)) {
         val heights = List(5) { index ->
             val wave = ((sin((progress + index * 0.2f) * 2f * PI) + 1f) / 2f).toFloat()

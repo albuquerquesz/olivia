@@ -1,132 +1,90 @@
 package com.olivia.companion.session
 
-import com.olivia.core.Frame
-import com.olivia.core.FrameFormat
-import com.olivia.core.FrameOrigin
-import com.olivia.core.GlassesConnection
-import com.olivia.core.GlassesGateway
-import com.olivia.core.SessionConfig
-import com.olivia.core.SessionId
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import com.olivia.core.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
+/** Synthetic markers only. A single producer owns sequence and monotonic scenario time. */
 internal class ScenarioGlassesGateway(
-    private val clock: () -> Long = { System.currentTimeMillis() },
+    private val clock: OliviaClock = SystemOliviaClock(),
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val fixtures: List<ScenarioFrame> = SessionScenario.sequence(),
 ) : GlassesGateway, AutoCloseable {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
-    private val lock = Mutex()
     private val _connection = MutableStateFlow(GlassesConnection.CONNECTED)
-    private val _frames = MutableSharedFlow<Frame>(extraBufferCapacity = 64)
-
-    override val connection: StateFlow<GlassesConnection> = _connection.asStateFlow()
-    override val frames: SharedFlow<Frame> = _frames.asSharedFlow()
-
+    private val _heartbeat = MutableStateFlow<CaptureHeartbeat?>(null)
+    private val _frames = MutableSharedFlow<Frame>(extraBufferCapacity = 1)
+    override val connection = _connection.asStateFlow()
+    override val heartbeat = _heartbeat.asStateFlow()
+    override val frames = _frames.asSharedFlow()
     private var producer: Job? = null
-    private var sessionId: SessionId? = null
-    private var startedAtEpochMs = 0L
-    private var pausedAtEpochMs: Long? = null
-    private var nextFixtureIndex = 0
-    private var frameIntervalMs = SessionScenario.FRAME_INTERVAL_MS
-    private var degradedAfterMs = 4_000L
+    private var capture: CaptureId? = null
+    private var startedAtMs = 0L
+    private var pausedAtMs: Long? = null
+    private var sequence = 0L
+    @Volatile private var connected = true
 
-    override suspend fun startCapture(sessionId: SessionId, config: SessionConfig) {
-        lock.withLock {
-            producer?.cancel()
-            this.sessionId = sessionId
-            startedAtEpochMs = clock()
-            pausedAtEpochMs = null
-            nextFixtureIndex = 0
-            frameIntervalMs = config.analysisIntervalMs
-            degradedAfterMs = config.degradedAfterMs
-            _connection.value = GlassesConnection.CONNECTED
-            producer = scope.launch { emitFixtures() }
-        }
+    override suspend fun startCapture(capture: CaptureId) {
+        producer?.cancelAndJoin()
+        this.capture = capture
+        startedAtMs = clock.now().monotonicMs
+        pausedAtMs = null
+        sequence = 0
+        connected = true
+        _heartbeat.value = null
+        _connection.value = GlassesConnection.CONNECTED
+        startProducer()
     }
 
     override suspend fun pauseCapture() {
-        lock.withLock {
-            pausedAtEpochMs = clock()
-            producer?.cancel()
-            producer = null
-        }
+        producer?.cancelAndJoin()
+        producer = null
+        pausedAtMs = clock.now().monotonicMs
     }
 
-    override suspend fun resumeCapture() {
-        lock.withLock {
-            pausedAtEpochMs?.let { pausedAt ->
-                startedAtEpochMs += clock() - pausedAt
-                pausedAtEpochMs = null
-            }
-            if (sessionId == null) return
-            // A reconexão depois de DEGRADED não passa por pauseCapture. Reiniciar o produtor
-            // a partir do próximo fixture mantém o mesmo take e permite que o adapter real use
-            // este método como seu ponto único de tentativa de reconexão.
-            producer?.cancel()
-            producer = scope.launch { emitFixtures() }
-        }
+    override suspend fun resumeCapture(capture: CaptureId) {
+        producer?.cancelAndJoin()
+        pausedAtMs?.let { startedAtMs += clock.now().monotonicMs - it }
+        pausedAtMs = null
+        this.capture = capture
+        _heartbeat.value = null
+        startProducer()
     }
 
     override suspend fun stopCapture() {
-        lock.withLock {
-            producer?.cancel()
-            producer = null
-            sessionId = null
-            pausedAtEpochMs = null
-        }
+        producer?.cancelAndJoin()
+        producer = null
+        capture = null
+        _heartbeat.value = null
     }
 
-    override fun close() {
-        scope.cancel()
+    fun setConnected(value: Boolean) {
+        connected = value
+        _connection.value = if (value) GlassesConnection.CONNECTED else GlassesConnection.DISCONNECTED
     }
 
-    private suspend fun emitFixtures() {
-        while (scope.isActive && nextFixtureIndex < fixtures.size) {
-            val fixture = fixtures[nextFixtureIndex]
-            val targetEpochMs = startedAtEpochMs + fixture.offsetMs
-            val previousOffsetMs = fixtures
-                .getOrNull(nextFixtureIndex - 1)
-                ?.offsetMs
-                ?: fixture.offsetMs
-            val gapMs = fixture.offsetMs - previousOffsetMs
-            if (gapMs > frameIntervalMs) {
-                val disconnectAtEpochMs = startedAtEpochMs + previousOffsetMs + degradedAfterMs
-                delay((disconnectAtEpochMs - clock()).coerceAtLeast(0))
-                if (!scope.isActive) return
-                _connection.value = GlassesConnection.DISCONNECTED
+    private fun startProducer() {
+        val generation = capture ?: return
+        producer = scope.launch {
+            while (isActive) {
+                val now = clock.now()
+                val offset = now.monotonicMs - startedAtMs
+                val slot = offset / SessionScenario.FRAME_INTERVAL_MS * SessionScenario.FRAME_INTERVAL_MS
+                val fixture = fixtures.lastOrNull { it.offsetMs <= slot }
+                val gap = offset in SessionScenario.DEGRADED_GAP_START_MS until SessionScenario.DEGRADED_GAP_END_MS
+                if (connected && !gap && fixture != null) {
+                    _connection.value = GlassesConnection.CONNECTED
+                    _heartbeat.value = CaptureHeartbeat(generation, now.monotonicMs)
+                    _frames.emit(Frame(
+                        FrameStamp(generation, sequence++, now), SessionScenario.FRAME_WIDTH,
+                        SessionScenario.FRAME_HEIGHT, FrameFormat.RGBA_8888, FrameOrigin.MOCK,
+                        byteArrayOf(fixture.marker.toByte()),
+                    ))
+                }
+                delay(500)
             }
-            delay((targetEpochMs - clock()).coerceAtLeast(0))
-            if (!scope.isActive) return
-            val currentSessionId = sessionId ?: return
-            _frames.emit(
-                Frame(
-                    sessionId = currentSessionId,
-                    capturedAtEpochMs = targetEpochMs,
-                    width = SessionScenario.FRAME_WIDTH,
-                    height = SessionScenario.FRAME_HEIGHT,
-                    format = FrameFormat.RGBA_8888,
-                    origin = FrameOrigin.MOCK,
-                    bytes = byteArrayOf(fixture.marker.toByte()),
-                ),
-            )
-            _connection.value = GlassesConnection.CONNECTED
-            nextFixtureIndex += 1
         }
     }
+
+    override fun close() { scope.cancel() }
 }

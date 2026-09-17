@@ -33,16 +33,18 @@ demonstraÃ§Ã£o offline marcada como `MOCK`, sem DAT, Gemini ou gravaÃ§Ã£
 
 Command boundary update: `LocalCommandRecognizer` emits only parsed session commands and never
 raw microphone audio or transcripts. `LocalCommandController` owns Android microphone permission
-and lifecycle, then forwards recognized commands to `SessionRuntime`. The current Porcupine
-implementation is explicitly unavailable: it does not request the microphone, record audio, or
-call a network service until an access key and approved pt-BR models are configured outside the
-repository. Therefore FE-03.1 remains open and no local recognition is claimed yet.
+and lifecycle, then forwards recognized commands to `SessionRuntime`. The Android source now uses
+Porcupine locally for the wake word and Rhino locally for the four closed pt-BR intents. Porcupine
+and Rhino contexts/parameter models are provisioned as ignored assets, and the SDKs never send
+activation audio or transcripts to a network service. FE-03.1 is implemented and remains pending
+physical command evidence; mock and asset smoke tests do not claim recognition quality in studio
+noise.
 
-Mock demo control update: while FE-03.1 is blocked, the `mock` flavor exposes clearly labelled
+Mock demo control update: the `mock` flavor also exposes clearly labelled
 `Iniciar demonstração`, pause, resume and stop controls. They call the same parsed
 `LocalSessionCommand` boundary as a future recognizer, exist only when the simulated backend is
-active, and do not represent voice recognition. The `glasses` flavor keeps the voice-only entry
-state until Porcupine is provisioned.
+active, and do not represent voice recognition. The `glasses` flavor uses the local Porcupine +
+Rhino source when the ignored assets and access key are provisioned.
 
 Android mock runtime fix: the first emulator run exposed that `Files.writeString` is not present
 in Android's Java runtime. `FileTimeline` now writes the temporary JSONL file through

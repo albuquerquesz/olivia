@@ -52,6 +52,16 @@ android {
         buildConfigField("String", "PICOVOICE_KEYWORD_PATH", buildConfigString(
             localProperties.getProperty("picovoice_keyword_path") ?: "olivia_android.ppn",
         ))
+        buildConfigField("String", "PICOVOICE_PORCUPINE_MODEL_PATH", buildConfigString(
+            localProperties.getProperty("picovoice_porcupine_model_path") ?: "porcupine_params_pt.pv",
+        ))
+        buildConfigField("String", "PICOVOICE_RHINO_CONTEXT_PATH", buildConfigString(
+            localProperties.getProperty("picovoice_rhino_context_path")
+                ?: "olivia-rhino_pt_android_v4_1_0.rhn",
+        ))
+        buildConfigField("String", "PICOVOICE_RHINO_MODEL_PATH", buildConfigString(
+            localProperties.getProperty("picovoice_rhino_model_path") ?: "rhino_params_pt.pv",
+        ))
         // Developer Mode accepts 0/0. Registered values are only supplied by ignored
         // local.properties or CI; source control never contains either credential.
         manifestPlaceholders["mwdatApplicationId"] =
@@ -183,6 +193,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.porcupine.android)
+    implementation(libs.rhino.android)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 

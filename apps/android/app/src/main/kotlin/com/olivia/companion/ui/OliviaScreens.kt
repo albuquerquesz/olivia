@@ -1,5 +1,6 @@
 package com.olivia.companion.ui
 
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,8 +44,11 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -55,6 +62,8 @@ import com.olivia.companion.session.AudioFeedbackStatus
 import com.olivia.companion.session.ExportState
 import com.olivia.companion.session.ExportStatus
 import com.olivia.companion.session.OliviaUiState
+import com.olivia.companion.session.LiveGuidanceStatus
+import com.olivia.companion.session.LivePreviewFrame
 import com.olivia.companion.session.TakeSummary
 import com.olivia.companion.session.confirmationLabel
 import com.olivia.companion.session.connectionLabel
@@ -67,11 +76,14 @@ import com.olivia.companion.session.sessionStatusLabel
 import com.olivia.companion.session.guidanceStatusLabel
 import com.olivia.core.AudioMode
 import com.olivia.core.CutReason
+import com.olivia.core.Direction
 import com.olivia.core.SessionId
 import com.olivia.core.SessionState
 import com.olivia.core.SuggestedCut
 import com.olivia.core.TimelineEvent
 import com.olivia.core.TimelineEventType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private val PrivacyCopy =
     "Frames de análise são efêmeros. O áudio do celular não alimenta IA durante o take."
@@ -138,7 +150,10 @@ fun OliviaHomeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 DeviceOverview()
-                RecordVideoCta(onClick = onOpenRecord)
+                RecordVideoCta(
+                    onClick = onOpenRecord,
+                    waveformActive = state.voiceState == com.olivia.companion.session.VoiceCommandState.LISTENING_FOR_COMMAND,
+                )
             }
             if (recent.isEmpty()) {
                 EmptyTakesCard(
@@ -366,6 +381,7 @@ private fun TakeThumbnail() {
 fun OliviaRecordingScreen(
     state: OliviaUiState,
     onOpenSettings: () -> Unit,
+    onOpenVoiceSettings: () -> Unit,
     onAudioMode: (AudioMode) -> Unit,
     onStart: () -> Unit,
     onPause: () -> Unit,
@@ -392,7 +408,14 @@ fun OliviaRecordingScreen(
                 GlassesCameraPreview(
                     elapsedMs = state.elapsedMs,
                     degraded = com.olivia.core.DegradationCause.CAPTURE_UNAVAILABLE in session?.degradationCauses.orEmpty(),
-                    simulated = state.backend.id == "mock",
+                    // The glasses flavor can also run through DAT's MockDeviceKit. In that mode
+                    // the backend id remains "glasses", but physical hardware is not required;
+                    // use the same simulated preview as the standalone mock flavor.
+                    simulated = !state.backend.requiresPhysicalGlasses,
+                    actualStreamExpected = state.backend.usesDatSdk,
+                    preview = state.livePreview,
+                    guidanceDirection = state.guidanceDirection,
+                    guidanceStatus = state.guidanceStatus,
                     modifier = Modifier.fillMaxSize(),
                 )
                 SessionStateBadge(
@@ -437,21 +460,9 @@ fun OliviaRecordingScreen(
         }
         if (!state.backend.requiresPhysicalGlasses) {
             BackendModeNotice(state.backend.usesDatSdk)
-        }
-        PanelDetail(guidanceStatusLabel(state.guidanceStatus), onPanel = false)
-        PanelDetail(when (state.voiceState) {
-            com.olivia.companion.session.VoiceCommandState.LISTENING_FOR_WAKE_WORD -> "Diga: Oi, Olivia. Depois: gravar, pausar, retomar ou terminar."
-            com.olivia.companion.session.VoiceCommandState.LISTENING_FOR_COMMAND -> "Ouvindo o comando no celular…"
-            com.olivia.companion.session.VoiceCommandState.UNAVAILABLE -> "Comandos locais de voz indisponíveis neste aparelho ou configuração."
-            com.olivia.companion.session.VoiceCommandState.ERROR -> "Não foi possível ouvir o comando."
-            else -> "Comandos de voz inativos."
-        }, onPanel = false)
-        AudioAvailabilityNotice(
-            mode = state.audioMode,
-            status = state.audioStatus,
-            message = state.audioStatusMessage,
-        )
-        if (!state.backend.requiresPhysicalGlasses) {
+            // Keep the primary session control close to the preview. The rest of this page is
+            // intentionally scrollable, but hiding the only visible start/stop action below the
+            // viewport made a tap appear to do nothing on tall phones with the bottom bar.
             DebugActions(
                 sessionState = sessionState,
                 onStart = onStart,
@@ -464,6 +475,33 @@ fun OliviaRecordingScreen(
                 working = state.working,
             )
         }
+        PanelDetail(guidanceStatusLabel(state.guidanceStatus), onPanel = false)
+        PanelDetail(when (state.voiceState) {
+            com.olivia.companion.session.VoiceCommandState.LISTENING_FOR_WAKE_WORD -> "Diga: Oi, Olivia. Depois: gravar, pausar, retomar ou terminar."
+            com.olivia.companion.session.VoiceCommandState.LISTENING_FOR_COMMAND -> "Ouvindo o comando no celular…"
+            com.olivia.companion.session.VoiceCommandState.UNAVAILABLE -> "Comandos locais de voz indisponíveis neste aparelho ou configuração."
+            com.olivia.companion.session.VoiceCommandState.ERROR -> "Não foi possível ouvir o comando."
+            else -> "Comandos de voz inativos."
+        }, onPanel = false)
+        if (state.voiceState == com.olivia.companion.session.VoiceCommandState.UNAVAILABLE) {
+            OutlinedButton(
+                onClick = onOpenVoiceSettings,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Text("Configurar comandos de voz", modifier = Modifier.weight(1f))
+                Icon(
+                    Icons.AutoMirrored.Outlined.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+        AudioAvailabilityNotice(
+            mode = state.audioMode,
+            status = state.audioStatus,
+            message = state.audioStatusMessage,
+        )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionTitle("Modo de feedback")
             FlowRow(
@@ -571,16 +609,41 @@ private fun GlassesCameraPreview(
     elapsedMs: Long,
     degraded: Boolean,
     simulated: Boolean,
+    actualStreamExpected: Boolean,
+    preview: LivePreviewFrame?,
+    guidanceDirection: Direction?,
+    guidanceStatus: LiveGuidanceStatus,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    val description = cameraPreviewDescription(simulated)
+    val description = cameraPreviewDescription(simulated, actualStreamExpected, preview != null)
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .semantics { contentDescription = description },
     ) {
-        if (simulated) {
+        if (preview != null) {
+            LivePreviewImage(preview)
+            LivePreviewOverlay(
+                direction = guidanceDirection,
+                status = guidanceStatus,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 76.dp),
+                color = colors.onSurface.copy(alpha = 0.72f),
+                contentColor = colors.onPrimary,
+                shape = RoundedCornerShape(10.dp),
+            ) {
+                Text(
+                    "Prévia do stream · ${preview.width}×${preview.height}",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        } else if (simulated && !actualStreamExpected) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val horizonY = size.height * 0.58f
                 val hasFramingIssue = elapsedMs in 8_000L..20_000L
@@ -644,7 +707,7 @@ private fun GlassesCameraPreview(
                 drawLine(guideColor, Offset(size.width - guideInset, size.height - guideInset), Offset(size.width - guideInset, size.height - guideInset - guideLength), 2.dp.toPx())
             }
         }
-        if (!simulated) {
+        if (preview == null && !simulated) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = colors.surfaceVariant,
@@ -652,6 +715,17 @@ private fun GlassesCameraPreview(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text("Prévia de vídeo indisponível", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        if (preview == null && actualStreamExpected) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = colors.surfaceVariant,
+                contentColor = colors.onSurfaceVariant,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text("Aguardando frame do MockDeviceKit…", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -672,6 +746,74 @@ private fun GlassesCameraPreview(
     }
 }
 
+@Composable
+private fun LivePreviewImage(preview: LivePreviewFrame) {
+    val image: ImageBitmap? by produceState<ImageBitmap?>(initialValue = null, preview.sequence) {
+        value = withContext(Dispatchers.Default) {
+            BitmapFactory.decodeByteArray(preview.jpeg, 0, preview.jpeg.size)?.asImageBitmap()
+        }
+    }
+    image?.let {
+        Image(
+            bitmap = it,
+            contentDescription = "Prévia ao vivo do stream da câmera dos óculos",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Composable
+private fun LivePreviewOverlay(
+    direction: Direction?,
+    status: LiveGuidanceStatus,
+    modifier: Modifier = Modifier,
+) {
+    if (direction == null || status !in setOf(
+            LiveGuidanceStatus.TARGET_FOUND,
+            LiveGuidanceStatus.GUIDANCE_PENDING,
+            LiveGuidanceStatus.GUIDANCE_SENT,
+        )
+    ) return
+    Canvas(modifier = modifier) {
+        val red = Color(0xFFE53935).copy(alpha = 0.78f)
+        val edge = 72.dp.toPx()
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val stroke = 6.dp.toPx()
+        when (direction) {
+            Direction.TURN_LEFT,
+            Direction.LEVEL_HORIZON_LEFT -> {
+                drawRect(red.copy(alpha = 0.18f), size = Size(edge, size.height))
+                drawLine(red, Offset(edge - 20.dp.toPx(), center.y), Offset(20.dp.toPx(), center.y), stroke, StrokeCap.Round)
+                drawLine(red, Offset(20.dp.toPx(), center.y), Offset(42.dp.toPx(), center.y - 20.dp.toPx()), stroke, StrokeCap.Round)
+                drawLine(red, Offset(20.dp.toPx(), center.y), Offset(42.dp.toPx(), center.y + 20.dp.toPx()), stroke, StrokeCap.Round)
+            }
+            Direction.TURN_RIGHT,
+            Direction.LEVEL_HORIZON_RIGHT -> {
+                drawRect(red.copy(alpha = 0.18f), topLeft = Offset(size.width - edge, 0f), size = Size(edge, size.height))
+                drawLine(red, Offset(size.width - edge + 20.dp.toPx(), center.y), Offset(size.width - 20.dp.toPx(), center.y), stroke, StrokeCap.Round)
+                drawLine(red, Offset(size.width - 20.dp.toPx(), center.y), Offset(size.width - 42.dp.toPx(), center.y - 20.dp.toPx()), stroke, StrokeCap.Round)
+                drawLine(red, Offset(size.width - 20.dp.toPx(), center.y), Offset(size.width - 42.dp.toPx(), center.y + 20.dp.toPx()), stroke, StrokeCap.Round)
+            }
+            Direction.RAISE -> drawLine(red, Offset(center.x, size.height - 36.dp.toPx()), Offset(center.x, 36.dp.toPx()), stroke, StrokeCap.Round)
+            Direction.LOWER -> drawLine(red, Offset(center.x, 36.dp.toPx()), Offset(center.x, size.height - 36.dp.toPx()), stroke, StrokeCap.Round)
+            Direction.MOVE_CLOSER,
+            Direction.MOVE_BACK,
+            Direction.FACE_THE_LIGHT,
+            Direction.AVOID_BACKLIGHT,
+            Direction.LEAVE_THE_SHADOW -> {
+                drawRoundRect(
+                    red,
+                    topLeft = Offset(size.width * .18f, size.height * .18f),
+                    size = Size(size.width * .64f, size.height * .64f),
+                    cornerRadius = CornerRadius(22.dp.toPx()),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke),
+                )
+            }
+        }
+    }
+}
+
 private fun recordingPanelMessage(
     session: com.olivia.core.SessionSnapshot?,
 ): String {
@@ -679,7 +821,9 @@ private fun recordingPanelMessage(
     return "A sessão orienta por áudio. O vídeo nativo é importado após o take."
 }
 
-private fun cameraPreviewDescription(simulated: Boolean): String {
+private fun cameraPreviewDescription(simulated: Boolean, actualStreamExpected: Boolean, hasFrame: Boolean): String {
+    if (hasFrame) return "Prévia ao vivo do stream da câmera dos óculos"
+    if (actualStreamExpected) return "Aguardando frame do MockDeviceKit"
     if (simulated) return "Câmera simulada dos óculos, formato vertical 720 por 1280"
     return "Prévia da câmera dos óculos indisponível"
 }

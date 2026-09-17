@@ -4,7 +4,7 @@ Origem: [backlog canônico](../../rules/olivia_backlog.json). BE-00, FE-02, FE-0
 
 - [x] **FE-02.1** — Implementar coordenador e transições/cancelamento sobre :core atualizado.
 - [ ] **BE-00.1** — Implementar adapter DAT, formato/orientação, buffers e disponibilidade independente da IA.
-- [ ] **FE-03.1** — Integrar wake word e comandos pt-BR locais com lifecycle/permissões e retorno de áudio.
+- [x] **FE-03.1** — Integrar wake word e comandos pt-BR locais com lifecycle/permissões e retorno de áudio.
 - [x] **FE-09.1** — Implementar watchdog e sinais de perda/recuperação, preservando pausa e timeline.
 - [ ] **BE-00.2** — Entregar unitários de borda e integração fonte→sessão→timeline no Docker e Android/MockDeviceKit.
 - [ ] **FE-03.2** — Planejar e registrar ensaio físico de comandos e evidência de ausência de envio de áudio.

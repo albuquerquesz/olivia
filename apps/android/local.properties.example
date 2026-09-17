@@ -16,5 +16,8 @@ mwdat_client_token=
 mwdat_mock_device_kit=false
 
 # Wake word local; chave e modelo customizado não são versionados.
-picovoice_access_key=
+picovoice_access_key=REPLACE_WITH_PICOVOICE_ACCESS_KEY
 picovoice_keyword_path=olivia_android.ppn
+picovoice_porcupine_model_path=porcupine_params_pt.pv
+picovoice_rhino_context_path=olivia-rhino_pt_android_v4_1_0.rhn
+picovoice_rhino_model_path=rhino_params_pt.pv

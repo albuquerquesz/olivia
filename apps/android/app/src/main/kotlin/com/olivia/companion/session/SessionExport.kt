@@ -32,6 +32,15 @@ interface SessionExportAdapter {
 class AndroidSessionExportAdapter(
     private val context: Context,
 ) : SessionExportAdapter {
+    private fun markerFile(sessionId: com.olivia.core.SessionId): File {
+        val safeId = sessionId.value.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        return File(context.cacheDir, "olivia-exports/$safeId.markers.json")
+    }
+
+    suspend fun discard(sessionId: com.olivia.core.SessionId) = withContext(Dispatchers.IO) {
+        markerFile(sessionId).delete()
+    }
+
     override suspend fun share(review: SessionReview, recordingPath: String?): ExportState {
         val path = recordingPath?.let(::File)
             ?: return ExportState(
@@ -47,10 +56,7 @@ class AndroidSessionExportAdapter(
 
         return try {
             val exportDirectory = File(context.cacheDir, "olivia-exports").apply { mkdirs() }
-            val markerFile = File(
-                exportDirectory,
-                "olivia-markers.json",
-            )
+            val markerFile = markerFile(review.sessionId)
             withContext(Dispatchers.IO) {
                 markerFile.writeText(OliviaMarkersJson.encode(review), Charsets.UTF_8)
             }
@@ -67,7 +73,7 @@ class AndroidSessionExportAdapter(
                 }
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(intent, "Enviar take e marcações"))
+            context.startActivity(Intent.createChooser(intent, "Enviar take e marcações").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             ExportState(
                 status = ExportStatus.SHARED,
                 message = "Seletor de compartilhamento aberto. A importação no CapCut depende do aparelho.",

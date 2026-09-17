@@ -1,6 +1,10 @@
 package com.olivia.companion.session
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.ImageFormat
+import android.graphics.Rect
+import android.graphics.YuvImage
 import android.util.Log
 import com.olivia.companion.GlassesBackend
 import com.olivia.companion.audio.AndroidAudioFeedback
@@ -11,6 +15,7 @@ import com.olivia.core.CaptureId
 import com.olivia.core.Correction
 import com.olivia.core.CorrectionStatus
 import com.olivia.core.CorrectionTracker
+import com.olivia.core.Direction
 import com.olivia.core.DefaultGuidanceEngine
 import com.olivia.core.FileTimeline
 import com.olivia.core.Frame
@@ -41,6 +46,8 @@ import com.olivia.core.TimelineEvent
 import com.olivia.core.SessionSnapshot
 import com.olivia.core.SystemOliviaClock
 import java.util.UUID
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -49,6 +56,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -79,9 +87,25 @@ enum class LiveGuidanceStatus {
     TARGET_CENTERED,
     GUIDANCE_PENDING,
     GUIDANCE_SENT,
+    /** Firebase/App Check access is not authorized for this installed build. */
+    FIREBASE_CONFIGURATION_UNAVAILABLE,
     ANALYSIS_UNAVAILABLE,
     AUDIO_UNAVAILABLE,
 }
+
+/**
+ * Latest decoded preview of the live glasses stream.
+ *
+ * This is deliberately a bounded, in-memory UI projection. It is cleared on pause/stop/close,
+ * is never written to the timeline or logs, and must not be confused with the native 3K take.
+ */
+public data class LivePreviewFrame(
+    val jpeg: ByteArray,
+    val width: Int,
+    val height: Int,
+    val sequence: Long,
+    val capturedAtMonotonicMs: Long,
+)
 
 interface SessionRuntime : AutoCloseable {
     val snapshot: StateFlow<SessionSnapshot?>
@@ -92,6 +116,10 @@ interface SessionRuntime : AutoCloseable {
     val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot>
     /** Human-readable live-loop phase for the phone UI, not a substitute for audio guidance. */
     val liveGuidanceStatus: StateFlow<LiveGuidanceStatus>
+    /** Most recent in-memory stream frame for the recording screen; null outside an active take. */
+    val livePreview: StateFlow<LivePreviewFrame?>
+    /** Current correction direction for the visual overlay; audio remains the authoritative output. */
+    val liveGuidanceDirection: StateFlow<Direction?>
     /** Local aggregate index used by the Sessions screen; no media or frame data is retained. */
     val sessionHistory: StateFlow<List<SessionHistoryEntry>>
     suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot>
@@ -127,9 +155,13 @@ class UnavailableSessionRuntime : SessionRuntime {
     private val state = MutableStateFlow<SessionSnapshot?>(null)
     private val metrics = MutableStateFlow(LiveLoopMetrics().snapshot())
     private val guidance = MutableStateFlow(LiveGuidanceStatus.IDLE)
+    private val preview = MutableStateFlow<LivePreviewFrame?>(null)
+    private val direction = MutableStateFlow<Direction?>(null)
     override val snapshot: StateFlow<SessionSnapshot?> = state.asStateFlow()
     override val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot> = metrics.asStateFlow()
     override val liveGuidanceStatus: StateFlow<LiveGuidanceStatus> = guidance.asStateFlow()
+    override val livePreview: StateFlow<LivePreviewFrame?> = preview.asStateFlow()
+    override val liveGuidanceDirection: StateFlow<Direction?> = direction.asStateFlow()
     override val sessionHistory: StateFlow<List<SessionHistoryEntry>> =
         MutableStateFlow<List<SessionHistoryEntry>>(emptyList()).asStateFlow()
     override suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot> =
@@ -179,6 +211,10 @@ internal class LiveSessionRuntime(
     override val liveLoopMetrics: StateFlow<LiveLoopMetricSnapshot> = _liveLoopMetrics.asStateFlow()
     private val _liveGuidanceStatus = MutableStateFlow(LiveGuidanceStatus.IDLE)
     override val liveGuidanceStatus: StateFlow<LiveGuidanceStatus> = _liveGuidanceStatus.asStateFlow()
+    private val _livePreview = MutableStateFlow<LivePreviewFrame?>(null)
+    override val livePreview: StateFlow<LivePreviewFrame?> = _livePreview.asStateFlow()
+    private val _liveGuidanceDirection = MutableStateFlow<Direction?>(null)
+    override val liveGuidanceDirection: StateFlow<Direction?> = _liveGuidanceDirection.asStateFlow()
     private val historyStore = LocalSessionHistory(context)
     override val sessionHistory: StateFlow<List<SessionHistoryEntry>> = historyStore.entries.stateIn(
         runtimeScope,
@@ -190,6 +226,18 @@ internal class LiveSessionRuntime(
     private var lastRecoveryAttemptMs = Long.MIN_VALUE
     private val analysisFrames = Channel<Frame>(capacity = 1)
     private var activeAnalysisJob: Job? = null
+    /** Conflated so camera delivery/analysis are never blocked by a UI JPEG conversion. */
+    private val previewFrames = Channel<Frame>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val previewWorker: Job = runtimeScope.launch {
+        for (frame in previewFrames) {
+            val accepted = runtimeMutex.withLock { coordinator.accepts(frame.stamp) }
+            if (!accepted) continue
+            val encoded = encodePreview(frame)
+            if (encoded != null && runtimeMutex.withLock { coordinator.accepts(frame.stamp) }) {
+                _livePreview.value = encoded
+            }
+        }
+    }
     private val analysisWorker: Job = runtimeScope.launch {
         for (frame in analysisFrames) {
             val job = launch(start = CoroutineStart.LAZY) { processAnalyze(frame) }
@@ -217,6 +265,7 @@ internal class LiveSessionRuntime(
     }
     private val frameObserver: Job = runtimeScope.launch {
         gateway.frames.collect { frame ->
+            previewFrames.trySend(frame)
             val fastStartedAt = clock.now()
             val fastResult = fastProcessor?.processFast(frame)
             val decisions = runtimeMutex.withLock {
@@ -272,6 +321,8 @@ internal class LiveSessionRuntime(
                     guidance = createGuidance(audioMode)
                     lastRecoveryAttemptMs = Long.MIN_VALUE
                     (analyzer as? HybridVisualAnalyzer)?.reset()
+                    _livePreview.value = null
+                    _liveGuidanceDirection.value = null
                     _liveGuidanceStatus.value = LiveGuidanceStatus.LOCATING_TARGET
                     coordinator.start(
                         sessionId = SessionId(UUID.randomUUID().toString()),
@@ -280,14 +331,20 @@ internal class LiveSessionRuntime(
                 }
                 LocalSessionCommand.PAUSE -> {
                     (analyzer as? HybridVisualAnalyzer)?.reset()
+                    _livePreview.value = null
+                    _liveGuidanceDirection.value = null
                     coordinator.pause()
                 }
                 LocalSessionCommand.RESUME -> {
                     (analyzer as? HybridVisualAnalyzer)?.reset()
+                    _livePreview.value = null
+                    _liveGuidanceDirection.value = null
                     coordinator.resume()
                 }
                 LocalSessionCommand.STOP -> {
                     (analyzer as? HybridVisualAnalyzer)?.reset()
+                    _livePreview.value = null
+                    _liveGuidanceDirection.value = null
                     coordinator.stop()
                 }
             }
@@ -399,7 +456,11 @@ internal class LiveSessionRuntime(
                         ?: "UNKNOWN"
                     Log.w(LOG_TAG, "visual analysis unavailable: $code")
                 }
-                _liveGuidanceStatus.value = LiveGuidanceStatus.ANALYSIS_UNAVAILABLE
+                _liveGuidanceStatus.value = when ((result.exceptionOrNull() as? AnalysisFailure)?.code) {
+                    com.olivia.core.AnalysisFailureCode.CONFIGURATION ->
+                        LiveGuidanceStatus.FIREBASE_CONFIGURATION_UNAVAILABLE
+                    else -> LiveGuidanceStatus.ANALYSIS_UNAVAILABLE
+                }
                 runtimeMutex.withLock { coordinator.onAnalysisUnavailable() }
                 return
             }
@@ -424,6 +485,11 @@ internal class LiveSessionRuntime(
                         coordinator.recordCorrectionOutcome(outcome)
                     }
                     correction = guidance.onAnalysis(analysis, clock.now())
+                    if (correction != null) {
+                        _liveGuidanceDirection.value = correction?.direction
+                    } else if (!analysis.hasDeviation) {
+                        _liveGuidanceDirection.value = null
+                    }
                     true
                 }
             }
@@ -500,6 +566,11 @@ internal class LiveSessionRuntime(
                         coordinator.recordCorrectionOutcome(outcome)
                     }
                     correction = guidance.onAnalysis(analysis, clock.now())
+                    if (correction != null) {
+                        _liveGuidanceDirection.value = correction?.direction
+                    } else if (!analysis.hasDeviation) {
+                        _liveGuidanceDirection.value = null
+                    }
                     true
                 }
             }
@@ -602,14 +673,49 @@ internal class LiveSessionRuntime(
         frameObserver.cancel()
         watchdog.cancel()
         analysisFrames.close()
+        previewFrames.close()
         analysisWorker.cancel()
+        previewWorker.cancel()
+        _livePreview.value = null
+        _liveGuidanceDirection.value = null
         (gateway as? AutoCloseable)?.close()
         audio.close()
         runtimeScope.cancel()
     }
 }
 
+private fun encodePreview(frame: Frame): LivePreviewFrame? = runCatching {
+    val jpeg = when (frame.format) {
+        FrameFormat.NV21 -> ByteArrayOutputStream().use { output ->
+            check(YuvImage(frame.bytes, ImageFormat.NV21, frame.width, frame.height, null)
+                .compressToJpeg(Rect(0, 0, frame.width, frame.height), PREVIEW_JPEG_QUALITY, output))
+            output.toByteArray()
+        }
+        FrameFormat.JPEG -> frame.bytes.copyOf()
+        FrameFormat.RGBA_8888 -> {
+            val bitmap = Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
+            try {
+                bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(frame.bytes))
+                ByteArrayOutputStream().use { output ->
+                    check(bitmap.compress(Bitmap.CompressFormat.JPEG, PREVIEW_JPEG_QUALITY, output))
+                    output.toByteArray()
+                }
+            } finally {
+                bitmap.recycle()
+            }
+        }
+    }
+    LivePreviewFrame(
+        jpeg = jpeg,
+        width = frame.width,
+        height = frame.height,
+        sequence = frame.stamp.sequence,
+        capturedAtMonotonicMs = frame.stamp.receivedAt.monotonicMs,
+    )
+}.getOrNull()
+
 private const val LOG_TAG = "OliviaSessionRuntime"
+private const val PREVIEW_JPEG_QUALITY = 68
 
 fun createMockSessionRuntime(context: Context): SessionRuntime {
     val clock = SystemOliviaClock()

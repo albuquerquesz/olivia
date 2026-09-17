@@ -24,7 +24,20 @@ public fun interface AnalysisTimingSink {
     public fun onStage(stage: AnalysisTimingStage, durationMs: Long)
 }
 
-public enum class AnalysisFailureCode { TRANSPORT, TIMEOUT, SCHEMA }
+public enum class AnalysisFailureCode { TRANSPORT, TIMEOUT, SCHEMA, CONFIGURATION }
+
+/**
+ * Content-free failure classification supplied by a platform transport.
+ *
+ * The Android Firebase adapter uses this for access/configuration failures (for example an
+ * unregistered App Check debug token). Keeping the marker in core lets the session UI show an
+ * actionable setup message without exposing provider errors, response bodies, or frame data.
+ */
+public enum class VisualTransportFailureCode { NETWORK, CONFIGURATION }
+
+public class VisualTransportFailure(
+    public val code: VisualTransportFailureCode,
+) : IllegalStateException("Visual transport unavailable: $code")
 
 /** Deliberately content-free: it is safe to surface without model output or frame metadata. */
 public class AnalysisFailure(public val code: AnalysisFailureCode) :
@@ -50,7 +63,15 @@ public class GeminiFrameAnalyzer(
 
     override suspend fun analyze(frame: Frame): Result<FrameAnalysis> = try {
         val response = withTimeout(timeoutMs) {
-            transport.classify(frame).getOrElse { throw AnalysisFailure(AnalysisFailureCode.TRANSPORT) }
+            transport.classify(frame).getOrElse { failure ->
+                val code = (failure as? VisualTransportFailure)?.code
+                throw AnalysisFailure(
+                    when (code) {
+                        VisualTransportFailureCode.CONFIGURATION -> AnalysisFailureCode.CONFIGURATION
+                        VisualTransportFailureCode.NETWORK, null -> AnalysisFailureCode.TRANSPORT
+                    },
+                )
+            }
         }
         val parseStarted = System.nanoTime()
         val localization = WorkAreaLocalizationSchema.decode(response)

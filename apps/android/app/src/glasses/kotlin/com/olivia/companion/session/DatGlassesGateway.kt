@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -59,7 +61,6 @@ internal class DatGlassesGateway(
     private var decoder: HevcFrameDecoder? = null
     private var streamJob: Job? = null
     private var sequence = 0L
-    private var wearablesInitialized = false
     internal var lastStartError: Throwable? = null
         private set
 
@@ -76,10 +77,7 @@ internal class DatGlassesGateway(
         try {
             // MockDeviceKit replaces device transport, not the SDK singleton. Initialize the same
             // Wearables runtime in both paths so session state and AutoDeviceSelector can update.
-            if (!wearablesInitialized) {
-                Wearables.initialize(context).getOrElse { throw IllegalStateException("DAT initialization unavailable") }
-                wearablesInitialized = true
-            }
+            ensureWearablesInitialized()
             if (forceMockDeviceKit || BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) {
                 DatMockDeviceBootstrap.enable(context, mockVideoUri)
             }
@@ -226,10 +224,42 @@ internal class DatGlassesGateway(
         }
     }
 
+    /**
+     * DAT owns a process-wide SDK singleton. A new gateway can be created after a configuration
+     * change, activity recreation, or a failed start while that singleton is still alive. Treat
+     * the SDK's explicit "already initialized" result as success; only a different initialization
+     * error should prevent a take from starting.
+     */
+    private suspend fun ensureWearablesInitialized() {
+        wearablesInitializationMutex.withLock {
+            if (processWearablesInitialized) return
+            val result = Wearables.initialize(context)
+            if (result.isFailure) {
+                val error = result.exceptionOrNull()
+                if (!error.isAlreadyInitialized()) {
+                    throw IllegalStateException("DAT initialization unavailable", error)
+                }
+                Log.i(TAG, "DAT SDK already initialized; reusing process singleton")
+            }
+            processWearablesInitialized = true
+        }
+    }
+
+    private fun Throwable?.isAlreadyInitialized(): Boolean {
+        var current = this
+        while (current != null) {
+            if (current.message?.contains("already initialized", ignoreCase = true) == true) return true
+            current = current.cause
+        }
+        return false
+    }
+
     private companion object {
         const val TAG = "OliviaDatGateway"
         const val DAT_FRAME_RATE = 2
         const val MOCK_DEVICE_READY_TIMEOUT_MS = 3_000L
         const val SESSION_STARTED_TIMEOUT_MS = 8_000L
+        private val wearablesInitializationMutex = Mutex()
+        private var processWearablesInitialized = false
     }
 }

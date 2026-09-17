@@ -2,4 +2,6 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="imported-recordings" path="olivia-recordings/" />
     <files-path name="review-exports" path="olivia-review-exports/" />
+    <cache-path name="markers" path="olivia-exports/" />
+    <files-path name="mock-recordings" path="recordings/" />
 </paths>

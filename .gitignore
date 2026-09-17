@@ -30,6 +30,11 @@ google-services.json
 *.gguf
 ggml-*.bin
 
+# Picovoice custom wake-word/intent models are local/licensed assets; never version them.
+apps/android/app/src/main/assets/*.ppn
+apps/android/app/src/main/assets/*.rhn
+apps/android/app/src/main/assets/*.pv
+
 # IDEs and editors
 .vscode/*
 !.vscode/settings.json

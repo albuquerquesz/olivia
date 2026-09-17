@@ -19,10 +19,36 @@ class VoiceCommandTest {
     }
 
     @Test
+    fun mapsOnlyTheRhinoIntentVocabulary() {
+        assertEquals(VoiceCommand.START, parseVoiceCommand("START_RECORDING"))
+        assertEquals(VoiceCommand.PAUSE, parseVoiceCommand("pause_recording"))
+        assertEquals(VoiceCommand.RESUME, parseVoiceCommand("resume-recording"))
+        assertEquals(VoiceCommand.STOP, parseVoiceCommand("stop recording"))
+        assertNull(parseVoiceCommand("START_SETTINGS"))
+    }
+
+    @Test
     fun rejectsCommandsOutsideTheClosedVocabulary() {
         assertNull(parseVoiceCommand("abrir configurações"))
         assertNull(parseVoiceCommand("não gravar"))
         assertNull(parseVoiceCommand("Oi, Olivia"))
+    }
+
+    @Test
+    fun unavailableVoiceSourceStaysSilentWhenStartedByNavigationLifecycle() = runTest {
+        val source = UnavailableVoiceCommandSource()
+        val errors = mutableListOf<VoiceCommandError>()
+        val errorJob = launch { source.errors.collect { errors += it } }
+
+        source.start()
+        source.stop()
+        advanceUntilIdle()
+
+        assertEquals(VoiceCommandState.UNAVAILABLE, source.state.value)
+        assertEquals(emptyList<VoiceCommandError>(), errors)
+
+        errorJob.cancel()
+        source.close()
     }
 
     @Test

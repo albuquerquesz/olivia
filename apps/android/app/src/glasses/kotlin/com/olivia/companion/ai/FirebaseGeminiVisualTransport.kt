@@ -17,6 +17,8 @@ import com.google.firebase.ai.type.thinkingConfig
 import com.olivia.core.Frame
 import com.olivia.core.FrameFormat
 import com.olivia.core.GeminiVisualTransport
+import com.olivia.core.VisualTransportFailure
+import com.olivia.core.VisualTransportFailureCode
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import kotlinx.coroutines.CancellationException
@@ -88,7 +90,15 @@ class FirebaseGeminiVisualTransport(
                 Log.w(TAG, "visual classify failed: ${error::class.java.simpleName}")
             }
             // Provider details and frame-derived data must not escape into app logs or timeline.
-            Result.failure(IllegalStateException("Firebase visual transport unavailable"))
+            Result.failure(
+                VisualTransportFailure(
+                    if (isFirebaseAccessConfigurationFailure(error)) {
+                        VisualTransportFailureCode.CONFIGURATION
+                    } else {
+                        VisualTransportFailureCode.NETWORK
+                    },
+                ),
+            )
         } finally {
             prepared?.takeIf { it !== decoded }?.recycle()
             decoded?.recycle()
@@ -139,12 +149,32 @@ class FirebaseGeminiVisualTransport(
         runCatching { timingSink.onStage(stage, durationMs) }
     }
 
+    /**
+     * Firebase AI reports App Check rejection and some model-access/quota failures through a
+     * provider server exception. Keep the classification deliberately content-free: only the
+     * exception type and safe access-related markers are inspected, never a response body.
+     */
+    private fun isFirebaseAccessConfigurationFailure(error: Throwable): Boolean {
+        val chain = generateSequence(error) { it.cause }.take(MAX_CAUSE_DEPTH)
+        return chain.any { cause ->
+            val type = cause::class.java.simpleName
+            val message = cause.message.orEmpty()
+            type.equals("ServerException", ignoreCase = true) ||
+                type.contains("AppCheck", ignoreCase = true) ||
+                message.contains("app attestation", ignoreCase = true) ||
+                message.contains("app check", ignoreCase = true) ||
+                message.contains("appcheck", ignoreCase = true) ||
+                message.contains("api key", ignoreCase = true)
+        }
+    }
+
     companion object {
         const val TAG = "OliviaFirebaseVisual"
         const val DEFAULT_MODEL = "gemini-3.5-flash-lite"
         const val DEFAULT_MAX_EDGE_PX = 512
         const val JPEG_QUALITY = 80
         const val RGBA_BYTES_PER_PIXEL = 4
+        const val MAX_CAUSE_DEPTH = 8
 
         /**
          * Firebase-enforced envelope for the sole cloud output allowed by Olivia. The provider

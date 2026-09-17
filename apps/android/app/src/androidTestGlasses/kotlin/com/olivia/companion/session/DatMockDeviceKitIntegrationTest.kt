@@ -14,6 +14,7 @@ import com.olivia.core.FrameFormat
 import com.olivia.core.FrameOrigin
 import com.olivia.core.GlassesConnection
 import com.olivia.core.InMemoryTimeline
+import com.olivia.core.MockFrameAnalyzer
 import com.olivia.core.SessionCoordinator
 import com.olivia.core.SessionId
 import com.olivia.core.SessionSignal
@@ -43,6 +44,50 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class DatMockDeviceKitIntegrationTest {
+    @Test
+    fun liveRuntimePublishesStreamPreviewAndClearsItAfterStop() = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        listOf(
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.CAMERA,
+        ).forEach { permission ->
+            grant(instrumentation, context.packageName, permission)
+        }
+        val clock = SystemOliviaClock()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val gateway = DatGlassesGateway(
+            context,
+            clock,
+            scope,
+            keepAliveInForeground = false,
+            forceMockDeviceKit = true,
+        )
+        val runtime = LiveSessionRuntime(
+            context = context,
+            gateway = gateway,
+            analyzer = MockFrameAnalyzer(clock, emptyMap()),
+            clock = clock,
+        )
+        try {
+            runtime.handle(LocalSessionCommand.START).getOrThrow()
+            val preview = withTimeout(FRAME_TIMEOUT_MS) {
+                runtime.livePreview.filterNotNull().first()
+            }
+            assertTrue("preview must contain JPEG bytes", preview.jpeg.isNotEmpty())
+            assertTrue("preview must remain portrait", preview.height >= preview.width)
+            assertTrue("preview sequence must be non-negative", preview.sequence >= 0)
+
+            runtime.handle(LocalSessionCommand.STOP).getOrThrow()
+            assertEquals(null, runtime.livePreview.value)
+        } finally {
+            runtime.close()
+            gateway.close()
+            scope.cancel()
+        }
+    }
+
     @Test
     fun mockDeviceKitDeliversPortraitNv21FramesAndRecoversSession() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
