@@ -154,7 +154,7 @@
         },
         {
           "code": "SH-03",
-          "title": "Deixar o app reproduzível e demonstrável em modo mock",
+          "title": "Deixar o app reproduzível e demonstrável sem hardware",
           "owner": "Frontend",
           "milestone": "M0 • Fundação (04–05/09)",
           "phase": "Pré-hackathon",
@@ -167,7 +167,7 @@
             "Há flavor/configuração MOCK que roda sem óculos.",
             "Companion app Android/Kotlin gera APK de debug no flavor MOCK."
           ],
-          "notes_and_risks": "A prioridade é ter um APK/app demonstrável em modo mock antes de qualquer integração de hardware.",
+          "notes_and_risks": "A prioridade é ter um APK interno de validação sem hardware antes de qualquer integração; a simulação não é um modo do produto.",
           "priority": "High",
           "estimate": 2,
           "labels": [
@@ -175,9 +175,9 @@
             "frontend",
             "foundation"
           ],
-          "description": "## Objetivo\n\nPrepare o repositório para que qualquer integrante consiga abrir, configurar e gerar uma versão demonstrável sem depender dos óculos. O modo mock precisa ser tratado como produto de primeira classe, pois ele é a garantia de demo antes e durante o hackathon.\n\n**Responsável:** Frontend\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Projeto compila em máquina limpa com um comando/documentação curta.\n- Secrets ficam fora do repositório e há .env/local config de exemplo.\n- Build de debug gerado automaticamente em CI.\n- Há flavor/configuração MOCK que roda sem óculos.\n- Companion app Android/Kotlin gera APK de debug no flavor MOCK.\n\n## Notas / risco\n\nA prioridade é ter um APK/app demonstrável em modo mock antes de qualquer integração de hardware.",
+          "description": "## Objetivo\n\nPrepare o repositório para que qualquer integrante consiga abrir, configurar e gerar uma versão de validação sem depender dos óculos. O flavor mock permanece interno e garante uma demonstração reproduzível antes da integração de hardware, sem criar um modo na experiência do produto.\n\n**Responsável:** Frontend\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** Nenhuma\n\n## Definição de pronto\n\n- Projeto compila em máquina limpa com um comando/documentação curta.\n- Secrets ficam fora do repositório e há .env/local config de exemplo.\n- Build de debug gerado automaticamente em CI.\n- Há flavor/configuração MOCK que roda sem óculos.\n- Companion app Android/Kotlin gera APK de debug no flavor MOCK.\n\n## Notas / risco\n\nA prioridade é ter um APK interno de validação sem hardware antes de qualquer integração; a simulação não é um modo do produto.",
           "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Prepare o repositório para que qualquer integrante consiga abrir, configurar e gerar uma versão demonstrável sem depender dos óculos. O modo mock precisa ser tratado como produto de primeira classe, pois ele é a garantia de demo antes e durante o hackathon."
+          "objective": "Prepare o repositório para que qualquer integrante consiga abrir, configurar e gerar uma versão de validação sem depender dos óculos. O flavor mock permanece interno e garante uma demonstração reproduzível antes da integração de hardware, sem criar um modo na experiência do produto."
         },
         {
           "code": "SH-04",
@@ -253,7 +253,7 @@
           ],
           "definition_of_done": [
             "Tela mostra estado de conexão, estado da sessão, timer e modo de feedback.",
-            "Ações de debug permitem iniciar/pausar/terminar em MOCK.",
+            "A sessão é controlada por comandos de voz; as transições permanecem exercitáveis por testes automatizados.",
             "Nenhuma tela depende diretamente do SDK dos óculos."
           ],
           "notes_and_risks": "Evitar polimento visual excessivo; clareza do estado operacional vale mais para o demo.",
@@ -264,9 +264,9 @@
             "frontend",
             "mobile"
           ],
-          "description": "## Objetivo\n\nConstrua a tela que a pessoa abre para acompanhar conexão, estado da sessão, cronômetro e modo de feedback, com controles de debug só para o mock. Ela deve priorizar leitura rápida do estado da Olivia durante a demo, e não acabamento visual de produto final.\n\n**Responsável:** Frontend\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-03, SH-04, FE-00\n\n## Definição de pronto\n\n- Tela mostra estado de conexão, estado da sessão, timer e modo de feedback.\n- Ações de debug permitem iniciar/pausar/terminar em MOCK.\n- Nenhuma tela depende diretamente do SDK dos óculos.\n\n## Notas / risco\n\nEvitar polimento visual excessivo; clareza do estado operacional vale mais para o demo.",
+          "description": "## Objetivo\n\nConstrua a tela que a pessoa abre para acompanhar conexão, estado da sessão, cronômetro e modo de feedback, sem transformar controles de teste em uma superfície do produto. Ela deve priorizar leitura rápida do estado da Olivia e operação por voz.\n\n**Responsável:** Frontend\n**Milestone:** M1 • Vertical slice (06–09/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** SH-03, SH-04, FE-00\n\n## Definição de pronto\n\n- Tela mostra estado de conexão, estado da sessão, timer e modo de feedback.\n- A sessão é controlada por comandos de voz; as transições permanecem exercitáveis por testes automatizados.\n- Nenhuma tela depende diretamente do SDK dos óculos.\n\n## Notas / risco\n\nEvitar polimento visual excessivo; clareza do estado operacional vale mais para o demo.",
           "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Construa a tela que a pessoa abre para acompanhar conexão, estado da sessão, cronômetro e modo de feedback, com controles de debug só para o mock. Ela deve priorizar leitura rápida do estado da Olivia durante a demo, e não acabamento visual de produto final."
+          "objective": "Construa a tela que a pessoa abre para acompanhar conexão, estado da sessão, cronômetro e modo de feedback, sem transformar controles de teste em uma superfície do produto. Ela deve priorizar leitura rápida do estado da Olivia e operação por voz."
         },
         {
           "code": "FE-02",
@@ -501,7 +501,7 @@
             "Wake word roda localmente sem enviar áudio à nuvem.",
             "Reconhece pelo menos: gravar, pausar, retomar e terminar.",
             "Há feedback audível curto para cada comando.",
-            "Existe botão/debug fallback apenas para desenvolvimento."
+            "As ações de sessão permanecem exercitáveis por testes automatizados, sem controles de debug na interface do produto."
           ],
           "notes_and_risks": "Testar com celular distante na bancada; o caso de uso depende de mãos livres.",
           "priority": "High",
@@ -512,9 +512,9 @@
             "voice",
             "porcupine"
           ],
-          "description": "## Objetivo\n\nIntegre wake word e comandos de gravar, pausar, retomar e terminar sem enviar o áudio à nuvem. Como Mariana está com as mãos ocupadas e o celular na bancada, teste alcance e retorno sonoro; o botão de debug é apenas um fallback de desenvolvimento.\n\n**Responsável:** Frontend\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-02, FE-00\n\n## Definição de pronto\n\n- Wake word roda localmente sem enviar áudio à nuvem.\n- Reconhece pelo menos: gravar, pausar, retomar e terminar.\n- Há feedback audível curto para cada comando.\n- Existe botão/debug fallback apenas para desenvolvimento.\n\n## Notas / risco\n\nTestar com celular distante na bancada; o caso de uso depende de mãos livres.",
+          "description": "## Objetivo\n\nIntegre wake word e comandos de gravar, pausar, retomar e terminar sem enviar o áudio à nuvem. Como Mariana está com as mãos ocupadas e o celular na bancada, teste alcance e retorno sonoro; o flavor de validação permanece restrito aos testes automatizados e não aparece como modo do produto.\n\n**Responsável:** Frontend\n**Milestone:** M2 • Feature complete (10–13/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Sim\n**Dependências:** FE-02, FE-00\n\n## Definição de pronto\n\n- Wake word roda localmente sem enviar áudio à nuvem.\n- Reconhece pelo menos: gravar, pausar, retomar e terminar.\n- Há feedback audível curto para cada comando.\n- As ações de sessão permanecem exercitáveis por testes automatizados, sem controles de debug na interface do produto.\n\n## Notas / risco\n\nTestar com celular distante na bancada; o caso de uso depende de mãos livres.",
           "review_status": "manually_reviewed_structured_for_mvp_readiness",
-          "objective": "Integre wake word e comandos de gravar, pausar, retomar e terminar sem enviar o áudio à nuvem. Como Mariana está com as mãos ocupadas e o celular na bancada, teste alcance e retorno sonoro; o botão de debug é apenas um fallback de desenvolvimento."
+          "objective": "Integre wake word e comandos de gravar, pausar, retomar e terminar sem enviar o áudio à nuvem. Como Mariana está com as mãos ocupadas e o celular na bancada, teste alcance e retorno sonoro; o flavor de validação permanece restrito aos testes automatizados e não aparece como modo do produto."
         },
         {
           "code": "FE-06",
