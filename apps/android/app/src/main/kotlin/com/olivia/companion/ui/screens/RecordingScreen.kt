@@ -2,23 +2,14 @@ package com.olivia.companion.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,10 +27,11 @@ import androidx.compose.ui.unit.dp
 import com.olivia.companion.session.AudioFeedbackStatus
 import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.formatOffset
-import com.olivia.companion.ui.AudioModeOption
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.companion.ui.OliviaPanel
-import com.olivia.companion.ui.SectionTitle
+import com.olivia.companion.ui.SettingsAudioModeSelector
+import com.olivia.companion.ui.SettingsCard
+import com.olivia.companion.ui.SettingsOverline
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionState
 import kotlin.math.PI
@@ -48,7 +40,6 @@ import kotlin.math.sin
 @Composable
 fun OliviaRecordingScreen(
     state: OliviaUiState,
-    onOpenSettings: () -> Unit,
     onAudioMode: (AudioMode) -> Unit,
 ) {
     val degraded = state.session?.state == SessionState.DEGRADED
@@ -111,31 +102,12 @@ fun OliviaRecordingScreen(
             status = state.audioStatus,
             message = state.audioStatusMessage,
         )
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionTitle("Modo de feedback")
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                AudioModeOption("Voz", state.audioMode == AudioMode.VOICE, enabled = !live) {
-                    onAudioMode(AudioMode.VOICE)
-                }
-                AudioModeOption("Sinal", state.audioMode == AudioMode.SIGNAL, enabled = !live) {
-                    onAudioMode(AudioMode.SIGNAL)
-                }
-            }
-        }
-        OutlinedButton(
-            onClick = onOpenSettings,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            shape = RoundedCornerShape(20.dp),
-        ) {
-            Text("Configurar áudio e dispositivo", modifier = Modifier.weight(1f))
-            Icon(
-                Icons.AutoMirrored.Outlined.ArrowForward,
-                contentDescription = null,
-                modifier = Modifier.padding(start = 8.dp).size(20.dp),
+        SettingsCard {
+            SettingsOverline("Modo de feedback")
+            SettingsAudioModeSelector(
+                audioMode = state.audioMode,
+                enabled = !live,
+                onAudioMode = onAudioMode,
             )
         }
     }

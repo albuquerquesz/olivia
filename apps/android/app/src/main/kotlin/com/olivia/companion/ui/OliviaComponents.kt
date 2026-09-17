@@ -3,7 +3,6 @@ package com.olivia.companion.ui
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -11,15 +10,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,7 +32,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.BatteryFull
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Button
@@ -235,13 +230,13 @@ private fun SettingsAudioModeOption(
     onClick: () -> Unit,
 ) {
     val background by animateColorAsState(
-        targetValue = MaterialTheme.colorScheme.onSurface.takeIf { selected }
+        targetValue = MaterialTheme.colorScheme.primary.takeIf { selected }
             ?: Color.Transparent,
         animationSpec = OliviaMotion.selection(),
         label = "settings audio mode background",
     )
     val contentColor by animateColorAsState(
-        targetValue = MaterialTheme.colorScheme.surface.takeIf { selected }
+        targetValue = MaterialTheme.colorScheme.onPrimary.takeIf { selected }
             ?: MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = OliviaMotion.selection(),
         label = "settings audio mode content",
@@ -522,60 +517,4 @@ internal fun PanelDetail(text: String, onPanel: Boolean = true) {
 @Composable
 internal fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-}
-
-@Composable
-internal fun AudioModeOption(label: String, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    val selectedBackground = colors.onPrimary.takeIf { selected } ?: colors.primary
-    val selectedForeground = colors.primary.takeIf { selected } ?: colors.onPrimary
-    val background by animateColorAsState(
-        selectedBackground,
-        OliviaMotion.selection(),
-        label = "audio option background",
-    )
-    val foreground by animateColorAsState(
-        selectedForeground,
-        OliviaMotion.selection(),
-        label = "audio option foreground",
-    )
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        0.97f.takeIf { pressed } ?: 1f,
-        OliviaMotion.press(),
-        label = "audio option press",
-    )
-    Surface(
-        modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale },
-        shape = RoundedCornerShape(16.dp),
-        color = background,
-        contentColor = foreground,
-        border = BorderStroke(1.dp, colors.inverseOnSurface),
-    ) {
-        Row(
-            modifier = Modifier
-                .selectable(
-                    selected = selected,
-                    enabled = enabled,
-                    onClick = onClick,
-                    role = Role.RadioButton,
-                    interactionSource = interactionSource,
-                    indication = null,
-                )
-                .semantics(mergeDescendants = true) {}
-                .heightIn(min = 48.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (selected) {
-                Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-            }
-            if (!selected) {
-                Spacer(Modifier.size(18.dp))
-            }
-            Text(label, style = MaterialTheme.typography.labelLarge)
-        }
-    }
 }

@@ -229,13 +229,6 @@ fun OliviaApp(
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     state = uiState,
-                    onOpenSettings = {
-                        navController.navigate(OliviaDestination.SETTINGS.route) {
-                            popUpTo(OliviaDestination.HOME.route) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
                     onAudioMode = viewModel::setAudioMode,
                 )
             }

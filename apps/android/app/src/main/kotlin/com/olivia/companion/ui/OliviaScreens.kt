@@ -36,12 +36,10 @@ fun OliviaHomeScreen(
 @Composable
 fun OliviaRecordingScreen(
     state: OliviaUiState,
-    onOpenSettings: () -> Unit,
     onAudioMode: (AudioMode) -> Unit,
 ) {
     RecordingScreen(
         state = state,
-        onOpenSettings = onOpenSettings,
         onAudioMode = onAudioMode,
     )
 }
