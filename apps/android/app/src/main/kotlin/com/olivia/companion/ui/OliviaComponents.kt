@@ -402,7 +402,7 @@ internal fun RecordVideoCta(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 120.dp),
-        color = MaterialTheme.colorScheme.primary,
+        color = RecordVideoCtaBackground,
         contentColor = MaterialTheme.colorScheme.onPrimary,
         shape = RoundedCornerShape(20.dp),
     ) {
@@ -434,6 +434,8 @@ internal fun RecordVideoCta(
         }
     }
 }
+
+private val RecordVideoCtaBackground = Color(0xFF315194)
 
 @Composable
 private fun VoiceWaveform() {
