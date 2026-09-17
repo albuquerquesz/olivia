@@ -16,7 +16,9 @@ Ajudar Mariana a corrigir enquadramento, luz/sombra na peça e horizonte enquant
 grava. Ao terminar, o fluxo previsto entrega marcas e cortes para revisão e CapCut.
 As regras de produto e contratos em docs/rules/ são a fonte de verdade.
 As telas atuais são um esqueleto: aparência não comprova hardware, voz ou IA ativos.
-O app abre na welcome, sem barra, com título, descrição e um botão Entrar no rodapé. O Início consulta dispositivo e os últimos takes; Ajustes guarda Voz/Sinal. Não inicia sessão.
+O app abre em um onboarding curto, sem barra, que explica o ciclo da Olivia e pede
+somente as permissões necessárias antes de entrar. O Início consulta dispositivo e
+os últimos takes; Ajustes guarda Voz/Sinal. Não inicia sessão.
 
 ## Brand Personality
 

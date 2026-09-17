@@ -39,8 +39,9 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 - Sem títulos de página (Gravar, Sessões, Ajustes). A orientação vem do
   painel e da barra inferior.
-- Welcome: tela inicial, sem barra inferior. Título `Bem vindo a OlivIA`,
-  descrição curta e botão primary Entrar no rodapé, sem conta.
+- Welcome/onboarding: tela inicial, sem barra inferior. Três etapas curtas explicam
+  o ciclo da Olivia, a privacidade e pedem somente microfone; no flavor de óculos,
+  também Bluetooth. Sem conta. Pareamento e autorização dos óculos ficam no Meta AI.
 - Início: painel com Dispositivo e Ray-Ban Meta; Últimos takes em cards (miniatura,
   título, badges de duração e data abaixo do título, seta) e atalho ver todos para Sessões.
   Sem inventar takes.
@@ -65,7 +66,8 @@ Compose que respeitam a escala de duração do Android, inclusive zero.
 
 ## Rastreabilidade e validação
 
-Refinamento visual de FE-01 (SH-03, SH-04, FE-00) e FE-05 (FE-01, FE-04).
+Refinamento visual de FE-01 (SH-03, SH-04, FE-00) e FE-05 (FE-01, FE-04), com
+onboarding apoiado por INT-00 para as permissões do DAT.
 Não conclui essas tasks funcionais por si só. Contratos, hardware, IA e privacidade
 permanecem definidos nos JSON de docs/rules/.
 
