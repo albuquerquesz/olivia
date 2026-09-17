@@ -186,21 +186,6 @@ private fun OnboardingIntro() {
             shape = RoundedCornerShape(28.dp),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = "Companion para seus takes",
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                    Text(
-                        text = "Olivia",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    )
-                }
                 Image(
                     painter = painterResource(R.drawable.olivia_logo),
                     contentDescription = "Olivia",
@@ -214,7 +199,6 @@ private fun OnboardingIntro() {
         }
         OnboardingHeading(
             title = "Grave com as mãos livres",
-            description = "A Olivia observa enquadramento, luz e horizonte enquanto você trabalha, e orienta tudo por áudio.",
         )
     }
 }
@@ -312,7 +296,7 @@ private fun OnboardingPermissionPage(
 }
 
 @Composable
-private fun OnboardingHeading(title: String, description: String) {
+private fun OnboardingHeading(title: String, description: String? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = title,
@@ -320,11 +304,13 @@ private fun OnboardingHeading(title: String, description: String) {
                 fontWeight = FontWeight.Bold,
             ),
         )
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        description?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
