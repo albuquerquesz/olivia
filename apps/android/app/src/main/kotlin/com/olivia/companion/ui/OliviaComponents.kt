@@ -200,7 +200,7 @@ internal fun SettingsAudioModeSelector(
             .fillMaxWidth()
             .height(48.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.surface)
             .selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -230,13 +230,13 @@ private fun SettingsAudioModeOption(
     onClick: () -> Unit,
 ) {
     val background by animateColorAsState(
-        targetValue = MaterialTheme.colorScheme.primary.takeIf { selected }
+        targetValue = MaterialTheme.colorScheme.onSurface.takeIf { selected }
             ?: Color.Transparent,
         animationSpec = OliviaMotion.selection(),
         label = "settings audio mode background",
     )
     val contentColor by animateColorAsState(
-        targetValue = MaterialTheme.colorScheme.onPrimary.takeIf { selected }
+        targetValue = MaterialTheme.colorScheme.surface.takeIf { selected }
             ?: MaterialTheme.colorScheme.onSurface,
         animationSpec = OliviaMotion.selection(),
         label = "settings audio mode content",
