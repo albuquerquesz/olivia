@@ -43,8 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
@@ -230,7 +228,7 @@ private fun TakePreview(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(12.dp),
-            color = colors.surface.copy(alpha = 0.94f),
+            color = colors.surfaceVariant,
             shape = RoundedCornerShape(8.dp),
         ) {
             Text(
@@ -282,16 +280,10 @@ private fun RecordedVideo(
 @Composable
 private fun PreviewPlaceholder() {
     val colors = MaterialTheme.colorScheme
-    val stripeBrush = Brush.linearGradient(
-        colors = listOf(colors.surfaceVariant, colors.surface, colors.surfaceVariant),
-        start = Offset(0f, 0f),
-        end = Offset(48f, 48f),
-        tileMode = TileMode.Repeated,
-    )
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(stripeBrush),
+            .background(colors.surface),
         contentAlignment = Alignment.Center,
     ) {
         Text(
