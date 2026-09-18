@@ -234,10 +234,9 @@ private fun RecentTakes(
     takes: List<TakeSummary>,
     onOpenTake: (SessionId) -> Unit,
 ) {
-    takes.forEachIndexed { index, take ->
+    takes.forEach { take ->
         TakePreviewCard(
             take = take,
-            featured = index == 0,
             onClick = { onOpenTake(take.sessionId) },
         )
     }
@@ -291,12 +290,21 @@ private fun RecentTakesCard(
     onSeeAllTakes: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
-    Column(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        RecentTakesHeader(onSeeAllTakes)
-        RecentTakes(takes, onOpenTake)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            RecentTakesHeader(onSeeAllTakes)
+            RecentTakes(takes, onOpenTake)
+        }
     }
 }
 
@@ -350,57 +358,35 @@ private fun EmptyTakesCard(
 @Composable
 private fun TakePreviewCard(
     take: TakeSummary,
-    featured: Boolean,
     onClick: () -> Unit,
 ) {
-    val cardColor = if (featured) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-    val cardBorder = if (featured) {
-        null
-    } else {
-        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    }
     Surface(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = if (featured) 132.dp else 88.dp),
+            .heightIn(min = 88.dp),
         shape = RoundedCornerShape(20.dp),
-        color = cardColor,
+        color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = cardBorder,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.padding(if (featured) 16.dp else 12.dp),
+            modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TakeThumbnail(
                 modifier = Modifier
-                    .size(if (featured) 88.dp else 64.dp)
-                    .clip(RoundedCornerShape(if (featured) 18.dp else 14.dp)),
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(14.dp)),
             )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(if (featured) 8.dp else 6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                if (featured) {
-                    Text(
-                        "Último take",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
                 Text(
                     take.title,
-                    style = if (featured) {
-                        MaterialTheme.typography.titleLarge
-                    } else {
-                        MaterialTheme.typography.titleMedium
-                    },
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -412,13 +398,6 @@ private fun TakePreviewCard(
                 ) {
                     TakeMetaBadge(Icons.Outlined.Schedule, formatOffset(take.durationMs))
                     TakeMetaBadge(Icons.Outlined.CalendarToday, recorded)
-                }
-                if (featured) {
-                    Text(
-                        "${take.correctionCount} correções · ${take.cutCount} cortes",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
             Icon(
