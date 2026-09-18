@@ -204,7 +204,7 @@ private fun SessionTakeCard(
                 TakeThumbnail(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                        .clip(RoundedCornerShape(12.dp)),
                 )
                 Text(
                     modifier = Modifier
