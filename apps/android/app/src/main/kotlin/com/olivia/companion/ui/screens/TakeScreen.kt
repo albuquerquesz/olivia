@@ -103,23 +103,25 @@ fun OliviaTakeScreen(
             recordingPath = recordingPath,
         )
 
-        if (recording != null) {
-            OutlinedButton(
-                onClick = onExport,
-                enabled = exportState.status != ExportStatus.SHARING,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 52.dp),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Text(
-                    if (exportState.status == ExportStatus.SHARING) {
-                        "Preparando compartilhamento…"
-                    } else {
-                        "Compartilhar take e marcações"
-                    },
-                )
-            }
+        SuggestedCutsSection(take)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        TimelineSection(take.events)
+
+        OutlinedButton(
+            onClick = onExport,
+            enabled = exportState.status != ExportStatus.SHARING,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Text(
+                if (exportState.status == ExportStatus.SHARING) {
+                    "Preparando exportação…"
+                } else {
+                    "Exportar vídeo"
+                },
+            )
         }
         exportState.message?.let { message ->
             Text(
@@ -128,10 +130,6 @@ fun OliviaTakeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-
-        SuggestedCutsSection(take)
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        TimelineSection(take.events)
     }
 }
 
@@ -432,22 +430,34 @@ private fun TimelineRow(event: TimelineEvent, isLast: Boolean) {
             ) {
                 Text(
                     formatOffset(event.offsetMs),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.8.sp,
+                    ),
                 )
                 Text(
                     timelineEventTag(event),
                     style = MaterialTheme.typography.labelSmall.copy(
-                        letterSpacing = 1.sp,
-                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 1.5.sp,
+                        fontWeight = FontWeight.Normal,
                     ),
                     color = colors.onSurfaceVariant,
                 )
             }
-            Text(eventTitle(event), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                eventTitle(event),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    letterSpacing = 0.6.sp,
+                    fontWeight = FontWeight.Normal,
+                ),
+            )
             if (confirmation != null) {
                 Text(
                     confirmation,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        letterSpacing = 0.6.sp,
+                        fontWeight = FontWeight.Normal,
+                    ),
                     color = colors.onSurfaceVariant,
                 )
             }
