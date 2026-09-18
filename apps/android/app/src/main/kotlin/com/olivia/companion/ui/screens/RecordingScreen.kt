@@ -54,7 +54,7 @@ fun OliviaRecordingScreen(
     val live = state.isLive
     OliviaPage(
         onNavigateBack = onNavigateBack,
-        backButtonVisible = !live,
+        backButtonVisible = true,
         verticalSpacing = 16.dp,
     ) {
         Column(
