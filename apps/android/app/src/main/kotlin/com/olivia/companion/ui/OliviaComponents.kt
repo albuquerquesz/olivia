@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,7 +35,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.BatteryFull
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
@@ -49,7 +49,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -69,6 +71,69 @@ import com.olivia.companion.R
 import com.olivia.core.AudioMode
 import kotlin.math.PI
 import kotlin.math.sin
+
+internal enum class OliviaButtonVariant {
+    Primary,
+    Warm,
+}
+
+@Composable
+internal fun OliviaButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    variant: OliviaButtonVariant = OliviaButtonVariant.Primary,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(12.dp.takeIf { variant == OliviaButtonVariant.Warm } ?: 20.dp)
+    val isWarm = variant == OliviaButtonVariant.Warm
+    val contentColor = when {
+        !enabled -> colors.onSurfaceVariant
+        isWarm -> OliviaWarmActionOn
+        else -> colors.onPrimary
+    }
+    val background = when {
+        !enabled -> Brush.verticalGradient(listOf(colors.surfaceVariant, colors.surfaceVariant))
+        isWarm -> Brush.verticalGradient(listOf(OliviaWarmActionStart, OliviaWarmActionEnd))
+        else -> Brush.verticalGradient(listOf(colors.primary, colors.primary))
+    }
+    val shadowModifier = if (isWarm && enabled) {
+        Modifier.shadow(
+            elevation = 4.dp,
+            shape = shape,
+            ambientColor = OliviaWarmActionShadow,
+            spotColor = OliviaWarmActionShadow,
+        )
+    } else {
+        Modifier
+    }
+
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .then(shadowModifier),
+        shape = shape,
+        color = Color.Transparent,
+        contentColor = contentColor,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(background, shape)
+                .padding(horizontal = 24.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                content = content,
+            )
+        }
+    }
+}
 
 @Composable
 internal fun OliviaPage(

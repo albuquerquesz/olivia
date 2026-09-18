@@ -27,8 +27,6 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +47,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.olivia.companion.R
+import com.olivia.companion.ui.OliviaButton
+import com.olivia.companion.ui.OliviaButtonVariant
 
 private const val IntroPage = 0
 private const val HowItWorksPage = 1
@@ -142,7 +142,7 @@ fun OliviaWelcomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             OnboardingPageIndicator(page = currentPage, pageCount = pageCount)
-            Button(
+            OliviaButton(
                 onClick = {
                     when {
                         needsAudioPermission -> onRequestAudioPermission()
@@ -154,11 +154,7 @@ fun OliviaWelcomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 56.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
+                variant = OliviaButtonVariant.Warm,
             ) {
                 Text(
                     text = onboardingButtonLabel(

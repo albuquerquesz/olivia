@@ -28,6 +28,10 @@ private val Canvas = Color(0xFFF1F3F7)
 private val OliviaBlue = Color(0xFFBFDFFD)
 private val Ink = Color(0xFF151A21)
 private val Mist = Color(0xFFE8EEF5)
+internal val OliviaWarmActionStart = Color(0xFFFF7246)
+internal val OliviaWarmActionEnd = Color(0xFFF15026)
+internal val OliviaWarmActionOn = Color(0xFFFEFEFE)
+internal val OliviaWarmActionShadow = Color(0x33F15026)
 
 private val OliviaLightColors = lightColorScheme(
     primary = OliviaBlue,
