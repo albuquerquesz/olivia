@@ -76,8 +76,8 @@ fun OliviaRecordingScreen(
                             text = formatOffset(state.elapsedMs),
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = 20.sp,
-                                lineHeight = 24.sp,
+                                fontSize = 16.sp,
+                                lineHeight = 20.sp,
                                 fontWeight = FontWeight.Bold,
                             ),
                         )
@@ -119,8 +119,8 @@ fun OliviaRecordingScreen(
     }
 }
 
-private val RecordingTimerBackground = Color(0xFFFFC7C2)
-private val RecordingTimerContent = Color(0xFF8B2D2D)
+private val RecordingTimerBackground = Color(0xFFD32F2F)
+private val RecordingTimerContent = Color.White
 
 @Composable
 private fun AudioAvailabilityNotice(
