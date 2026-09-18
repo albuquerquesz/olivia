@@ -23,7 +23,7 @@ menos 10 inferências reais com condições anotadas. Reportar p50/p95, tamanho 
 
 | Item | Resultado | Evidência sanitizada | Limitação/fallback |
 | --- | --- | --- | --- |
-| DAT físico / primeiro frame | `PENDING` |  |  |
+| DAT físico / primeiro frame | `PENDING — GATT_TIMEOUT` | Retomada: `REGISTERED`, `dev_mode=true`, um device `COMPATIBLE`; leitura GATT expira antes da câmera | Decoder corrigido e instalado; primeiro frame/preview pendentes |
 | voz/tons nos óculos | `PENDING` |  |  |
 | A1 início/fim nativo | `PENDING` |  |  |
 | A2 3K + DAT | `PENDING` |  |  |
@@ -33,4 +33,21 @@ menos 10 inferências reais com condições anotadas. Reportar p50/p95, tamanho 
 | IA/qualidade | `PENDING` |  |  |
 | bateria/latência | `PENDING` |  |  |
 
+## Atualização operacional — 18/09/2026
+
+O APK `glassesDebug` foi recompilado com `MWDAT_MOCK_DEVICE_KIT=false` e instalado no Moto G60.
+O wake word e `START_RECORDING` foram reconhecidos localmente, e o gateway físico chegou ao DAT.
+O preflight observou `registration=AVAILABLE` e `devices=0`; a tentativa de autorização abriu o Meta AI,
+mas a integração falhou por `Application is not authorized to perform this operation. Attestation failed.`
+Ainda não há evidência suficiente para marcar `PASS_HARDWARE` sem observar `STARTED` e o primeiro frame.
+O adapter registra apenas estado agregado do preflight e `origin`, `format`, `width` e `height` do primeiro
+frame, sem pixels ou mídia.
+
+Após a falha de attestation, o `glassesDebug` foi separado corretamente para Developer Mode (`0/0`),
+sem MockDeviceKit. A próxima evidência necessária é `registration=REGISTERED`, device elegível,
+`STARTED` e `first_frame origin=DAT` com Developer Mode ativado no Meta AI.
+
 Antes do checkpoint final, salvar APK físico, APK mock, commit/hash e log sanitizado em dois locais.
+
+Retomada às 12:14–12:18: o bloqueio inicial de registro foi superado. `APP_CHECK_READY` observado.
+Evidência atual e separação do histórico em [retomada DAT](checkpoint-1/retomada-dat.md).

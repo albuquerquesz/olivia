@@ -1,7 +1,9 @@
 package com.olivia.companion.ai
 
 import android.content.Context
+import android.util.Log
 import com.google.firebase.FirebaseApp
+import com.olivia.core.AnalysisTimingSink
 import com.olivia.core.FrameAnalyzer
 import com.olivia.core.DeterministicLocalVisualAnalyzer
 import com.olivia.core.GeminiFrameAnalyzer
@@ -23,7 +25,12 @@ object FirebaseVisualAnalyzerFactory {
         lateinit var hybrid: HybridVisualAnalyzer
         val remote = GeminiFrameAnalyzer(
                 clock = clock,
-                transport = FirebaseGeminiVisualTransport.forFirebaseApp(app),
+                transport = FirebaseGeminiVisualTransport.forFirebaseApp(
+                    app,
+                    timingSink = FirebaseTimingSink { stage, durationMs ->
+                        Log.i(TAG, "firebase_timing stage=$stage ms=$durationMs")
+                    },
+                ),
                 localVisualAnalyzer = DeterministicLocalVisualAnalyzer(),
                 lumaDecoder = AndroidFrameLumaDecoder(),
                 localizationSink = com.olivia.core.LocalizationSink { stamp, localization ->
@@ -36,6 +43,9 @@ object FirebaseVisualAnalyzerFactory {
                     MOCK_DEVICE_KIT_TIMEOUT_MS
                 } else {
                     PRODUCTION_TIMEOUT_MS
+                },
+                timingSink = AnalysisTimingSink { stage, durationMs ->
+                    Log.i(TAG, "analysis_timing stage=$stage ms=$durationMs")
                 },
             )
         hybrid = HybridVisualAnalyzer(
@@ -54,4 +64,5 @@ object FirebaseVisualAnalyzerFactory {
 
     private const val PRODUCTION_TIMEOUT_MS = 2_000L
     private const val MOCK_DEVICE_KIT_TIMEOUT_MS = 8_000L
+    private const val TAG = "OliviaVisualTiming"
 }

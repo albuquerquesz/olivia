@@ -141,7 +141,7 @@
     ],
     "invariant": "STARTED, PAUSED, STOPPED e DEGRADED não podem ser removidos ou renomeados.",
     "note": "SH-04 foi alinhada aos dez estados na revisão SDD de 12/09/2026. STOPPING encerra a captura, STOPPED marca o fim do loop ao vivo, PROCESSING é o pós-take e READY é a timeline pronta.",
-    "degraded_rule": "Coordenador aplicará quatro segundos sem heartbeat de captura quando esperado; causas independentes e intenção de retorno STARTED/PAUSED são campos do snapshot. Executor do watchdog permanece FE-02/FE-09.",
+    "degraded_rule": "Inicialização DAT tem timeout próprio de até 25 s para o primeiro frame após STREAMING; ao retornar de startCapture, o coordenador consome heartbeat da mesma geração antes de liberar o watchdog. Coordenador aplicará quatro segundos sem heartbeat de captura quando esperado; causas independentes e intenção de retorno STARTED/PAUSED são campos do snapshot. Executor do watchdog permanece FE-02/FE-09.",
     "transition_policy": "SessionTransitions.allows define grafo; callbacks, idempotência e guardas de causa/intenção são responsabilidade de FE-02. PROCESSING somente vem de STOPPED; cancelamento de PROCESSING retorna a STOPPED. Falha de análise adiciona ANALYSIS_UNAVAILABLE uma vez e só uma análise posterior bem-sucedida remove a causa.",
     "degradation_causes": [
       "CAPTURE_UNAVAILABLE",

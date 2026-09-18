@@ -1,6 +1,7 @@
 package com.olivia.companion.ui
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
@@ -57,6 +58,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -88,9 +90,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.olivia.companion.session.OliviaSessionViewModel
 import com.olivia.companion.session.LocalSessionCommand
+import com.olivia.companion.session.SessionRuntimeFactory
 import com.olivia.companion.session.TakeSummary
 import com.olivia.companion.session.VoiceCommandState
 import com.olivia.core.SessionId
+import kotlinx.coroutines.launch
 
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
     HOME("home", "Início", Icons.Outlined.Home),
@@ -159,6 +163,7 @@ fun OliviaApp(
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
     val snackbar = remember { androidx.compose.material3.SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
     var permissionRequested by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(uiState.commandError) {
         uiState.commandError?.let { snackbar.showSnackbar(it) }
@@ -296,6 +301,20 @@ fun OliviaApp(
                         }
                     },
                     onOpenVoiceSettings = { openVoiceSettings(context) },
+                    onConnectGlasses = {
+                        val activity = context as? Activity
+                        val result = activity?.let(SessionRuntimeFactory::startGlassesRegistration)
+                            ?: Result.failure(IllegalStateException("Activity indisponível"))
+                        coroutineScope.launch {
+                            snackbar.showSnackbar(
+                                if (result.isSuccess) {
+                                    "Verificando permissão e componente DAT no Meta AI."
+                                } else {
+                                    "Não foi possível abrir o fluxo de conexão do DAT."
+                                },
+                            )
+                        }
+                    },
                     onAudioMode = viewModel::setAudioMode,
                     onStart = viewModel::start,
                     onPause = viewModel::pause,

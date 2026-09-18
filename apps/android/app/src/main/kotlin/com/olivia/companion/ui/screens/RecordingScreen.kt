@@ -55,6 +55,7 @@ import com.olivia.companion.ui.SectionTitle
 import com.olivia.core.AudioMode
 import com.olivia.core.DegradationCause
 import com.olivia.core.Direction
+import com.olivia.core.GlassesConnection
 import com.olivia.core.SessionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -66,6 +67,7 @@ fun OliviaRecordingScreen(
     state: OliviaUiState,
     onOpenSettings: () -> Unit,
     onOpenVoiceSettings: () -> Unit = {},
+    onConnectGlasses: () -> Unit = {},
     onAudioMode: (AudioMode) -> Unit,
     onStart: () -> Unit,
     onPause: () -> Unit,
@@ -100,7 +102,7 @@ fun OliviaRecordingScreen(
                     modifier = Modifier.fillMaxSize(),
                 )
                 ConnectionStateBadge(
-                    label = connectionLabel(state.connection),
+                    label = recordingConnectionLabel(state),
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(20.dp),
@@ -124,6 +126,7 @@ fun OliviaRecordingScreen(
                         Text(
                             text = recordingPanelMessage(
                                 session = session,
+                                connection = state.connection,
                                 requiresPhysicalGlasses = state.backend.requiresPhysicalGlasses,
                             ),
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -167,7 +170,23 @@ fun OliviaRecordingScreen(
                 )
             }
         }
-        if (!state.backend.requiresPhysicalGlasses) {
+        if (state.backend.requiresPhysicalGlasses &&
+            (session == null || sessionState == SessionState.ERROR)
+        ) {
+            OutlinedButton(
+                onClick = onConnectGlasses,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                shape = RoundedCornerShape(20.dp),
+            ) {
+                Text("Conectar Olivia no Meta AI", modifier = Modifier.weight(1f))
+                Icon(
+                    Icons.AutoMirrored.Outlined.ArrowForward,
+                    contentDescription = null,
+                    modifier = Modifier.padding(start = 8.dp).size(20.dp),
+                )
+            }
+        }
+        if (!state.backend.requiresPhysicalGlasses || com.olivia.companion.BuildConfig.DEBUG) {
             DebugActions(
                 sessionState = sessionState,
                 onStart = onStart,
@@ -177,6 +196,7 @@ fun OliviaRecordingScreen(
                 onRecover = onRecover,
                 onStop = onStop,
                 working = state.working,
+                simulationAllowed = !state.backend.requiresPhysicalGlasses,
             )
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -341,7 +361,7 @@ private fun GlassesCameraPreview(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        if (actualStreamExpected) "Aguardando frame do MockDeviceKit…"
+                        if (actualStreamExpected) "Aguardando frame do DAT…"
                         else "Prévia de vídeo indisponível",
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -440,11 +460,25 @@ private fun LivePreviewOverlay(
 
 private fun recordingPanelMessage(
     session: com.olivia.core.SessionSnapshot?,
+    connection: GlassesConnection,
     requiresPhysicalGlasses: Boolean,
 ): String {
     if (session?.state == SessionState.DEGRADED) return sessionStatusLabel(session) + ". As marcas foram preservadas."
-    if (requiresPhysicalGlasses) return "É necessário conectar os óculos para gravar."
+    if (requiresPhysicalGlasses) {
+        if (session == null) return "Diga: Oi, Olivia, gravar para iniciar o DAT."
+        if (session.state == SessionState.ERROR) {
+            return "Não foi possível iniciar o DAT. Toque em Conectar Olivia no Meta AI."
+        }
+        if (session.state == SessionState.STARTING) return "Conectando aos óculos…"
+        if (connection == GlassesConnection.CONNECTED) return "Recebendo a câmera dos óculos."
+        return "Aguardando o primeiro frame do DAT…"
+    }
     return "A sessão orienta por áudio. O vídeo nativo é importado após o take."
+}
+
+private fun recordingConnectionLabel(state: OliviaUiState): String {
+    if (state.backend.requiresPhysicalGlasses && state.session == null) return "Aguardando início"
+    return connectionLabel(state.connection)
 }
 
 private fun cameraPreviewDescription(
@@ -453,7 +487,7 @@ private fun cameraPreviewDescription(
     hasFrame: Boolean,
 ): String {
     if (hasFrame) return "Prévia ao vivo do stream da câmera dos óculos"
-    if (actualStreamExpected) return "Aguardando frame do MockDeviceKit"
+    if (actualStreamExpected) return "Aguardando frame do DAT"
     if (simulated) return "Câmera simulada dos óculos, formato vertical 720 por 1280"
     return "Prévia da câmera dos óculos indisponível"
 }
@@ -478,6 +512,7 @@ private fun DebugActions(
     onRecover: () -> Unit,
     onStop: () -> Unit,
     working: Boolean,
+    simulationAllowed: Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle("Debug")
@@ -489,7 +524,7 @@ private fun DebugActions(
             SessionState.IDLE, SessionState.STOPPED, SessionState.READY, SessionState.ERROR -> DebugButton("Iniciar sessão", onStart)
             SessionState.STARTED -> {
                 DebugButton("Pausar", onPause)
-                DebugButton("Simular queda", onDegrade)
+                if (simulationAllowed) DebugButton("Simular queda", onDegrade)
                 DebugButton("Terminar", onStop)
             }
             SessionState.PAUSED -> {
@@ -498,7 +533,7 @@ private fun DebugActions(
             }
             SessionState.DEGRADED -> {
                 DebugButton("Pausar", onPause)
-                DebugButton("Simular retorno", onRecover)
+                if (simulationAllowed) DebugButton("Simular retorno", onRecover)
                 DebugButton("Terminar", onStop)
             }
             SessionState.STARTING,

@@ -5,6 +5,7 @@ import com.google.firebase.appcheck.AppCheckProviderFactory
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
 import com.olivia.companion.BuildConfig
+import android.util.Log
 
 /**
  * Installs Android attestation before Firebase AI Logic is used. The Firebase Console still owns
@@ -22,6 +23,13 @@ internal object FirebaseAppCheckBootstrap {
             factory,
             true,
         )
+        if (BuildConfig.DEBUG) {
+            // Verify the installed app's own provider/token, never an instrumentation secret.
+            // Only report the result; an attestation token must never enter logs.
+            FirebaseAppCheck.getInstance(app).getAppCheckToken(false)
+                .addOnSuccessListener { Log.i("OliviaAppCheck", "APP_CHECK_READY") }
+                .addOnFailureListener { Log.w("OliviaAppCheck", "APP_CHECK_FAILED type=${it.javaClass.simpleName}") }
+        }
     }
 
     private fun debugFactory(): AppCheckProviderFactory =

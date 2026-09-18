@@ -237,7 +237,9 @@ internal class RhinoCommandRecognizer(
     private companion object {
         const val TAG = "OliviaVoice"
         const val RHINO_SENSITIVITY = 0.45f
-        const val RHINO_ENDPOINT_SECONDS = 0.5f
+        // Keep enough silence after the command for the short "gravar" utterance
+        // without ending the Rhino window while the user is still speaking.
+        const val RHINO_ENDPOINT_SECONDS = 1.0f
     }
 }
 

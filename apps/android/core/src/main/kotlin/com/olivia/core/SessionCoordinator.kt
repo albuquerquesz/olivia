@@ -121,6 +121,12 @@ public class SessionCoordinator(
         )
         return try {
             gateway.startCapture(newCapture)
+            // Startup may suspend for permission, connection and the first decoded frame.
+            // Consume evidence already published by the adapter before the serialized owner
+            // releases its lock to the watchdog or frame consumers.
+            gateway.heartbeat.value?.takeIf { it.capture == newCapture }?.let {
+                onCaptureHeartbeat(it)
+            }
             Result.success(requireNotNull(_snapshot.value))
         } catch (error: Throwable) {
             if (error is CancellationException) throw error

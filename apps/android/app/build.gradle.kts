@@ -37,6 +37,11 @@ val configuredAbiFilters = providers.gradleProperty("olivia.abiFilters").orNull
     ?.toSet()
     ?.takeIf { it.isNotEmpty() }
 
+val configuredMwdatApplicationId =
+    localOrEnvironment("mwdat_application_id", "MWDAT_APPLICATION_ID")
+val configuredMwdatClientToken =
+    localOrEnvironment("mwdat_client_token", "MWDAT_CLIENT_TOKEN")
+
 // Protected CI builds may inject the release signing material. Local builds keep the existing
 // signing behavior unless all CI signing inputs are present.
 val ciReleaseKeystorePath = providers.environmentVariable("ANDROID_RELEASE_KEYSTORE_PATH").orNull
@@ -119,12 +124,13 @@ android {
         buildConfigField("String", "PICOVOICE_RHINO_MODEL_PATH", buildConfigString(
             localProperties.getProperty("picovoice_rhino_model_path") ?: "rhino_params_pt.pv",
         ))
-        // Developer Mode accepts 0/0. Registered values are only supplied by ignored
-        // local.properties or CI; source control never contains either credential.
+        // Release uses the registered integration. The debug override below intentionally
+        // switches local development builds to DAT Developer Mode (0/0), which avoids app
+        // attestation and requires Developer Mode enabled in Meta AI.
         manifestPlaceholders["mwdatApplicationId"] =
-            localOrEnvironment("mwdat_application_id", "MWDAT_APPLICATION_ID") ?: "0"
+            configuredMwdatApplicationId ?: "0"
         manifestPlaceholders["mwdatClientToken"] =
-            localOrEnvironment("mwdat_client_token", "MWDAT_CLIENT_TOKEN") ?: "0"
+            configuredMwdatClientToken ?: "0"
         buildConfigField(
             "boolean",
             "MWDAT_USE_MOCK_DEVICE_KIT",
@@ -165,8 +171,9 @@ android {
 
     buildTypes {
         debug {
-            // The CI developer APK remains DEBUG and uses MockDeviceKit, but can reuse the
-            // protected release certificate and Play Integrity for a token-free install path.
+            // Use the locally configured Wearables integration for the physical hackathon APK.
+            // Developer Mode remains enabled on the device, but DAT 0.9.0 still requires the
+            // client token while completing the registration handshake.
             if (ciReleaseSigningReady && signDeveloperWithReleaseKey) {
                 signingConfig = signingConfigs.getByName("ciRelease")
             }

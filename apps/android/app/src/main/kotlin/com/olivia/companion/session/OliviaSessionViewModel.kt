@@ -135,8 +135,10 @@ class OliviaSessionViewModel(
                 if (fromVoice) runtime.signal(SessionSignal.VOICE_COMMAND_ERROR)
                 error("Comando indisponível neste estado da sessão.")
             }
+            // Show recording/connection progress before waiting for DAT or the Meta AI prompt.
+            if (fromVoice && command != LocalSessionCommand.STOP) _voiceNavigation.tryEmit(command)
             runtime.handle(command).getOrThrow()
-            if (fromVoice) _voiceNavigation.tryEmit(command)
+            if (fromVoice && command == LocalSessionCommand.STOP) _voiceNavigation.tryEmit(command)
             if (command == LocalSessionCommand.STOP) {
                 val stopped = requireNotNull(runtime.snapshot.value)
                 val events = runtime.timelineFor(stopped.id).getOrThrow()

@@ -77,6 +77,19 @@
     "testing_limit": "Docker testa componentes de domínio e transportes controlados; MockDeviceKit exige camada Android e não comprova Bluetooth/firmware físico.",
     "evidence_matrix": "docs/hackaton-day-prod/03-native-recording-and-storage.md"
   },
+  "physical_preview_checkpoint": {
+    "date": "2026-09-18",
+    "tasks": ["BE-00", "INT-04"],
+    "dependencies": ["SH-04", "FE-00", "FE-02", "BE-02", "INT-00"],
+    "mode": "glassesDebug físico, DAT 0.9.0, Developer Mode 0/0, MockDeviceKit=false",
+    "decoder": "HEVC Annex B aceita configuração e imagem no mesmo pacote; saída YUV flexível via MediaCodec.getOutputImage, sem ImageReader/SurfaceImage no Moto G60. csd-0 é entregue somente pelo MediaFormat, sem reenvio explícito após start.",
+    "startup_readiness": "Após STREAMING, startCapture aguarda até 25 s pelo primeiro heartbeat de frame decodificado; timeout limpa recursos. O coordenador consome esse heartbeat ao retornar do adapter, antes de liberar o lock ao watchdog. Na captura ativa, 4 s sem frame continuam gerando DEGRADED.",
+    "permission_flow": "Aguardar link CONNECTED/COMPATIBLE antes de consultar CAMERA; Denied abre RequestPermissionContract e o comando original aguarda o resultado por até 90 s. Erro de consulta não equivale a revogação.",
+    "previous_session_evidence": "Histórico anexado registra CAMERA=GRANTED, sessão DAT STARTED e stream STREAMING, seguido de crash nativo no ImageReader. Isso não comprova frame decodificado nem STARTED no coordenador Olivia.",
+    "current_evidence": "Retomada às 12:14–12:16: APP_CHECK_READY, registration=REGISTERED, dev_mode=true e devices=1 COMPATIBLE; tentativas encerradas em 15 s por timeout de conexão, com leituras GATT expirando em 2000 ms. Preview físico ainda pendente.",
+    "validation": "Correção de configuração HEVC compilada e instalada por installGlassesDebug; primeiro frame físico ainda não validado.",
+    "privacy": "Somente estados e metadados agregados como evidência; nenhum frame, áudio bruto ou credencial persistido."
+  },
   "agent_reference": {
     "static_docs": "https://wearables.developer.meta.com/llms.txt",
     "live_docs_mcp": "https://mcp.developer.meta.com/wearables",

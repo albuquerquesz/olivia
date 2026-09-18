@@ -3,6 +3,31 @@
 Cada etapa pode ser repetida sem apagar dados, alterar contrato ou criar promessa. Em falha: parar,
 registrar estado sanitizado, usar fallback e seguir.
 
+## Estado executado — 18/09/2026
+
+- [x] ADB reconheceu o Moto G60 por USB.
+- [x] `glassesDebug` físico instalado com `MWDAT_MOCK_DEVICE_KIT=false`.
+- [x] Tela de gravação aberta; preview aguarda o stream DAT.
+- [x] Comando “Oi, Olivia, gravar” executado; `START_RECORDING` reconhecido localmente.
+- [x] Preflight DAT executado; `registration=AVAILABLE`, `devices=0`.
+- [x] Fluxo oficial de autorização abriu o Meta AI.
+- [x] `glassesDebug` ajustado para Developer Mode DAT (`APPLICATION_ID=0`, `CLIENT_TOKEN=0`) e reinstalado.
+- [x] Developer Mode e registro local confirmados: `REGISTERED`, `dev_mode=true`, um device compatível.
+- [ ] `STARTED` e primeiro frame real observados.
+- [ ] Evidência `PASS_HARDWARE` salva sem anexar frame.
+
+### Retomada às 12:14–12:18
+
+- [x] `APP_CHECK_READY` observado no APK instalado, sem novo cadastro de token.
+- [x] Mantido DAT `0.9.0`; decoder usa saída direta `MediaCodec.getOutputImage` para evitar o caminho `ImageReader` que sofreu crash.
+- [x] Removido envio duplicado da configuração HEVC; `installGlassesDebug` compilou e instalou a correção no Moto G60.
+- [ ] Primeiro frame/preview da correção: tentativas desta retomada ficaram em `CONNECTING`/`DISCONNECTED`, com timeout GATT antes da câmera.
+
+O histórico anterior registra câmera autorizada, sessão DAT `STARTED` e stream `STREAMING`.
+Esses estados do SDK não comprovam `STARTED` da Olivia, que exige heartbeat de frame decodificado.
+Registro/autorização inicial não é mais o bloqueio observado. Evidência detalhada em
+[retomada física](checkpoint-1/retomada-dat.md).
+
 ## 08:00–09:00 — credenciamento e recepção
 
 - [ ] Registrar hardware, firmware, versões, baterias e responsável.

@@ -28,6 +28,33 @@ orientação por áudio e marcas/cortes pós-take. O celular é a ponte obrigat�
 | loop de direção | 0,5 fps, cooldown, estados, timeline, áudio local | qualidade/latência/audibilidade física |
 | mídia nativa | fronteira e fallback de importação | 3K, coexistência, transferência, alinhamento |
 
+## Progresso registrado — 18/09/2026
+
+- [x] Moto G60 conectado ao ADB; pacote físico `com.olivia.companion` instalado.
+- [x] `mwdat_mock_device_kit=false` confirmado no `local.properties` usado no build.
+- [x] `glassesDebug` compilado e instalado no Moto; a tela física usa preview DAT; controles manuais existem apenas no build debug para diagnóstico.
+- [x] Tela de gravação aguarda o primeiro frame do DAT e mantém o comando local “Oi, Olivia. Depois: gravar”.
+- [x] Wake word e comando `START_RECORDING` reconhecidos localmente no Moto.
+- [x] Gateway físico inicializa o DAT e registra preflight sanitizado: `registration=AVAILABLE`, `devices=0`.
+- [x] Ação oficial de autorização abre o Meta AI pelo DAT.
+- [x] `glassesDebug` corrigido para DAT Developer Mode (`APPLICATION_ID=0`, `CLIENT_TOKEN=0`) e reinstalado.
+- [x] Developer Mode e registro local confirmados: `REGISTERED`, `dev_mode=true`, um device compatível.
+- [ ] Observar `STARTED` + primeiro frame real no APK físico.
+- [ ] Marcar `PASS_HARDWARE` somente após esse primeiro frame e preview observáveis.
+- [ ] Gravação nativa 3K/transferência permanece `BLOCKED_BY_DAT_0_9_0`, conforme o gate de 18/09.
+
+### Retomada às 12:14–12:18
+
+- [x] `APP_CHECK_READY` observado no APK instalado, sem novo cadastro de token.
+- [x] Mantido DAT `0.9.0`; decoder usa saída direta `MediaCodec.getOutputImage` para evitar o caminho `ImageReader` que sofreu crash.
+- [x] Removido envio duplicado da configuração HEVC; `installGlassesDebug` compilou e instalou a correção no Moto G60.
+- [ ] Primeiro frame/preview da correção: tentativas desta retomada ficaram em `CONNECTING`/`DISCONNECTED`, com timeout GATT antes da câmera.
+
+O histórico anterior registra câmera autorizada, sessão DAT `STARTED` e stream `STREAMING`.
+Esses estados do SDK não comprovam `STARTED` da Olivia, que exige heartbeat de frame decodificado.
+Registro/autorização inicial não é mais o bloqueio observado. Evidência detalhada em
+[retomada física](checkpoint-1/retomada-dat.md).
+
 ## Modos
 
 | Artefato | Uso | Regra |

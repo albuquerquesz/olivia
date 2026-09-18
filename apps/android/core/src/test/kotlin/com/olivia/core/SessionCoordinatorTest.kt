@@ -10,6 +10,29 @@ import kotlin.test.assertIs
 
 class SessionCoordinatorTest {
     @Test
+    fun `slow adapter startup consumes its heartbeat before the watchdog runs`() = runBlocking {
+        val clock = MutableSessionClock()
+        val gateway = FakeGateway(onStart = {
+            clock.advanceBy(18_000)
+            emitHeartbeat(clock.now().monotonicMs)
+        })
+        val timeline = InMemoryTimeline()
+        val coordinator = SessionCoordinator(clock, gateway, FakeAudio(clock), timeline)
+        val session = SessionId("slow-start")
+
+        coordinator.start(session)
+        coordinator.checkCaptureHealth()
+        assertEquals(SessionState.STARTED, coordinator.snapshot.value?.state)
+        // Delivery of the same heartbeat by the asynchronous observer is idempotent.
+        coordinator.onCaptureHeartbeat(requireNotNull(gateway.heartbeat.value))
+        assertEquals(listOf(TimelineEventType.SESSION_STARTED), timeline.events(session).map { it.type })
+
+        clock.advanceBy(4_000)
+        coordinator.checkCaptureHealth()
+        assertEquals(SessionState.DEGRADED, coordinator.snapshot.value?.state)
+    }
+
+    @Test
     fun `post take reaches ready only after an explicit successful completion`() = runBlocking {
         val clock = MutableSessionClock()
         val gateway = FakeGateway()
@@ -131,7 +154,7 @@ private class MutableSessionClock : OliviaClock {
     }
 }
 
-private class FakeGateway : GlassesGateway {
+private class FakeGateway(private val onStart: FakeGateway.() -> Unit = {}) : GlassesGateway {
     override val connection: Flow<GlassesConnection> = emptyFlow()
     override val frames: Flow<Frame> = emptyFlow()
     override val heartbeat: MutableStateFlow<CaptureHeartbeat?> = MutableStateFlow(null)
@@ -142,6 +165,7 @@ private class FakeGateway : GlassesGateway {
     override suspend fun startCapture(capture: CaptureId) {
         active = capture
         resumeCount += 1
+        onStart()
     }
 
     override suspend fun pauseCapture() = Unit

@@ -1,12 +1,10 @@
 package com.olivia.companion.session
 
-import android.graphics.ImageFormat
 import android.media.Image
-import android.media.ImageReader
 import android.media.MediaCodec
+import android.media.MediaCodecInfo
 import android.media.MediaFormat
-import android.os.Handler
-import android.os.HandlerThread
+import android.util.Log
 import java.nio.ByteBuffer
 
 /**
@@ -23,37 +21,31 @@ internal class HevcFrameDecoder(
     private val onFrame: (width: Int, height: Int, nv21: ByteArray) -> Unit,
     private val onUnavailable: () -> Unit,
 ) : AutoCloseable {
-    private val thread = HandlerThread("OliviaHevcDecoder").apply { start() }
-    private val handler = Handler(thread.looper)
-    private val imageReader = ImageReader.newInstance(width, height, ImageFormat.YUV_420_888, MAX_IMAGES)
     private val codec = MediaCodec.createDecoderByType(MediaFormat.MIMETYPE_VIDEO_HEVC)
     private var cachedConfig: ByteArray? = null
     private var active = false
     private var closed = false
 
-    init {
-        imageReader.setOnImageAvailableListener({ reader ->
-            reader.acquireLatestImage()?.use { image ->
-                if (!closed) runCatching { onFrame(image.width, image.height, image.toNv21()) }
-                    .onFailure { onUnavailable() }
-            }
-        }, handler)
-    }
-
+    @Synchronized
     fun enqueue(buffer: ByteBuffer, presentationTimeUs: Long, isCodecConfig: Boolean) {
         if (closed) return
         val packet = buffer.copyRemaining()
         if (packet.isEmpty()) return
         runCatching {
-            if (isCodecConfig || packet.hasConfigNal()) {
-                cachedConfig = packet
-                if (active) queue(packet, 0L, MediaCodec.BUFFER_FLAG_CODEC_CONFIG)
+            val config = packet.configNals()
+            if (config.isNotEmpty()) {
+                cachedConfig = ((cachedConfig ?: ByteArray(0)) + config).distinctConfigNals()
+            }
+            // Glasses can put VPS/SPS/PPS and the first keyframe in one access unit.
+            // It is a picture packet as well: never discard it merely for containing CSD.
+            if (!packet.hasPictureNal()) {
                 return
             }
             if (!active) {
                 if (!packet.hasIrapNal()) return
                 activate()
-                cachedConfig?.let { queue(it, 0L, MediaCodec.BUFFER_FLAG_CODEC_CONFIG) }
+                // csd-0 is submitted automatically by MediaCodec.start(). Sending a second
+                // codec-config buffer here violates that contract and can disrupt startup.
                 active = true
             }
             queue(
@@ -63,18 +55,18 @@ internal class HevcFrameDecoder(
             )
             drain()
         }.onFailure {
-            active = false
+            Log.w("OliviaHevcDecoder", "decode_failed type=${it.javaClass.simpleName}")
             onUnavailable()
         }
     }
 
     private fun activate() {
-        codec.configure(
-            MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_HEVC, width, height),
-            imageReader.surface,
-            null,
-            0,
-        )
+        // Buffer output avoids the Moto G60's native ImageReader SurfaceImage plane crash.
+        // Flexible YUV exposes CPU-readable planes directly from MediaCodec, without a Surface.
+        val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_HEVC, width, height)
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
+        cachedConfig?.let { format.setByteBuffer("csd-0", ByteBuffer.wrap(it)) }
+        codec.configure(format, null, null, 0)
         codec.start()
     }
 
@@ -93,25 +85,63 @@ internal class HevcFrameDecoder(
             when (val index = codec.dequeueOutputBuffer(info, OUTPUT_TIMEOUT_US)) {
                 MediaCodec.INFO_TRY_AGAIN_LATER -> return
                 MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> Unit
-                else -> if (index >= 0) codec.releaseOutputBuffer(index, true)
+                else -> if (index >= 0) {
+                    try {
+                        codec.getOutputImage(index)?.use { image ->
+                            val crop = image.cropRect
+                            onFrame(crop.width(), crop.height(), image.toNv21())
+                        }
+                    } finally {
+                        codec.releaseOutputBuffer(index, false)
+                    }
+                }
             }
         }
     }
 
+    @Synchronized
     override fun close() {
         if (closed) return
         closed = true
         if (active) runCatching { codec.stop() }
         runCatching { codec.release() }
-        imageReader.close()
-        thread.quitSafely()
+        cachedConfig?.fill(0)
+        cachedConfig = null
     }
 
     private fun ByteBuffer.copyRemaining(): ByteArray = duplicate().let { source ->
         ByteArray(source.remaining()).also(source::get)
     }
 
-    private fun ByteArray.hasConfigNal(): Boolean = nalTypes().any { it in 32..34 }
+    private fun ByteArray.configNals(): ByteArray = nalUnits()
+        .filter { nalType(it) in 32..34 }
+        .fold(ByteArray(0)) { result, nal -> result + nal }
+
+    private fun ByteArray.distinctConfigNals(): ByteArray = nalUnits()
+        .filter { nalType(it) in 32..34 }
+        .associateBy { nalType(it) }.toSortedMap().values
+        .fold(ByteArray(0)) { result, nal -> result + nal }
+
+    private fun nalType(nal: ByteArray): Int =
+        ((nal[if (nal[2] == 1.toByte()) 3 else 4].toInt() and 0x7e) shr 1)
+
+    private fun ByteArray.nalUnits(): List<ByteArray> {
+        val starts = mutableListOf<Int>()
+        var i = 0
+        while (i + 3 < size) {
+            val prefix = if (this[i] == 0.toByte() && this[i + 1] == 0.toByte()) {
+                when {
+                    this[i + 2] == 1.toByte() -> 3
+                    i + 4 < size && this[i + 2] == 0.toByte() && this[i + 3] == 1.toByte() -> 4
+                    else -> 0
+                }
+            } else 0
+            if (prefix > 0) { starts += i; i += prefix } else i++
+        }
+        return starts.mapIndexed { index, start -> copyOfRange(start, starts.getOrElse(index + 1) { size }) }
+    }
+
+    private fun ByteArray.hasPictureNal(): Boolean = nalTypes().any { it in 0..31 }
 
     private fun ByteArray.hasIrapNal(): Boolean = nalTypes().any { it in 16..21 }
 
@@ -135,29 +165,29 @@ internal class HevcFrameDecoder(
     }
 
     private fun Image.toNv21(): ByteArray {
+        val crop = cropRect
+        val width = crop.width()
+        val height = crop.height()
         val output = ByteArray(width * height * 3 / 2)
         val y = planes[0]
         val u = planes[1]
         val v = planes[2]
-        copyPlane(y, width, height, output, 0)
+        var yOffset = 0
+        for (row in 0 until height) for (column in 0 until width) {
+            output[yOffset++] = y.byteAt(row + crop.top, column + crop.left)
+        }
         var offset = width * height
         for (row in 0 until height / 2) for (column in 0 until width / 2) {
-            output[offset++] = v.byteAt(row, column)
-            output[offset++] = u.byteAt(row, column)
+            output[offset++] = v.byteAt(row + crop.top / 2, column + crop.left / 2)
+            output[offset++] = u.byteAt(row + crop.top / 2, column + crop.left / 2)
         }
         return output
     }
 
-    private fun copyPlane(plane: Image.Plane, columns: Int, rows: Int, output: ByteArray, start: Int) {
-        var offset = start
-        for (row in 0 until rows) for (column in 0 until columns) output[offset++] = plane.byteAt(row, column)
-    }
-
     private fun Image.Plane.byteAt(row: Int, column: Int): Byte =
-        buffer.get(row * rowStride + column * pixelStride)
+        buffer.get(buffer.position() + row * rowStride + column * pixelStride)
 
     private companion object {
-        const val MAX_IMAGES = 2
         const val INPUT_TIMEOUT_US = 10_000L
         const val OUTPUT_TIMEOUT_US = 0L
     }

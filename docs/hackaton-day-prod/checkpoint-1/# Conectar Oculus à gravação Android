@@ -1,0 +1,2512 @@
+# Conectar Oculus à gravação Android
+
+> estamos no hackaton
+>
+> /Users/vitorsantana/Desktop/olivia/docs/hackaton-day-prod
+>
+> o android conectado no ADB é o moto g60 que esta com o app meta ai pareado com o oculos, estamos usando o oculus e o apk ta la no app tambem
+>
+> com isso, vamos iniciar toda a implementacao e ir marcando os checks do /Users/vitorsantana/Desktop/olivia/docs/hackaton-day-prod
+>
+> o objetivo neste momento é substituir a integracao MOCK pela interacao com o oculus, pra comecar vamos usar o oculus pra gravar a cena e exibir o conteudo na preview do celular.
+>
+> oi seja,
+>
+> 1. "User abre o app e fala oi, olivia, grvar"
+>
+> 1.1 : usuario e levado pra tela de gravacao de tela
+>
+> 1. o oculus inicia gravacao com a camera dele
+> 2. na preview mostrada no android ele mostra a camera do oculus e toda a logica do ROI usa o video do oculus e fica tudo conectado
+>
+> e demais coisas relacionadas a isso ou checkpoints tecnicos ate la
+
+<details><summary>29 previous messages</summary>
+
+> Vou começar pelo mapa do produto e pelo estado atual do checkpoint do hackathon. Vou usar as skills `olivia-escopo-final` e `android-kotlin`, porque a mudança toca diretamente no fluxo final do Olivia e na integração Android/DAT; antes de editar, vou validar os contratos, adapters disponíveis e o que já está marcado em `docs/hackaton-day-prod`.
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `~/.codex/skills/olivia-escopo-final/SKILL.md`
+> - Read `~/.codex/skills/android-kotlin/SKILL.md`
+>
+> </details>
+>
+> A primeira tentativa apontou para o alias errado; as skills de produto/Android estão no diretório local de agentes do projeto. Vou reler por esse caminho e seguir com a inspeção.
+>
+> <details><summary>Explored 5 files, a list, ran 2 commands</summary>
+>
+> <details><summary>Explored 8 files, a list</summary>
+>
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+> - Listed files
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+> - Read `./docs/rules/architecture-diagram.json`
+> - Read `./docs/rules/olivia-contracts.json`
+> - Read `./docs/rules/olivia_backlog.json`
+> - Read `./docs/rules/meta_wearables_dat_android.json`
+> - Read `./docs/rules/hackaton-rules.json`
+>
+> </details>
+>
+> - Ran `printf '%s\n' '---BACKLOG INDEX---' && jq -r '.. | objects | select(has("code") and has("title")) | [.code,.title,(.sdd.status // .status // ""),(.priority // "")] | @tsv' docs/rules/olivia_backlog.json && printf '%s\n' '---DAY PROD README---' && sed -n '1,260p' docs/hackaton-day-prod/README.md && printf '%s\n' '---EVENT CONTRACT---' && sed -n '1,300p' docs/hackaton-day-prod/00-event-contract.md`
+>
+> - Ran `for f in docs/hackaton-day-prod/01-real-glasses-connection.md docs/hackaton-day-prod/02-bluetooth-and-dat.md docs/hackaton-day-prod/03-native-recording-and-storage.md docs/hackaton-day-prod/04-live-loop-and-guidance.md docs/hackaton-day-prod/05-privacy-and-evidence.md docs/hackaton-day-prod/06-runbook-and-checklists.md; do printf '\n===== %s =====\n' "$f"; sed -n '1,380p' "$f"; done`
+>
+> </details>
+>
+> Os documentos confirmam que o próximo passo é `INT-04`/`BE-00`: ligar o flavor físico ao `DatGlassesGateway`, mantendo `:core` e o loop já congelados. Há um limite importante para a gravação: o DAT `0.9.0` integrado não expõe gravação nativa/transferência 3K; portanto vou implementar e validar o caminho físico de câmera/preview/ROI agora, sem fabricar um vídeo final a partir do stream Bluetooth.
+>
+> <details><summary>Explored 18 files, a search, a list, ran 3 commands</summary>
+>
+> <details><summary>Explored 18 files, a search, a list</summary>
+>
+> - Listed files in `android`
+> - Searched for `DAT|MWDAT|MockDevice|DatGlasses|ActiveBackend|glassesDebug|mockDebug|Frame|preview|camera|capture|record|Wearables|AutoDeviceSelector|DeviceSession|Stream` in `android`
+> - Read `./apps/android/app/build.gradle.kts`
+> - Read `./apps/android/build.gradle.kts`
+> - Read `./apps/android/settings.gradle.kts`
+> - Read `./apps/android/app/src/main/AndroidManifest.xml`
+> - Read `./apps/android/app/src/glasses/AndroidManifest.xml`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ActiveBackend.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/GlassesBackend.kt`
+> - Read `./apps/android/app/src/mock/kotlin/com/olivia/companion/ActiveBackend.kt`
+> - Read `./apps/android/app/src/mock/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatStreamingService.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatMockDeviceBootstrap.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+>
+> </details>
+>
+> - Ran `git status --short && printf '%s\n' '---GATEWAY NUMBERED---' && nl -ba apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt | sed -n '1,360p' && printf '%s\n' '---RUNTIME NUMBERED 180-560---' && nl -ba apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt | sed -n '180,560p'`
+>
+> <details><summary>Explored 4 files</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt`
+>
+> </details>
+>
+> - Ran `printf '%s\n' '---INT-04/BE-00/BE-02/FE-01/FE-02/FE-09---' && for code in INT-04 BE-00 BE-02 FE-01 FE-02 FE-09 INT-01 INT-03; do jq -r --arg code "$code" '.. | objects | select(.code? == $code) | {code,title,dependencies,definition_of_done,notes_and_risks,sdd,implementation_note}' docs/rules/olivia_backlog.json; done && printf '%s\n' '---LOCAL CONFIG KEYS (VALUES REDACTED)---' && if [ -f apps/android/local.properties ]; then sed -E 's/(=.*)/=<redacted>/' apps/android/local.properties; else echo 'apps/android/local.properties absent'; fi && printf '%s\n' '---ADB DEVICES---' && adb devices -l 2>&1 && printf '%s\n' '---INSTALLED OLIVIA PACKAGES---' && adb shell pm list packages 2>/dev/null | rg 'olivia|meta|wearable' || true`
+>
+> - Ran `printf '%s\n' '---PHYSICAL FLAG---' && if [ -f apps/android/local.properties ]; then awk -F= '/^(mwdat_mock_device_kit|mwdat_application_id|mwdat_client_token)=/{ if ($1=="mwdat_mock_device_kit") print $1"=" $2; else print $1"=<set>" }' apps/android/local.properties; fi && printf '%s\n' '---APK/PROCESS---' && adb shell dumpsys package com.olivia.companion | rg 'versionName|versionCode|firstInstallTime|lastUpdateTime|codePath|dataDir|enabled=' && adb shell pidof com.olivia.companion || true && printf '%s\n' '---RECENT OLIVIA LOGS---' && adb logcat -d -t 300 -v brief | rg 'Olivia|MWDAT|Meta|DAT|Firebase|Preview' | tail -n 160`
+>
+> </details>
+>
+> O ambiente está pronto para o caminho físico: Moto G60 aparece no ADB, `com.olivia.companion` está instalado e o `mwdat_mock_device_kit=false` local está correto. Vou fazer agora um smoke test sem alterar código: abrir o APK físico, capturar o estado do DAT e verificar se chega o primeiro frame; isso separa falha de pareamento/permissão de falha do adapter.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -c && adb shell am force-stop com.olivia.companion && adb shell monkey -p com.olivia.companion 1 >/dev/null && sleep 4 && printf '%s\n' '---LOGS---' && adb logcat -d -v threadtime | rg 'Olivia|DAT|Wearables|Meta|Firebase|FATAL|AndroidRuntime' | tail -n 220 && printf '%s\n' '---ACTIVITY---' && adb shell dumpsys activity activities | rg 'mResumedActivity|com.olivia.companion' | head -n 20`
+> - Ran `adb exec-out screencap -p > /tmp/olivia-moto-home.png && file /tmp/olivia-moto-home.png`
+>
+> </details>
+>
+> Viewed an image
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell input tap 450 1840 && sleep 2 && adb exec-out screencap -p > /tmp/olivia-moto-after-enter.png && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg 'text=|content-desc=' | head -n 120`
+>
+> </details>
+>
+> Viewed an image
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell input tap 540 2210 && sleep 2 && adb exec-out screencap -p > /tmp/olivia-moto-home2.png && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg 'text=|content-desc=' | head -n 180`
+>
+> </details>
+>
+> Viewed an image
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell input tap 500 1000 && sleep 2 && adb exec-out screencap -p > /tmp/olivia-moto-record.png && adb shell uiautomator dump /sdcard/olivia-record.xml >/dev/null && adb shell cat /sdcard/olivia-record.xml | tr '>' '>\n' | rg 'text=|content-desc=' | head -n 180 && printf '%s\n' '---LOGS---' && adb logcat -d -v threadtime | rg 'Olivia|DAT|Wearables|Meta|Firebase|FATAL|AndroidRuntime' | tail -n 220`
+>
+> </details>
+>
+> Viewed an image
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb logcat -c && adb shell input tap 540 1930 && sleep 10 && printf '%s\n' '---LOGS---' && adb logcat -d -v threadtime | rg 'Olivia|DAT|Wearables|Meta|Firebase|FATAL|AndroidRuntime|Exception' | tail -n 260 && printf '%s\n' '---SCREEN---' && adb exec-out screencap -p > /tmp/olivia-moto-start.png && adb shell uiautomator dump /sdcard/olivia-start.xml >/dev/null && adb shell cat /sdcard/olivia-start.xml | tr '>' '>\n' | rg 'text=|content-desc=' | head -n 130`
+>
+> </details>
+>
+> Viewed an image
+>
+> O smoke test trouxe a causa operacional principal: o APK instalado não é o físico correto — a tela mostra `Debug` e “Aguardando frame do MockDeviceKit”, embora o `local.properties` atual esteja com `false`. Ao iniciar, o DAT chegou a `Óculos conectados` e a tela recebeu uma prévia, mas isso ainda pode ser o artefato antigo/mock. Vou gerar e instalar o `glassesDebug` com a flag física vigente; depois repito o teste e marco apenas evidências que o hardware realmente comprovar.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `adb logcat -c && adb shell am force-stop com.olivia.companion && adb shell monkey -p com.olivia.companion 1 >/dev/null && sleep 4 && adb exec-out screencap -p > /tmp/olivia-moto-installed.png && adb shell uiautomator dump /sdcard/olivia-installed.xml >/dev/null && printf '%s\n' '---UI FLAGS---' && adb shell cat /sdcard/olivia-installed.xml | tr '>' '>\n' | rg 'Óculos|Debug|Aguardando|gravar|Entrar|Bem vindo' | head -n 80 && printf '%s\n' '---LOGS---' && adb logcat -d -v threadtime | rg 'Olivia|DAT|FATAL|AndroidRuntime|Voice' | tail -n 160`
+>
+> </details>
+>
+> Viewed an image
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell input tap 540 2210 && sleep 1 && adb shell input tap 500 1000 && sleep 2 && adb exec-out screencap -p > /tmp/olivia-moto-record-physical.png && adb shell uiautomator dump /sdcard/olivia-record-physical.xml >/dev/null && printf '%s\n' '---UI---' && adb shell cat /sdcard/olivia-record-physical.xml | tr '>' '>\n' | rg 'Óculos|Debug|Aguardando|Iniciar|Diga:|Prévia|gravar' | head -n 120`
+>
+> </details>
+>
+> Viewed an image
+>
+> <details><summary>Explored 5 files, a search, ran a command</summary>
+>
+> - Ran `printf '%s\n' '---GLASSES TESTS---' && for f in apps/android/app/src/androidTestGlasses/kotlin/com/olivia/companion/session/*.kt apps/android/app/src/androidTestGlasses/kotlin/com/olivia/companion/ai/*.kt; do printf '\n===== %s =====\n' "$f"; sed -n '1,300p' "$f"; done`
+>
+> <details><summary>Explored 5 files, a search</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseVisualAnalyzerFactory.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseGeminiVisualTransport.kt`
+> - Read `./apps/android/core/src/main/kotlin/com/olivia/core/HybridVisualAnalyzer.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Searched for `DatGlassesGateway|DatMockDeviceBootstrap|MWDAT_USE_MOCK|forceMock|mockVideoUri|Aguardando frame|actualStreamExpected` in `app`
+>
+> </details>
+>
+> </details>
+>
+> A versão física correta foi gerada e instalada com sucesso. O próximo ajuste é pequeno e diretamente ligado ao checkpoint: o APK físico ainda exibe “MockDeviceKit” quando aguarda o primeiro frame, o que confundiria a banca; também vou registrar somente metadados sanitizados do primeiro frame (`origem`, `formato`, `dimensões`) para provar câmera sem tocar em pixels/logar mídia.
+>
+> <details><summary>Edited 2 files, ran a command</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+11 -0)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt` (+2 -2)
+> - Ran `./gradlew installGlassesDebug`
+>
+> </details>
+>
+> O código compilou e instalou `glassesDebug` no Moto G60 com sucesso. A tela física agora não exibe ações de debug nem canvas simulado; ela aguarda o stream DAT, como deve. A gravação nativa 3K continua explicitamente fora do adapter porque o DAT integrado não oferece essa API — o take atual será o loop/preview vivo, com importação pós-take apenas se houver mídia oficial.
+>
+> <details><summary>Ran 5 commands</summary>
+>
+> - Ran `adb shell am force-stop com.olivia.companion && adb shell monkey -p com.olivia.companion 1 >/dev/null && sleep 2 && adb shell input tap 540 2210 && sleep 1 && adb shell input tap 500 1000 && sleep 1 && adb shell uiautomator dump /sdcard/olivia-physical-ready.xml >/dev/null && printf '%s\n' '---PHYSICAL APK UI CHECK---' && adb shell cat /sdcard/olivia-physical-ready.xml | tr '>' '>\n' | rg 'MockDeviceKit|Aguardando frame|Óculos indisponíveis|Iniciar sessão|Debug|Modo de feedback' | head -n 80 && printf '%s\n' '---PACKAGE---' && adb shell dumpsys package com.olivia.companion | rg 'versionName|lastUpdateTime'`
+> - Ran `adb shell cat /sdcard/olivia-physical-ready.xml | tr '>' '>\n' | rg 'text=|content-desc=' | tail -n 100`
+> - Ran `adb shell input tap 540 2210 && sleep 2 && adb shell uiautomator dump /sdcard/olivia-home-ready.xml >/dev/null && adb shell cat /sdcard/olivia-home-ready.xml | tr '>' '>\n' | rg 'Oi, Olivia|Ray-Ban Meta|content-desc="Gravar"|text="Início"' | head -n 50`
+> - Ran `adb shell input tap 500 1000 && sleep 2 && adb shell uiautomator dump /sdcard/olivia-record-ready.xml >/dev/null && printf '%s\n' '---PHYSICAL SCREEN CHECK---' && adb shell cat /sdcard/olivia-record-ready.xml | tr '>' '>\n' | rg 'MockDeviceKit|Aguardando frame|Óculos indisponíveis|Iniciar sessão|Debug|DAT|Modo de feedback|Diga:' | head -n 100`
+> - Ran `git diff -- apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt && printf '%s\n' '---STATUS---' && git status --short && printf '%s\n' '---APK HASH---' && shasum -a 256 apps/android/app/build/outputs/apk/glasses/debug/app-glasses-debug.apk | cut -c1-80`
+>
+> </details>
+>
+> Vou registrar o estado no pacote operacional agora: o que já foi provado em código/ADB, o que ainda precisa do comando de voz no aparelho e o que permanece bloqueado pela API do DAT. Não vou marcar `PASS_HARDWARE` antes de observar o primeiro frame no APK físico correto.
+>
+> <details><summary>Edited 3 files, ran a command</summary>
+>
+> - Wrote `./docs/hackaton-day-prod/05-privacy-and-evidence.md` (+7 -0)
+> - Wrote `./docs/hackaton-day-prod/06-runbook-and-checklists.md` (+9 -0)
+> - Wrote `./docs/hackaton-day-prod/README.md` (+10 -0)
+> - Ran `git diff --check && git status --short && printf '%s\n' '---DIFF STAT---' && git diff --stat && printf '%s\n' '---CHECKS---' && rg -n "Progresso registrado|Atualização operacional|Estado executado|PASS_HARDWARE|Aguardando frame do DAT|first_frame" docs/hackaton-day-prod apps/android/app/src | sed -n '1,160p'`
+>
+> </details>
+</details>
+
+Implementação física iniciada e APK atualizado no Moto G60.
+
+Feito:
+
+- `glassesDebug` compilado/instalado com `MWDAT_MOCK_DEVICE_KIT=false`.
+- Tela física usa o stream DAT; removido texto incorreto “MockDeviceKit”.
+- Adapter registra apenas metadados sanitizados do primeiro frame.
+- Checklists atualizados em [README](<./docs/hackaton-day-prod/README.md>), [privacidade](<./docs/hackaton-day-prod/05-privacy-and-evidence.md>) e [runbook](<./docs/hackaton-day-prod/06-runbook-and-checklists.md>).
+- Build e instalação confirmados com sucesso.
+
+No aparelho, a tela de gravação está aberta. Próximo checkpoint: diga **“Oi, Olivia, gravar”** e observar `STARTED` + primeiro frame real do Ray-Ban.
+
+A gravação nativa 3K permanece bloqueada pela API DAT 0.9.0; não será simulada usando o stream Bluetooth.
+
+> ele ta falando e preciso conectar o oculus, mas ja ta conectado
+
+<details><summary>47 previous messages</summary>
+
+> Vou diagnosticar a diferença entre “conectado no Meta AI” e “elegível para sessão no DAT”. Primeiro vou capturar o estado atual do app e os logs sanitizados do momento em que o comando de voz tentou iniciar; isso deve indicar se falhou em permissão, seleção do dispositivo, sessão DAT ou câmera.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `printf '%s\n' '---ADB---' && adb devices -l && printf '%s\n' '---APP UI---' && adb shell uiautomator dump /sdcard/olivia-current.xml >/dev/null && adb shell cat /sdcard/olivia-current.xml | tr '>' '>\n' | rg 'text=|content-desc=' | rg 'Óculos|frame|conectar|sessão|Diga|erro|indispon|STARTED|gravar' | head -n 160 && printf '%s\n' '---OLIVIA/DAT LOGS---' && adb logcat -d -v threadtime | rg 'OliviaDatGateway|DAT:CORE|Wearables|DeviceSession|OliviaSession|OliviaVoice|OliviaFirebase|FATAL|AndroidRuntime|Exception' | tail -n 300`
+>
+> </details>
+>
+> O log mudou o diagnóstico: o wake word está funcionando (`Wake word detected`), mas o Rhino não reconheceu o comando (`Rhino intent not understood`). Portanto, nessa tentativa o DAT nem chegou a iniciar; a mensagem de óculos indisponíveis é o estado inicial da tela, não a causa real. Vou revisar o vocabulário/fluxo de comando e ajustar para aceitar a formulação que vocês estão falando no hackathon.
+>
+> <details><summary>Explored 6 files, 2 searches, a list, ran 3 commands</summary>
+>
+> <details><summary>Explored 7 files, 2 searches, a list</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/AndroidVoiceCommandSource.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/VoiceCommand.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/VoiceCommandSource.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/commands/LocalCommandController.kt`
+> - Searched for `Rhino|intent|gravar|grav|pausar|terminar|retomar|olivia-rhino|context` in `app`
+> - Listed files in `app`
+> - Searched for `porcupine|rhino|ppn|rhn|pv$`
+> - Read `./apps/android/app/src/test/kotlin/com/olivia/companion/session/VoiceCommandTest.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/VoiceCommandSource.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+>
+> </details>
+>
+> - Ran `find apps/android/app/src -type f \( -name '*.rhn' -o -name '*.ppn' -o -name '*.pv' \) -print | sort && printf '%s\n' '---RES/ASSETS---' && find apps/android/app/src -maxdepth 4 -type f | rg 'assets|raw|picovoice|olivia' | sort | sed -n '1,200p' && printf '%s\n' '---CONTEXT FILE NAMES FROM INSTALLED APK---' && unzip -l apps/android/app/build/outputs/apk/glasses/debug/app-glasses-debug.apk | rg 'olivia|porcupine|rhino|\.rhn|\.ppn|\.pv' | sed -n '1,160p'`
+>
+> - Ran `strings apps/android/app/src/main/assets/olivia-rhino_pt_android_v4_1_0.rhn | sed -n '1,120p' && printf '%s\n' '---README VOICE---' && rg -n -i "voz|porcupine|rhino|comando|gravar|olivia" apps/android/README.md docs README.md 2>/dev/null | sed -n '1,260p'`
+>
+> - Ran `printf '%s\n' '---APP PROCESS---' && adb shell pidof com.olivia.companion && printf '%s\n' '---CURRENT APP LOGS---' && adb logcat -d -v threadtime | rg '18566|com\.olivia\.companion|Firebase|Olivia|DAT' | tail -n 500`
+>
+> </details>
+>
+> Context compaction
+>
+> Source: automatic
+> Status: completed
+>
+> Vou corrigir primeiro a etapa de comando de voz: o wake word foi detectado, mas o Rhino encerrou sem entender “gravar”, então a sessão do DAT nem chegou a ser iniciada. Vou aumentar a janela de escuta do comando e reinstalar o APK físico; depois verifico se aparecem `STARTED` e o primeiro frame real.
+>
+> <details><summary>Edited a file, explored 2 files, a search, ran a command, searched the web</summary>
+>
+> <details><summary>Explored 2 files, a search</summary>
+>
+> - Searched for `RHINO_ENDPOINT|setEndpointDuration|setRequireEndpoint|RhinoCommandRecognizer|onWakeWordDetected|activationCue` in `app`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/AndroidVoiceCommandSource.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/VoiceCommandSource.kt`
+>
+> </details>
+>
+> - Ran `rg -n "picovoice|rhino|porcupine|PICOVOICE" apps/android -g '*.gradle*' -g '*.toml' -g '*.kt' -g '*.properties' | head -120 && git diff -- apps/android/app/src/main/kotlin/com/olivia/companion/session/AndroidVoiceCommandSource.kt`
+>
+> Searched the web for `site:picovoice.ai/docs Rhino Android setEndpointDurationSec setRequireEndpoint`
+>
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/session/AndroidVoiceCommandSource.kt` (+3 -1)
+>
+> </details>
+>
+> Ajuste aplicado: o Rhino estava usando o mínimo de 0,5 s de silêncio para fechar a fala; passei para 1,0 s, que dá tempo para “gravar” terminar sem mudar o contrato local/offline da voz. Agora vou compilar e instalar a variante `glassesDebug` com o MockDeviceKit desativado.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+>
+> </details>
+>
+> APK físico instalado com sucesso no Moto G60. A variante instalada continua sem MockDeviceKit e o fluxo segue aguardando o DAT real. Faça agora exatamente: diga “Oi, Olivia”, espere o sinal curto, depois diga “gravar”; vou acompanhar se o comando chega ao `DatGlassesGateway` e se o óculos entrega o primeiro frame.
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> - Ran `adb logcat -c && adb shell am force-stop com.olivia.companion && adb shell monkey -p com.olivia.companion 1 >/dev/null && adb shell dumpsys package com.olivia.companion | rg -n "versionName|lastUpdateTime|firstInstallTime"`
+> - Ran `adb logcat -d -s OliviaVoice:V *:S`
+> - Ran `adb logcat -d -s 'OliviaVoice:V' '*:S'`
+>
+> </details>
+>
+> A tela foi reiniciada limpa e o listener local está ativo (`Porcupine listening`). Vou deixar os logs do app acompanhando agora; pode falar a sequência com uma pequena pausa entre “Olivia” e “gravar”.
+>
+> <details><summary>Explored 3 files, 2 searches, ran 2 commands</summary>
+>
+> - Ran `timeout 45 adb logcat -v time -s 'OliviaVoice:I' 'OliviaDatGateway:I' '*:S'`
+>
+> - Ran `adb logcat -v time -s 'OliviaVoice:I' 'OliviaDatGateway:I' '*:S'`
+>
+> <details><summary>Explored 5 files, 2 searches</summary>
+>
+> - Searched for `gravar|start_recording|pause_recording|retomar|terminar|olivia-rhino|Oi, Olivia|Olivia` in `android`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+> - Searched for `enum class GlassesConnection|GlassesConnection\.|connection =|MutableStateFlow<GlassesConnection>|connectionLabel` in `main`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+>
+> </details>
+>
+> </details>
+>
+> Além do reconhecimento, achei a causa da mensagem enganosa: no modo físico a UI inicial começa com `UNAVAILABLE` porque ainda não abriu uma sessão DAT; ela estava apresentando isso como “Óculos indisponíveis” mesmo antes de tentar conectar. Vou separar “aguardando iniciar” de “falha de conexão”, para o pareamento do Meta AI não ser tratado como desconectado.
+>
+> <details><summary>Edited a file</summary>
+>
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt` (+15 -2)
+>
+> </details>
+>
+> A UI agora não vai mais afirmar que os óculos estão desconectados antes do primeiro comando: ficará “Aguardando início”; depois mostrará “Conectando aos óculos” e só então o estado real do DAT. Vou reinstalar esse ajuste junto com a janela de voz.
+>
+> <details><summary>Ran 7 commands</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `adb logcat -c && adb shell am force-stop com.olivia.companion && adb shell monkey -p com.olivia.companion 1 >/dev/null && sleep 2 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Aguardando|Óculos|DAT|Diga|Ouvindo|gravar'`
+> - Ran `adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | head -120`
+> - Ran `adb shell input tap 540 2210 && sleep 1 && adb shell input tap 540 2150 && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Aguardando|Óculos|DAT|Diga|Ouvindo|gravar|início|câmera'`
+> - Ran `adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | head -100`
+> - Ran `adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -C 2 'content-desc="Gravar"|text="Oi, Olivia, Gravar"'`
+> - Ran `adb shell input tap 960 2270 && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Aguardando|Óculos|DAT|Diga|Ouvindo|gravar|início|câmera|Recebendo'`
+>
+> </details>
+>
+> Confirmei na tela nova: agora aparece `Aguardando início` e `Diga: Oi, Olivia, gravar para iniciar o DAT.` — não mais “Óculos indisponíveis”. O APK está pronto para a prova real. Fale agora “Oi, Olivia”, espere o sinal, depois “gravar”; vou capturar os eventos do DAT.
+>
+> <details><summary>Explored 4 files, 2 searches, a list, ran 8 commands</summary>
+>
+> - Ran `adb logcat -v time -s 'OliviaVoice:I' 'OliviaDatGateway:I' 'DAT:CORE:I' 'DAT:CAMERA:I' '*:S'`
+>
+> - Ran `adb logcat -v time '*:I' | rg --line-buffered 'OliviaVoice|OliviaDatGateway|DAT:CORE|DAT:CAMERA'`
+>
+> - Ran `sed -n '1,340p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt && sed -n '1,180p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatMockDeviceBootstrap.kt && sed -n '1,180p' apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt && sed -n '1,140p' apps/android/app/src/glasses/kotlin/com/olivia/companion/ActiveBackend.kt 2>/dev/null || true`
+>
+> <details><summary>Explored 2 files, a search</summary>
+>
+> - Read `./apps/android/app/src/main/AndroidManifest.xml`
+> - Read `./apps/android/app/build.gradle.kts`
+> - Searched for `Wearables|createSession|AutoDeviceSelector|DeviceSession|permission|Permission|Meta|DAT` in `android`
+>
+> </details>
+>
+> - Ran `rg -n "mwdat|wearables|applicationId|clientToken|meta" apps/android/app/build/intermediates/merged_manifests/glassesDebug apps/android/app/build/intermediates/packaged_manifests/glassesDebug apps/android/app/build/intermediates/merged_manifest -g '*.xml' -g '*.json' 2>/dev/null | head -160`
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `./apps/android/local.properties`
+> - Read `./apps/android/app/build/intermediates/packaged_manifests/glassesDebug/processGlassesDebugManifestForPackage/AndroidManifest.xml`
+>
+> </details>
+>
+> - Ran `rg -n "class AutoDeviceSelector|AutoDeviceSelector|eligible|application id|Developer Mode|createSession" ~/.gradle/caches/modules-2/files-2.1/com.meta.wearable* ~/.gradle/caches/modules-2/files-2.1/com.meta.wearable.dat* apps/android -g '*.kt' -g '*.java' -g '*.md' -g '*.json' 2>/dev/null | head -220`
+>
+> <details><summary>Explored a search, a list</summary>
+>
+> - Searched for `*wearable*` in `files-2.1`
+> - Listed files in `com.meta.wearable`
+>
+> </details>
+>
+> - Ran `unzip -l /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/77967dd1eb1c1088e909307e57424633ff5aeea2/mwdat-core-0.9.0.aar | head -80 && unzip -p /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/77967dd1eb1c1088e909307e57424633ff5aeea2/mwdat-core-0.9.0.aar classes.jar > /tmp/mwdat-core.jar && jar tf /tmp/mwdat-core.jar | rg 'selector|Wearables|Device|Permission|Session' | head -160`
+>
+> - Ran `jar tf /tmp/mwdat-core.jar | rg 'com/meta/wearable/dat/core/(selectors|types|session|.*Device|Wearables)' | head -220`
+>
+> - Ran `javap -classpath /tmp/mwdat-core.jar -p com.meta.wearable.dat.core.Wearables com.meta.wearable.dat.core.selectors.AutoDeviceSelector com.meta.wearable.dat.core.types.Device com.meta.wearable.dat.core.types.DeviceCompatibility com.meta.wearable.dat.core.types.LinkState com.meta.wearable.dat.core.types.RegistrationState com.meta.wearable.dat.core.types.DeviceState com.meta.wearable.dat.core.types.PermissionStatus | sed -n '1,320p'`
+>
+> </details>
+>
+> Agora o comando foi reconhecido corretamente (`START_RECORDING`). O problema real apareceu no ponto certo: o DAT tentou abrir a sessão, mas o `AutoDeviceSelector` retornou “DAT glasses unavailable”. Ou seja, o Bluetooth/Meta AI está conectado no sistema, porém o app ainda não está vendo esse dispositivo como elegível no registro do DAT. Vou instrumentar apenas o estado agregado de registro/elegibilidade (sem ID, token ou mídia) para fechar se é registro/permissão ou seleção.
+>
+> <details><summary>Edited a file, ran 2 commands</summary>
+>
+> - Ran `adb logcat -d -v time | rg -i 'OliviaDat|DAT|Wearables|ACDC|registration|device.*(eligible|compat|connect)|permission' | tail -220`
+> - Ran `javap -classpath /tmp/mwdat-core.jar -c -p 'com.meta.wearable.dat.core.selectors.AutoDeviceSelector' | sed -n '1,340p'`
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+17 -0)
+>
+> </details>
+>
+> A leitura preliminar confirma que o sistema Android enxerga o hardware, mas isso não prova que o DAT está registrado para este app. Adicionei um diagnóstico seguro que registra somente `registration`, modo de desenvolvimento, quantidade de devices e estados de compatibilidade; nenhum identificador ou credencial. Vou instalar e executar uma nova tentativa para descobrir o bloqueio exato.
+>
+> <details><summary>Edited a file, ran a command</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+1 -1)
+>
+> </details>
+>
+> A compilação encontrou apenas uma diferença da API 0.9 (`isDevMode` é propriedade, não função); corrigi e estou reinstalando. O diagnóstico não altera o comportamento do app.
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `adb logcat -c && adb shell am force-stop com.olivia.companion && adb shell monkey -p com.olivia.companion 1 >/dev/null && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Entrar|Início|Gravar|Oi, Olivia'`
+> - Ran `adb shell input tap 540 2210 && sleep 1 && adb shell input tap 960 2270 && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Aguardando|Óculos|DAT|Diga|início|gravar'`
+>
+> </details>
+>
+> O APK instrumentado está instalado e na tela de gravação. Agora preciso de uma nova tentativa de voz para capturar o preflight do DAT; diga “Oi, Olivia”, aguarde o sinal e diga “gravar”.
+>
+> <details><summary>Explored 9 files, 6 searches, ran 4 commands, searched the web</summary>
+>
+> - Ran `adb logcat -v time '*:I' | rg --line-buffered 'OliviaVoice|OliviaDatGateway|DAT preflight|DAT:CORE|DAT:CAMERA'`
+>
+> <details><summary>Explored 2 files, a search</summary>
+>
+> - Searched for `startRegistration|startUnregistration|RegistrationState|openFirmware|Wearables` in `app`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt`
+>
+> </details>
+>
+> - Ran `for p in android.permission.BLUETOOTH_SCAN android.permission.BLUETOOTH_CONNECT android.permission.CAMERA android.permission.RECORD_AUDIO; do printf '%s=' "$p"; adb shell cmd package check-permission "$p" com.olivia.companion; done`
+>
+> - Ran `for p in android.permission.BLUETOOTH_SCAN android.permission.BLUETOOTH_CONNECT android.permission.CAMERA android.permission.RECORD_AUDIO; do printf '%s=' "$p"; adb shell pm check-permission "$p" com.olivia.companion; done`
+>
+> - Ran `adb shell dumpsys package com.olivia.companion | rg -n 'BLUETOOTH|CAMERA|RECORD_AUDIO|runtime permissions|granted=true|granted=false' | head -100`
+>
+> <details><summary>Explored 5 files, 3 searches</summary>
+>
+> - Searched for `*ActiveBackend.kt` in `app`
+> - Searched for `data class GlassesBackend|object ActiveBackend` in `app`
+> - Searched for `OliviaRecordingScreen\(` in `app`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaScreens.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/GlassesBackend.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+>
+> </details>
+>
+> Searched the web for `site:wearables.developer.meta.com Device Access Toolkit Android startRegistration Wearables registrationState AVAILABLE ...`
+>
+> <details><summary>Explored 2 files, 2 searches</summary>
+>
+> - Searched for `BackendRuntimeProvider` in `app`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionLabels.kt`
+> - Searched for `SessionState\.ERROR|fun start\(` in `SessionCoordinator.kt`
+> - Read `./apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt`
+>
+> </details>
+>
+> </details>
+>
+> feito
+>
+> <details><summary>Edited 5 files</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+19 -0)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt` (+13 -0)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt` (+19 -0)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaScreens.kt` (+2 -0)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt` (+17 -0)
+>
+> </details>
+>
+> Perfeito. Vou aproveitar o registro concluído, compilar a integração do botão/fluxo oficial e reinstalar o `glassesDebug`; depois repetimos “Oi, Olivia” → “gravar” para confirmar que `devices` saiu de zero e chegar ao primeiro frame.
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `adb logcat -c && adb shell am force-stop com.olivia.companion && adb shell monkey -p com.olivia.companion 1 >/dev/null && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Entrar|Início|Gravar|Autorizar|Aguardando'`
+> - Ran `adb shell input tap 540 2210 && sleep 1 && adb shell input tap 960 2270 && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Autorizar|Aguardando|início|Diga|Óculos|DAT'`
+>
+> </details>
+>
+> O fluxo de autorização aparece no APK como `Autorizar Olivia no Meta AI`. Como você já concluiu essa etapa, vamos testar direto o caminho principal agora. Diga “Oi, Olivia”, espere o sinal, depois “gravar”; preciso ver `registration=REGISTERED`, algum device elegível e então `first_frame origin=DAT`.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb logcat -v time '*:I' | rg --line-buffered 'OliviaVoice|OliviaDatGateway|DAT preflight|DAT:CORE|DAT:CAMERA'`
+>
+> </details>
+>
+> fiz aqm, erro dnv
+>
+> Entendi. A voz está funcionando agora; o erro não é mais “gravar”. A nova evidência é objetiva: `registration=AVAILABLE` e `devices=0` dentro do DAT, então o pareamento do Meta AI ainda não foi registrado para este APK/app ID. Vou abrir o fluxo oficial pelo próprio botão da Olivia e confirmar o que o Meta AI devolve, em vez de tentar outro adapter Bluetooth.
+>
+> <details><summary>Explored 4 files, ran 4 commands</summary>
+>
+> - Ran `adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -C 2 'Autorizar Olivia no Meta AI'`
+>
+> - Ran `adb shell input tap 540 1834 && sleep 2 && adb shell dumpsys activity activities | rg -m 3 'mResumedActivity|ResumedActivity|mFocusedApp'`
+>
+> - Ran `adb shell uiautomator dump /sdcard/meta-ui.xml >/dev/null && adb shell cat /sdcard/meta-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | head -120`
+>
+> - Ran `adb logcat -d -v time | rg -i 'integration|registration|silverstone|wearable|dat|391121|olivia|error' | tail -240`
+>
+> <details><summary>Explored 4 files</summary>
+>
+> - Read `./docs/hackaton-day-prod/01-real-glasses-connection.md`
+> - Read `./docs/rules/meta_wearables_dat_android.json`
+> - Read `./docs/hackaton-day-prod/02-bluetooth-and-dat.md`
+> - Read `./apps/android/README.md`
+>
+> </details>
+>
+> </details>
+>
+> O fluxo oficial abriu o Meta AI, então a ponte está correta. O erro exibido pelo próprio Meta AI é: “Application is not authorized to perform this operation. Attestation failed.” Isso explica `registration=AVAILABLE` e `devices=0`: não é ADB nem o pareamento Bluetooth; é autorização/attestation da integração no Wearables Developer Center para este APK. Vou obter a assinatura do `glassesDebug` para deixar o ajuste de portal objetivo e registrar o checkpoint como bloqueado por configuração externa.
+>
+> <details><summary>Explored 3 files, ran a command</summary>
+>
+> - Ran `./gradlew signingReport`
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./docs/hackaton-day-prod/README.md`
+> - Read `./docs/hackaton-day-prod/05-privacy-and-evidence.md`
+> - Read `./docs/hackaton-day-prod/06-runbook-and-checklists.md`
+>
+> </details>
+>
+> </details>
+>
+> Fechamos o diagnóstico: ao tocar em `Autorizar Olivia no Meta AI`, o próprio Meta AI abriu, mas retornou `Application is not authorized to perform this operation. Attestation failed.` Portanto a correção restante está fora do código: autorizar a integração no Developer Center para o package/assinatura do APK e release channel da conta. Vou deixar essa evidência e a assinatura do APK documentadas, e melhorar a mensagem de erro da tela.
+>
+> oq precisamos setar ali? pq temos as credencuais do apk via mwdat\_application\_id e do mwdat\_client\_token do wearables
+>
+> <details><summary>Edited 5 files</summary>
+>
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt` (+3 -0)
+> - Wrote `./docs/hackaton-day-prod/01-real-glasses-connection.md` (+15 -0)
+> - Wrote `./docs/hackaton-day-prod/05-privacy-and-evidence.md` (+7 -4)
+> - Wrote `./docs/hackaton-day-prod/06-runbook-and-checklists.md` (+4 -1)
+> - Wrote `./docs/hackaton-day-prod/README.md` (+5 -1)
+>
+> </details>
+>
+> As credenciais podem estar corretas e ainda assim o DAT rejeitar o APK: `mwdat_application_id`/`mwdat_client_token` identificam a integração, mas o Meta AI também valida package, certificado de assinatura e release channel/conta. Vou conferir a configuração oficial do projeto e separar o caminho `Developer Mode (0/0)` do caminho registrado, para não trocar valores no escuro.
+>
+> <details><summary>Ran a command, searched the web</summary>
+>
+> Searched the web for `site:github.com/facebook/meta-wearables-dat-android "mwdat_application_id" ...`
+>
+> - Ran `sed -n '85,145p' apps/android/app/build.gradle.kts && sed -n '150,235p' apps/android/app/build.gradle.kts && git status --short`
+>
+> </details>
+>
+> Achamos a configuração correta para este momento: para `glassesDebug` local, o DAT deve usar `mwdat_application_id=0` e `mwdat_client_token=0`, com Developer Mode ativado no Meta AI; as credenciais reais ficam para uma build de produção/release-channel. O APK atual estava em modo registrado (`dev_mode=false`), por isso caiu em attestation. Vou separar isso no Gradle: debug físico em Developer Mode, release usando os valores protegidos que vocês já têm.
+>
+> <details><summary>Edited a file, ran a command</summary>
+>
+> - Wrote `./apps/android/app/build.gradle.kts` (+14 -6)
+> - Ran `./gradlew installGlassesDebug`
+>
+> </details>
+>
+> A build nova foi instalada com sucesso no Moto G60. Agora `glassesDebug` usa `0/0` no manifest, mantendo `MWDAT_USE_MOCK_DEVICE_KIT=false`; portanto continua sendo câmera física, mas em DAT Developer Mode. As credenciais reais permanecem reservadas para `glassesRelease`. Falta habilitar Developer Mode no Meta AI para esse Ray-Ban antes do próximo teste.
+>
+> <details><summary>Edited 4 files, ran a command</summary>
+>
+> - Ran `awk '/com.meta.wearable.mwdat.APPLICATION_ID|com.meta.wearable.mwdat.CLIENT_TOKEN/{getline; print $0}' apps/android/app/build/intermediates/packaged_manifests/glassesDebug/processGlassesDebugManifestForPackage/AndroidManifest.xml | sed 's/android:value="[^"]*"/android:value="<redacted>"/' && git diff --check`
+> - Wrote `./docs/hackaton-day-prod/01-real-glasses-connection.md` (+5 -0)
+> - Wrote `./docs/hackaton-day-prod/05-privacy-and-evidence.md` (+4 -0)
+> - Wrote `./docs/hackaton-day-prod/06-runbook-and-checklists.md` (+2 -1)
+> - Wrote `./docs/hackaton-day-prod/README.md` (+2 -1)
+>
+> </details>
+</details>
+
+Para o APK atual (`glassesDebug`), o correto é:
+
+- `APPLICATION_ID=0`
+- `CLIENT_TOKEN=0`
+- Ativar **Developer Mode** no Meta AI para os óculos.
+
+Já alterei o Gradle e reinstalei o APK físico. As credenciais reais ficam para `glassesRelease`, junto com:
+
+- package: `com.olivia.companion`
+- SHA-256 do certificado de release
+- release channel/tester autorizado
+- `APPLICATION_ID` e `CLIENT_TOKEN` correspondentes
+
+O erro ocorreu porque o `glassesDebug` estava usando credenciais reais com assinatura debug, causando `Attestation failed`. A documentação oficial confirma `0/0` para Developer Mode. [Configuração oficial DAT Android](https://github.com/facebook/meta-wearables-dat-android/blob/main/AGENTS.md)
+
+Agora ative Developer Mode no Meta AI, feche/reabra a Olivia e repita “Oi, Olivia, gravar”. Esperamos `registration=REGISTERED`, `devices>0` e depois o primeiro frame DAT.
+
+> no app meta ia ou nas crewdenciais do app?
+
+No **app Meta AI**:
+
+1. Abra Meta AI.
+2. Entre no dispositivo Ray-Ban Meta.
+3. Ative **Developer Mode / Modo desenvolvedor**.
+
+Os `0/0` são configuração do APK `glassesDebug`; já deixei o Gradle usando isso. Não precisa apagar as credenciais reais do `local.properties`: elas ficam reservadas para o build release.
+
+Credenciais reais exigem configuração no Wearables Developer Center, não apenas no app Meta AI.
+
+> onde
+
+<details><summary>2 previous messages</summary>
+
+> Vou localizar o caminho exato no Meta AI deste Moto G60, porque o nome/posição do toggle varia conforme a versão do aplicativo.
+>
+> <details><summary>Searched the web</summary>
+>
+> Searched the web for `site:wearables.developer.meta.com Developer Mode Meta AI app settings Ray-Ban Meta Android ...`
+>
+> </details>
+</details>
+
+No **app Meta AI**, não nas credenciais:
+
+**Meta AI → engrenagem de configurações → seus óculos → “Glasses & privacy” → “Your glasses” → Developer Mode.**
+
+Em algumas versões aparece direto como **Developer Mode** dentro das configurações dos óculos. Ative e reinicie o Meta AI. A orientação oficial confirma que o Developer Mode é habilitado pelo app Meta AI. ([Meta Wearables FAQ](https://developers.meta.com/wearables/faq/))
+
+Depois volte para a Olivia e tente novamente.
+
+> e eu tenho conta no meta wearables developer o projeto ta setado e as credenciais em /Users/vitorsantana/Desktop/olivia/apps/android/local.properties pq nao vai
+
+Porque existem dois caminhos diferentes:
+
+| APK | Configuração |
+|---|---|
+| `glassesDebug` atual | `APPLICATION_ID=0`, `CLIENT_TOKEN=0` + Developer Mode no Meta AI |
+| `glassesRelease` | credenciais reais + package, certificado e release channel autorizados |
+
+As credenciais em `local.properties` estão sendo lidas — nós confirmamos isso no manifest. Porém, quando o APK `glassesDebug` usava essas credenciais, ele estava assinado pela chave debug local. O Meta AI rejeitou essa combinação com:
+
+`Application is not authorized... Attestation failed`
+
+Para usar as credenciais reais, o Developer Center precisa autorizar:
+
+- package: `com.olivia.companion`
+- certificado SHA-256 do APK instalado
+- conta/tester no release channel
+- versão publicada/autorizada
+
+A chave debug atual tem SHA-256:
+
+`68:34:EC:A2:60:F3:94:1F:A8:83:CE:EF:B4:5E:9E:08:80:99:5A:C0:A8:25:DF:13:54:A8:D0:43:78:79:8E:CF`
+
+Para o hackathon, o caminho mais rápido é ativar Developer Mode no Meta AI e testar o APK atual com `0/0`. O DAT documenta exatamente essa separação entre Developer Mode e credenciais de produção. ([documentação oficial DAT](https://github.com/facebook/meta-wearables-dat-android/blob/main/AGENTS.md))
+
+> foi, ta no modo dev e agora
+
+<details><summary>16 previous messages</summary>
+
+> Ótimo. Agora vamos testar o APK físico atual em Developer Mode. Vou fechar o Meta AI, abrir a Olivia, iniciar a tela de gravação e acompanhar se o DAT passa para `REGISTERED`/device elegível.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb shell am force-stop com.facebook.stella && adb shell am force-stop com.olivia.companion && adb shell monkey -p com.olivia.companion 1 >/dev/null && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Entrar|Início|Gravar|Autorizar|Aguardando'`
+> - Ran `adb shell input tap 540 2210 && sleep 1 && adb shell input tap 960 2270 && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg 'Aguardando|Autorizar|Diga|início|DAT'`
+>
+> </details>
+>
+> A Olivia já está na tela física correta e sem MockDeviceKit. Fale agora: “Oi, Olivia”, espere o sinal curto e depois “gravar”. Vou observar o resultado do DAT nesta tentativa.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb logcat -v time '*:I' | rg --line-buffered 'OliviaVoice|OliviaDatGateway|DAT preflight|DAT:CORE|DAT:CAMERA'`
+>
+> </details>
+>
+> nada , ainad erro olha ai
+>
+> Vi. O teste confirmou que o modo dev ainda não está chegando ao DAT: o log continua `dev_mode=false`, `registration=AVAILABLE`, `devices=0`. Então o toggle do Meta AI não é o único problema — o APK instalado ainda está sendo interpretado com credenciais registradas. Vou verificar o manifest empacotado e corrigir a injeção dos placeholders; não vou continuar repetindo o comando de voz.
+>
+> <details><summary>Explored 4 searches, ran 15 commands</summary>
+>
+> <details><summary>Explored 2 searches</summary>
+>
+> - Searched for `com.meta.wearable.mwdat.APPLICATION_ID|com.meta.wearable.mwdat.CLIENT_TOKEN` in `AndroidManifest.xml`
+> - Searched for `manifestPlaceholders|mwdatApplicationId|mwdatClientToken` in `build.gradle.kts`
+>
+> </details>
+>
+> - Ran `javap -classpath /tmp/mwdat-core.jar -c -p com.meta.wearable.dat.core.Wearables | rg -n -A35 -B8 'isDevMode|initialize\('`
+>
+> - Ran `adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|bounds="\[[^]]+\]\[[^]]+\]"' | rg -B2 -A1 'Autorizar Olivia|\[40,1769\]\[1040,1899\]' | head -12`
+>
+> - Ran `adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -C 1 'Autorizar|DAT não autorizou|Attestation|Aguardando' | head -40`
+>
+> - Ran `adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | head -80`
+>
+> - Ran `adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -C 3 'text="Óculos"|content-desc="Wayfarer 01QQ"|text="Configurações da Meta AI"' | head -50`
+>
+> - Ran `perl -0ne 'while(/.{0,500}text="Óculos".{0,500}/g){print "$&\n"}' /tmp/nonexistent 2>/dev/null || true
+> adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -n 'text="Óculos"|content-desc="Wayfarer 01QQ"'`
+>
+> - Ran `adb exec-out cat /sdcard/olivia-ui.xml | xmllint --xpath 'string(//node[@text="Autorizar Olivia no Meta AI"]/@bounds)' - 2>/dev/null || true; adb exec-out cat /sdcard/meta-ui.xml | xmllint --xpath 'string(//node[@text="Óculos"]/@bounds)' - 2>/dev/null || true`
+>
+> - Ran `adb shell ls -l /sdcard/olivia-ui.xml /sdcard/meta-ui.xml && adb exec-out cat /sdcard/meta-ui.xml | head -c 100`
+>
+> - Ran `adb exec-out cat /sdcard/meta-ui.xml > /tmp/meta-ui.xml && xmllint --xpath 'string(//node[@text="Óculos"]/@bounds)' /tmp/meta-ui.xml; echo`
+>
+> <details><summary>Explored 2 searches</summary>
+>
+> - Searched for `.{0,100}(text|content-desc)="Óculos".{0,150}` in `meta-ui.xml`
+> - Searched for `Óculos|Wayfarer|Configurações|content-desc="[^"]+"` in `meta-ui.xml`
+>
+> </details>
+>
+> - Ran `adb exec-out cat /sdcard/olivia-ui.xml > /tmp/current-ui.xml && rg -o '.{0,120}(text|content-desc)="(Óculos|Wayfarer 01QQ)".{0,200}' /tmp/current-ui.xml`
+>
+> - Ran `perl -0ne 'while(/.{0,900}text="Óculos".{0,1200}/g){print "$&\n"}' /tmp/current-ui.xml | head -c 5000`
+>
+> - Ran `perl -0ne 'while(/.{0,400}resource-id="settings_device_wayfarer_01qq_item".{0,1800}/g){print "$&\n"}' /tmp/current-ui.xml | head -c 5000`
+>
+> - Ran `adb shell input tap 540 1426 && sleep 1 && adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null && adb shell cat /sdcard/olivia-ui.xml | tr '>' '>\n' | rg -o 'text="[^"]+"|content-desc="[^"]+"' | rg -i 'developer|desenvol|versão|app info|óculos|privacidade|settings' | head -80`
+>
+> - Ran `adb exec-out cat /sdcard/olivia-ui.xml > /tmp/glasses-settings.xml && perl -0ne 'while(/.{0,700}(Modo de desenvolvedor).{0,1300}/g){print "$&\n"}' /tmp/glasses-settings.xml | head -c 6000`
+>
+> - Ran `jar tf /tmp/mwdat-core.jar | rg 'RegistrationManager' | head -80 && javap -classpath /tmp/mwdat-core.jar -p com.meta.wearable.dat.core.internal.registration.RegistrationManager com.meta.wearable.dat.core.internal.registration.RegistrationManagerImpl 2>/dev/null | head -180`
+>
+> </details>
+>
+> Context compaction
+>
+> Source: automatic
+> Status: completed
+>
+> Vi o ponto exato: o APK atual já está empacotado com `0/0` para usar o Developer Mode, e o toggle do Meta AI está realmente ligado. O erro restante é o registro do app no DAT: `registration=AVAILABLE`, `dev_mode=false`, `devices=0`.
+>
+> Vou abrir o fluxo oficial pelo botão “Autorizar Olivia no Meta AI” nesta versão e verificar o retorno do Meta AI antes de tentar a gravação de novo.
+>
+> <details><summary>Ran 7 commands</summary>
+>
+> - Ran `adb shell am force-stop com.facebook.stella
+> adb shell am force-stop com.olivia.companion
+> adb shell monkey -p com.olivia.companion 1 >/dev/null
+> sleep 1
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null
+> adb shell cat /sdcard/olivia-ui.xml`
+> - Ran `adb shell input tap 540 2210
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null
+> adb shell cat /sdcard/olivia-ui.xml`
+> - Ran `adb logcat -c
+> adb shell input tap 960 2270
+> sleep 1
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null
+> adb shell cat /sdcard/olivia-ui.xml | rg -o 'text="[^"]*"|content-desc="[^"]*"' | rg 'DAT|Autorizar|Aguardando|Conectando|frame|Gravar|erro|Erro' | head -80
+> adb logcat -d -v time -s OliviaDatGateway:I OliviaVoiceCommandSource:I OliviaSessionRuntime:I`
+> - Ran `adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg -C 2 'Autorizar Olivia|Aguardando início|Aguardando frame'`
+> - Ran `adb logcat -c
+> adb shell input tap 540 1834
+> sleep 3
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/current-ui.xml >/dev/null
+> adb shell cat /sdcard/current-ui.xml | sed 's/></>\n</g' | rg 'text=|content-desc=|checked=' | rg 'Autorizar|Erro|erro|integra|desenvolvedor|permit|Application|indispon|Ray-Ban|Olivia' | head -100
+> adb logcat -d -v time | rg -i 'IntegrationConnection|Attestation|DAT|registration|Application is not authorized|Olivia' | tail -120`
+> - Ran `adb shell cat /sdcard/current-ui.xml | sed 's/></>\n</g' | head -160
+> adb logcat -d -v time | rg -i 'IntegrationConnectionViewModel|Attestation|attestation|Application is not authorized|Application data|partnerInfo|registration' | tail -80`
+> - Ran `sleep 2
+> adb shell uiautomator dump /sdcard/current-ui-2.xml >/dev/null
+> adb shell cat /sdcard/current-ui-2.xml | sed 's/></>\n</g' | head -120
+> adb logcat -d -v time | rg -i 'error state changed|Attestation failed|Application is not authorized|Application data is currently unavailable|integration.*error|partnerInfoList|DAT data|registration.*fail|deeplink' | tail -100`
+>
+> </details>
+>
+> O fluxo agora revelou algo novo: com `0/0`, o Meta AI abre, mas descarta o deep link como `Unconfigured DeviceDeepLink: null`; ele não chega nem na tela de autorização. Isso explica por que o SDK continua `devices=0`.
+>
+> Vou conferir o adapter de inicialização e o manifest final para ajustar o formato correto do Developer Mode. O problema deixou de ser pareamento Bluetooth e passou a ser o registro/deep link DAT do APK.
+>
+> <details><summary>Explored 3 files, 3 searches, ran a command, searched the web</summary>
+>
+> <details><summary>Explored 2 files, 2 searches</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+> - Read `./apps/android/app/build.gradle.kts`
+> - Searched for `startRegistration|Wearables.initialize|APPLICATION_ID|CLIENT_TOKEN|mwdatApplicationId|mwdatClientToken|metaAppId|publicKey` in `android`
+> - Searched for `developer mode|0/0|application id|client token|startRegistration|registration` in `docs`
+>
+> </details>
+>
+> Searched the web for `site:github.com/facebook/meta-wearables-dat-android Developer Mode 0 0 startRegistration appId clientToken ...`
+>
+> - Ran `sed -n '1,220p' apps/android/app/src/glasses/AndroidManifest.xml
+> sed -n '1,140p' apps/android/README.md
+> sed -n '1,180p' /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/*/*-sources.jar 2>/dev/null || true`
+>
+> <details><summary>Explored a file, a search</summary>
+>
+> - Read `./apps/android/app/src/main/AndroidManifest.xml`
+> - Searched for `intent-filter|scheme|MainActivity|deep link|AppLink` in `android`
+>
+> </details>
+>
+> </details>
+>
+> Achei a configuração faltante no código: o `MainActivity` não tinha o `intent-filter` de callback exigido pelo DAT. O próprio guia oficial lista esse filtro como pré-requisito; por isso o Meta AI recebia a solicitação e registrava `Unconfigured DeviceDeepLink: null`.
+>
+> Vou adicionar o callback `olivia://` ao manifest, reinstalar o `glassesDebug` e repetir o fluxo.
+>
+> <details><summary>Edited a file, ran a command</summary>
+>
+> - Wrote `./apps/android/app/src/main/AndroidManifest.xml` (+6 -0)
+> - Ran `./gradlew installGlassesDebug`
+>
+> </details>
+>
+> O APK novo instalou no Moto G60 com sucesso. Agora vou repetir exatamente o caminho: abrir Olivia, entrar em Gravar, acionar a autorização e observar se o Meta AI volta para a Olivia em vez de descartar o deep link.
+>
+> <details><summary>Ran 5 commands</summary>
+>
+> - Ran `adb shell am force-stop com.facebook.stella
+> adb shell am force-stop com.olivia.companion
+> adb shell monkey -p com.olivia.companion 1 >/dev/null
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg 'text="Entrar"|content-desc="Gravar"|text="Autorizar Olivia|text="Diga: Oi' | head -30`
+> - Ran `adb logcat -c
+> adb shell input tap 540 1834
+> sleep 4
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/current-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/current-ui.xml | sed 's/></>\n</g' | rg 'package=|text="|content-desc="' | rg 'com.facebook.stella|com.olivia.companion|erro|Erro|autor|Author|Integration|config|Olivia|device' | head -120
+> adb logcat -d -v time | rg -i 'DeviceDeepLink|IntegrationConnection|Attestation|Application is not authorized|registration|Unconfigured|Olivia' | tail -100`
+> - Ran `adb shell input tap 540 2210
+> sleep 1
+> adb shell input tap 960 2270
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg -C 1 'Autorizar Olivia|Aguardando frame|Gravar' | head -80`
+> - Ran `adb logcat -c
+> adb shell input tap 540 1834
+> sleep 4
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/current-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/current-ui.xml | sed 's/></>\n</g' | rg 'package=|text="|content-desc="' | rg 'com.facebook.stella|com.olivia.companion|erro|Erro|autor|Author|Integration|config|Olivia|device' | head -140
+> adb logcat -d -v time | rg -i 'DeviceDeepLink|IntegrationConnection|Attestation|Application is not authorized|registration|Unconfigured|Olivia' | tail -100`
+> - Ran `sleep 3
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/meta-registration.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/meta-registration.xml | sed 's/></>\n</g' | rg 'text="|content-desc="|resource-id=' | rg 'register|permission|developer|app|Olivia|integration|Erro|error|allow|Authorize|autoriz|Ray-Ban|device|indispon' | head -160
+> adb logcat -d -v time | rg -i 'DATRegistration|dat_registration|DeviceDeepLink|URI_RESOLUTION|Unconfigured|error state|Attestation|Application is not authorized|integration' | tail -120`
+>
+> </details>
+</details>
+
+> faz dnv eu cnacelei sem querer o request
+
+<details><summary>50 previous messages</summary>
+
+> Sem problema, vou repetir só a inspeção do estado atual do Meta AI e do log do registro, sem alterar nada.
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> - Ran `sleep 2
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/meta-registration.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/meta-registration.xml | sed 's/></>\n</g' | rg 'text="|content-desc="|resource-id=' | rg 'register|permission|developer|app|Olivia|integration|Erro|error|allow|Authorize|autoriz|Ray-Ban|device|indispon' | head -160
+> adb logcat -d -v time | rg -i 'DATRegistration|dat_registration|DeviceDeepLink|URI_RESOLUTION|Unconfigured|error state|Attestation|Application is not authorized|integration' | tail -120`
+> - Ran `adb logcat -d -v time | awk '$0 ~ /10:57:20|10:57:21|10:57:22|10:57:23|10:57:24|10:57:25|10:57:26|10:57:27|10:57:28|10:57:29|10:57:30|10:57:31|10:57:32|10:57:33|10:57:34|10:57:35|10:57:36|10:57:37|10:57:38/' | rg -i 'dat|register|deep|integration|error|fail|app|olivia|device|permission|developer|URI' | tail -220`
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/permission-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/permission-ui.xml | sed 's/></>\n</g' | rg 'package=|text="|content-desc="' | rg 'permission|Permitir|permitir|Allow|Wi|dispositivo|Meta AI|Fotos|câmera|microfone|Olivia' | head -120`
+>
+> </details>
+>
+> Agora o fluxo avançou de verdade: o Meta AI entrou em `DATRegistrationDestination` e saiu para a tela principal; não apareceu mais o erro de attestation nem o `Unconfigured DeviceDeepLink`. Isso indica que o callback foi aceito.
+>
+> Vou voltar a Olivia, iniciar a tela de gravação e deixar o log limpo para você falar “Oi, Olivia, gravar”.
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> - Ran `adb shell am force-stop com.facebook.stella
+> adb shell am force-stop com.olivia.companion
+> adb shell monkey -p com.olivia.companion 1 >/dev/null
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> if adb shell cat /sdcard/olivia-ui.xml | rg -q 'text="Entrar"'; then adb shell input tap 540 2210; sleep 1; fi
+> adb shell input tap 960 2270
+> sleep 1
+> adb logcat -c
+> adb shell uiautomator dump /sdcard/olivia-recording.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-recording.xml | sed 's/></>\n</g' | rg 'text="Aguardando|text="Autorizar|content-desc="Aguardando|text="Diga:' | head -40`
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/olivia-recording.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-recording.xml | sed 's/></>\n</g' | rg 'text="|content-desc="' | rg 'Entrar|Aguardando|Autorizar|Diga|Gravar|frame|Erro|Conectando' | head -80`
+> - Ran `adb shell input tap 960 2270
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-recording.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-recording.xml | sed 's/></>\n</g' | rg 'text="|content-desc="' | rg 'Aguardando|Autorizar|Diga|Gravar|frame|Erro|Conectando|00:00' | head -80`
+>
+> </details>
+>
+> A tela correta está aberta e ainda aguardando o início. Pode falar agora, pausando um instante entre as palavras:
+>
+> “Oi, Olivia” — pausa — “gravar”.
+>
+> Vou capturar o resultado do DAT por alguns segundos.
+>
+> <details><summary>Explored 2 files, a search, ran 3 commands</summary>
+>
+> - Ran `timeout 35 adb logcat -v time | rg -i 'OliviaDatGateway|OliviaVoiceCommandSource|OliviaSessionRuntime|DAT preflight|DAT start|first_frame|session|permission|registration|Wearables' | tail -160`
+>
+> - Ran `adb logcat -v time`
+>
+> - Ran `adb logcat -d -v time | rg -i 'OliviaDatGateway|OliviaVoiceCommandSource|OliviaSessionRuntime|DAT preflight|DAT start|first_frame|device unavailable|START_RECORDING|Rhino|Wake word|permission|registration' | tail -160`
+>
+> <details><summary>Explored 3 files, a search</summary>
+>
+> - Searched for `AndroidVoiceCommandSource|voice|Comandos de voz|startListening|START_RECORDING|startGlasses` in `companion`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+>
+> </details>
+>
+> </details>
+>
+> agr ele deu erro e nao me mandou ora meta ai
+>
+> <details><summary>Explored a file, a search</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Searched for `Log\.(i|d|w|e).*Voice|TAG|state.value` in `AndroidVoiceCommandSource.kt`
+>
+> </details>
+>
+> Entendi. Agora o erro aconteceu antes de abrir o Meta AI: isso significa que o comando de voz foi recebido, mas o adapter tentou criar a sessão sem uma autorização DAT válida persistida. Vou ler o log dessa tentativa e separar se foi estado de registro, permissão de câmera ou dispositivo elegível.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -d -v time | rg -i 'OliviaVoice|OliviaDatGateway|OliviaSessionRuntime|DAT preflight|DAT start|first_frame|permission|registration|device|eligible|attestation|Wearables' | tail -220`
+> - Ran `adb logcat -d -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I`
+>
+> </details>
+>
+> O log confirma: voz está funcionando, mas o DAT ainda está exatamente em `registration=AVAILABLE`, `dev_mode=false`, `devices=0`; por isso não abre o Meta AI ao falar — ele falha antes, em `createSession`.
+>
+> A correção do callback foi aceita pelo Android, mas o registro ainda não foi concluído no Meta AI. Vou reabrir e capturar a tela imediatamente, porque provavelmente há uma etapa de autorização que passou rápido ou ficou em outra atividade.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell input tap 540 1834
+> sleep 1
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/registration-now.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/registration-now.xml | sed 's/></>\n</g' | rg 'package=|text="|content-desc="|resource-id=' | rg 'facebook.stella|olivia|registration|DAT|Olivia|allow|permit|autor|Developer|integration|erro|Error|camera|device' | head -180
+> adb logcat -d -v time | rg -i 'dat/registration|DATRegistration|DeviceDeepLink|URI_RESOLUTION|Unconfigured|attestation|Application is not authorized|registration' | tail -100`
+>
+> </details>
+>
+> Achei o detalhe da tentativa: depois do erro o painel rolou, e o botão mudou para `y=1668–1798`; o toque em `1834` caiu fora dele. Vou tocar agora no centro real do botão e verificar a autorização.
+>
+> <details><summary>Ran a command, searched the web</summary>
+>
+> - Ran `adb logcat -c
+> adb shell input tap 540 1733
+> sleep 2
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/registration-real.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/registration-real.xml | sed 's/></>\n</g' | rg 'package=|text="|content-desc="|resource-id=' | rg 'facebook.stella|olivia|registration|DAT|Olivia|allow|permit|autor|Developer|integration|erro|Error|camera|device' | head -180
+> adb logcat -d -v time | rg -i 'dat/registration|DATRegistration|DeviceDeepLink|URI_RESOLUTION|Unconfigured|attestation|Application is not authorized|registration|permission' | tail -140`
+>
+> Searched the web for `site:github.com/facebook/meta-wearables-dat-android "TOKEN_NOT_CONFIGURED" ...`
+>
+> Searched the web for `site:github.com/facebook/meta-wearables-dat-android "mwdat_client_token = 0" ...`
+>
+> </details>
+>
+> autorizei e voltou pro app mas ele ainda fla como nao autorizado
+>
+> Agora temos a causa definitiva no log:
+>
+> `Attestation failed: TOKEN_NOT_CONFIGURED`.
+>
+> Ou seja, a autorização voltou, mas o APK `glassesDebug` estava com `0/0`; o SDK 0.9.0 tentou registrar e não encontrou token, então manteve `dev_mode=false`. As credenciais reais existem no `local.properties`, mas eu tinha sobrescrito o debug para `0/0`.
+>
+> Vou remover essa sobrescrita no debug, usar as credenciais locais do projeto e reinstalar. O callback já está corrigido; agora o registro terá os dados necessários para concluir.
+>
+> <details><summary>Edited a file, ran a command</summary>
+>
+> - Wrote `./apps/android/app/build.gradle.kts` (+3 -4)
+> - Ran `./gradlew installGlassesDebug`
+>
+> </details>
+>
+> O APK com as credenciais reais do `local.properties` foi compilado e instalado no Moto G60. Vou repetir a autorização nessa versão e checar o resultado do handshake; agora o log não deve mais mostrar `TOKEN_NOT_CONFIGURED`.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `adb shell am force-stop com.facebook.stella
+> adb shell am force-stop com.olivia.companion
+> adb shell monkey -p com.olivia.companion 1 >/dev/null
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | rg -q 'text="Entrar"' && adb shell input tap 540 2210
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | rg -q 'content-desc="Gravar"' || adb shell input tap 960 2270
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg -C 1 'Autorizar Olivia|O DAT não autorizou|Aguardando frame|content-desc="Gravar"' | head -100`
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg 'text="|content-desc="' | rg 'Entrar|Aguardando|Autorizar|Diga|Gravar|frame|Erro|Conectando' | head -100`
+> - Ran `adb shell input tap 960 2270
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg -C 1 'Autorizar Olivia|O DAT não autorizou|Aguardando frame|Aguardando início' | head -100`
+> - Ran `adb logcat -c
+> adb shell input tap 540 1834
+> sleep 3
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb logcat -d -v time -s AttestationManager:D DAT:CORE:RegistrationManager:D OliviaDatGateway:I | tail -120
+> adb logcat -d -v time | rg -i 'TOKEN_NOT_CONFIGURED|Attestation failed|Application is not authorized|dat/registration|DeviceDeepLink|URI_RESOLUTION|registration' | tail -100`
+>
+> </details>
+>
+> Boa: agora apareceu no log `Application is already registered with Meta Wearables`. Isso confirma que a autorização foi concluída; o problema do `0/0` foi resolvido com as credenciais reais.
+>
+> A Olivia já voltou para a tela de gravação. Vou testar o caminho final novamente. Fale: “Oi, Olivia” — pausa — “gravar”.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -c
+> adb shell uiautomator dump /sdcard/olivia-ready.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ready.xml | sed 's/></>\n</g' | rg 'text="Aguardando|text="Autorizar|content-desc="Aguardando|text="Diga:' | head -40`
+> - Ran `adb logcat -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I`
+>
+> </details>
+>
+> agr dps do gravar ele ta so nesse aguardando frame do dat
+>
+> Entendi — o comando foi aceito e a tela entrou no fluxo, mas ainda não chegou o primeiro frame do DAT. Vou coletar o log dessa tentativa agora para ver se a sessão ficou em `STARTING`, se faltou permissão de câmera ou se o óculos ainda está sem dispositivo elegível.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -d -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I`
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/current-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/current-ui.xml | sed 's/></>\n</g' | rg 'text="|content-desc="' | rg 'DAT|frame|Gravar|Aguardando|Conectando|Erro|Óculos|00:' | head -100
+> adb shell pidof com.olivia.companion
+> adb logcat -d -v time | rg -i 'DAT preflight|DAT start|START_RECORDING|Wake word|Rhino intent|first_frame|RegistrationManager|Application is already registered|TOKEN_NOT_CONFIGURED|NO_ELIGIBLE|permission' | tail -120`
+>
+> </details>
+>
+> A tela confirma que a sessão nem chegou a iniciar: continua `Aguardando início` e não há log de `START_RECORDING` nesta última tentativa. Então o “Aguardando frame” ainda é o estado anterior da preview, não um frame perdido depois de uma sessão iniciada.
+>
+> Vou verificar rapidamente a permissão do microfone e o estado do processo de voz; se estiver tudo certo, a próxima fala precisa ser “Oi, Olivia” com uma pausa clara antes de “gravar”.
+>
+> <details><summary>Explored 2 files, ran a command</summary>
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/AndroidVoiceCommandSource.kt`
+>
+> </details>
+>
+> - Ran `adb shell dumpsys package com.olivia.companion | rg -C 2 'RECORD_AUDIO|BLUETOOTH_CONNECT|CAMERA|granted=true|granted=false' | head -100`
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+>
+> </details>
+>
+> </details>
+>
+> A permissão do microfone e da câmera está concedida. Como não apareceu nenhum `START_RECORDING` no último log, vou reiniciar apenas a Olivia para reativar o detector local e confirmar que o Porcupine/Rhino voltou a escutar depois do retorno do Meta AI.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -c
+> adb shell am force-stop com.olivia.companion
+> adb shell monkey -p com.olivia.companion 1 >/dev/null
+> sleep 2
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | rg -q 'text="Entrar"' && adb shell input tap 540 2210
+> sleep 1
+> adb shell input tap 960 2270
+> sleep 3
+> adb logcat -d -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg 'text="Diga: Oi|text="Ouvindo|text="Comandos|Aguardando início|content-desc="Aguardando' | head -60`
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg 'text="|content-desc="' | rg 'Entrar|Diga|Ouvindo|Comandos|Aguardando|Gravar' | head -100
+> adb logcat -d -v time | rg 'OliviaVoice|OliviaDatGateway|OliviaSessionRuntime' | tail -100`
+>
+> </details>
+>
+> Detector confirmado: `Voice local ready` e `Porcupine listening`. Agora a Olivia está realmente escutando.
+>
+> Fale novamente exatamente: “Oi, Olivia” — espere o bip — “gravar”. Vou capturar a sessão e o primeiro frame.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I`
+> - Ran `adb logcat -d -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I
+> adb shell uiautomator dump /sdcard/current-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/current-ui.xml | sed 's/></>\n</g' | rg 'text="|content-desc="' | rg 'Aguardando|Conectando|Recebendo|Diga|Ouvindo|Erro|Óculos|frame|00:' | head -100`
+>
+> </details>
+>
+> O wake word foi detectado agora e o celular está em `Ouvindo comando`. Falta só falar o segundo comando neste momento:
+>
+> “gravar”.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb logcat -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I`
+>
+> </details>
+>
+> ta damdp erro qnd eu falo gravo
+>
+> Agora o registro está correto: `REGISTERED`, `dev_mode=true`, `devices=1`, óculos `CONNECTING/COMPATIBLE`. O erro mudou e está claro: o app tenta criar a sessão imediatamente enquanto o DAT ainda está conectando; o `AutoDeviceSelector` retorna “indisponível” nesse instante.
+>
+> Vou ajustar o gateway para aguardar a transição do dispositivo para conectado antes de `createSession`, mantendo o mesmo adapter e sem alterar o loop de frames.
+>
+> <details><summary>Edited a file, explored a file, a search, a list, ran 3 commands</summary>
+>
+> <details><summary>Explored a file, a search, a list</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Listed files in `com.meta.wearable`
+> - Searched for `*.jar` in `com.meta.wearable`
+>
+> </details>
+>
+> - Ran `unzip -l /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/77967dd1eb1c1088e909307e57424633ff5aeea2/mwdat-core-0.9.0.aar | rg 'Device.*State|LinkState|DeviceMetadata|DeviceIdentifier|Wearables|Selector'
+> unzip -p /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/77967dd1eb1c1088e909307e57424633ff5aeea2/mwdat-core-0.9.0.aar classes.jar > /tmp/mwdat-core-0.9.0.jar
+> javap -classpath /tmp/mwdat-core-0.9.0.jar -public com.meta.wearable.dat.core.types.DeviceMetadata com.meta.wearable.dat.core.types.DeviceLinkState com.meta.wearable.dat.core.types.DeviceCompatibility com.meta.wearable.dat.core.Wearables 2>&1 | head -240`
+>
+> - Ran `jar tf /tmp/mwdat-core-0.9.0.jar | rg 'core/types/(Device|Link)|Device\.class|State\.class|Selector' | head -120`
+>
+> - Ran `javap -classpath /tmp/mwdat-core-0.9.0.jar -public com.meta.wearable.dat.core.types.Device com.meta.wearable.dat.core.types.LinkState com.meta.wearable.dat.core.types.DeviceState com.meta.wearable.dat.core.selectors.AutoDeviceSelector com.meta.wearable.dat.core.types.DeviceCompatibility 2>&1 | head -260`
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+28 -0)
+>
+> </details>
+>
+> Implementei a espera do estado `CONNECTING → CONNECTED` antes de criar a sessão. O timeout é de 10 segundos; depois disso o erro continua explícito, sem mascarar falha de hardware. Vou instalar essa correção e repetir a fala.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+>
+> </details>
+>
+> A correção compilou e foi instalada. O registro do Meta AI deve permanecer salvo; agora só precisamos repetir o comando para validar a espera do link e ver se chega `STARTED`/`first_frame`. Vou deixar a tela de gravação pronta.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb shell am force-stop com.olivia.companion
+> adb shell monkey -p com.olivia.companion 1 >/dev/null
+> sleep 2
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | rg -q 'text="Entrar"' && adb shell input tap 540 2210
+> sleep 1
+> adb shell input tap 960 2270
+> sleep 1
+> adb logcat -c
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg 'text="Aguardando|text="Autorizar|text="Diga: Oi|content-desc="Aguardando|text="Ouvindo' | head -60`
+> - Ran `adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg 'text="|content-desc="' | rg 'Aguardando|Autorizar|Diga|Ouvindo|Entrar|Gravar' | head -80
+> adb logcat -d -v time | rg 'OliviaVoice' | tail -40`
+>
+> </details>
+>
+> Tela pronta, registro mantido. Fale “Oi, Olivia”, aguarde o bip, depois “gravar”. Desta vez vou observar especialmente se sai de `CONNECTING` para `CONNECTED` e se aparece `first_frame`.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb logcat -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I`
+>
+> </details>
+>
+> agr ele ifca nesse conectsndo aos ocoulos por uns segundos e dps fala nao autorizado
+>
+> <details><summary>Explored 3 files, 2 searches, ran 3 commands</summary>
+>
+> - Ran `javap -classpath /tmp/mwdat-core-0.9.0.jar -public 'com.meta.wearable.dat.core.Wearables$RequestPermissionContract' com.meta.wearable.dat.core.types.Permission com.meta.wearable.dat.core.types.PermissionStatus 2>&1 | head -180
+> jar tf /tmp/mwdat-core-0.9.0.jar | rg 'RequestPermission|PermissionContract|Permission' | head -120`
+>
+> <details><summary>Explored 4 files, 2 searches</summary>
+>
+> - Searched for `checkPermissionStatus|RequestPermissionContract|Permission.CAMERA|permission` in `android`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+> - Searched for `class SessionCoordinator|startCapture|GlassesConnection|lastStartError|DAT glasses unavailable` in `core`
+>
+> </details>
+>
+> - Ran `javap -classpath /tmp/mwdat-core-0.9.0.jar -public com.meta.wearable.dat.core.types.DatResult 'com.meta.wearable.dat.core.types.PermissionStatus$Granted' 'com.meta.wearable.dat.core.types.PermissionStatus$Denied' com.meta.wearable.dat.core.types.PermissionError 2>&1 | head -220`
+>
+> - Ran `javap -classpath /tmp/mwdat-core-0.9.0.jar -c -p 'com.meta.wearable.dat.core.Wearables$RequestPermissionContract' | sed -n '1,220p'`
+>
+> </details>
+>
+> Esse “conectando → não autorizado” é a permissão DAT de câmera que ainda não foi concedida. Registro e permissão são etapas separadas: o app já está `REGISTERED`, mas o device não fica elegível enquanto o Meta AI não libera `CAMERA`.
+>
+> Vou fazer o botão existente abrir automaticamente a etapa correta: se já estiver registrado, ele abre “permitir câmera nos óculos”; se não estiver, abre o registro. Assim não precisamos desregistrar nem refazer pareamento.
+>
+> <details><summary>Edited 3 files, ran a command</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+9 -1)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+1 -0)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt` (+1 -1)
+> - Ran `./gradlew installGlassesDebug`
+>
+> </details>
+>
+> A nova versão instalou. Como o app já está registrado, o botão agora deve abrir a autorização de câmera no Meta AI, não repetir o cadastro. Vou abrir a tela e acionar essa permissão.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `adb shell am force-stop com.facebook.stella
+> adb shell am force-stop com.olivia.companion
+> adb shell monkey -p com.olivia.companion 1 >/dev/null
+> sleep 2
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | rg -q 'text="Entrar"' && adb shell input tap 540 2210
+> sleep 1
+> adb shell input tap 960 2270
+> sleep 1
+> adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg -C 1 'Autorizar Olivia|Aguardando frame|O DAT não autorizou' | head -80`
+> - Ran `adb shell uiautomator dump /sdcard/olivia-ui.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/olivia-ui.xml | sed 's/></>\n</g' | rg -C 1 'Autorizar Olivia|Aguardando frame|O DAT não autorizou|Entrar|content-desc="Gravar"' | head -100`
+> - Ran `adb logcat -c
+> adb shell input tap 540 1834
+> sleep 2
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/permission-flow.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/permission-flow.xml | sed 's/></>\n</g' | rg 'package=|text="|content-desc="|resource-id=' | rg 'facebook.stella|permission|câmera|camera|permit|Permitir|Olivia|Ray-Ban|device|erro|Error|allow' | head -180
+> adb logcat -d -v time | rg -i 'permissions/request|Permission|permission|already registered|registration|DAT' | tail -120`
+> - Ran `sleep 3
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb shell uiautomator dump /sdcard/permission-flow.xml >/dev/null 2>&1 || true
+> adb shell cat /sdcard/permission-flow.xml | sed 's/></>\n</g' | rg 'package=|text="|content-desc="|resource-id=' | rg 'facebook.stella|permission|câmera|camera|permit|Permitir|Olivia|Ray-Ban|device|erro|Error|allow|acesso' | head -200
+> adb logcat -d -v time | rg -i 'device/permissions|PermissionRequest|permission.*request|permission.*error|permission.*grant|DAT' | tail -120`
+>
+> </details>
+>
+> Achei a causa deste último erro: a tela do Meta AI está dizendo literalmente “Nenhum óculos conectado”. O DAT fica em `CONNECTING` porque, neste momento, o Ray-Ban aparece como `DISCONNECTED` no Meta AI — não é mais credencial nem código da Olivia.
+>
+> Vou fechar esse aviso e dar alguns segundos para o Meta AI reconectar. Deixe os óculos fora do estojo, abertos e ligados; depois verifico novamente antes de tentar a fala.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell input tap 540 1320
+> sleep 5
+> adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'
+> adb logcat -d -v time | rg -i 'DeviceIndicatorViewModel|Device states:|ACDCLeaseFeatureClient|connectedState=|device.*connected|device.*disconnected' | tail -100
+> adb shell dumpsys bluetooth_manager | rg -i '74:55:1A:B6:F6:18|RB Meta|STATE_CONNECTED|connected' | tail -80`
+>
+> </details>
+>
+> Context compaction
+>
+> Source: automatic
+> Status: completed
+</details>
+
+> ele ja ta em mim inclusive eu escuto o audio deve ter sido outra parda\\
+
+<details><summary>5 previous messages</summary>
+
+> Context compaction
+>
+> Source: automatic
+> Status: completed
+>
+> Sim — se o áudio está saindo nos óculos, o Bluetooth de áudio está conectado; o que pode estar separado é o canal de dados/câmera do Meta AI. Vou conferir agora o estado atual do DAT e o erro exato, porque o último log já tinha mudado para `CONNECTED/COMPATIBLE`. Vou seguir os guardrails Olivia e Android Kotlin para não mexer fora do fluxo da câmera.
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+>
+> </details>
+>
+> A skill confirma que esse diagnóstico está dentro do fluxo obrigatório: áudio e câmera são canais distintos. Agora vou separar três estados no aparelho: Bluetooth de áudio, vínculo do Meta AI e sessão de câmera DAT.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `adb devices -l && adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'`
+> - Ran `adb logcat -d -v time -s OliviaVoice:I OliviaDatGateway:I OliviaSessionRuntime:I`
+> - Ran `adb shell uiautomator dump /sdcard/olivia-window.xml >/dev/null && adb shell cat /sdcard/olivia-window.xml`
+> - Ran `adb logcat -d -v time | rg -i 'DATSession|DeviceSession|StreamError|first_frame|camera permission|permission|metadata=|mwdat|Wearables' | tail -n 260`
+>
+> </details>
+</details>
+
+Achei o erro exato: não é pareamento nem credencial. O DAT vê `1` óculos como `CONNECTED/COMPATIBLE`, mas recusa o stream com `ERROR_CODE_PERMISSION_DENIED` para `android.permission.CAMERA`. Vou checar se falta a permissão Android comum no app ou apenas a permissão de câmera do Wearables no Meta AI.
+
+> realmente ele ta como nao conectado no app da meta mas eu escuto o audio, algo rolo u como reinicia
+
+<details><summary>4 previous messages</summary>
+
+> Sim, isso explica tudo: o perfil Bluetooth de áudio continua ativo, mas a conexão de dados do Meta AI caiu. Não precisa desemparelhar nem apagar o projeto. Vou reiniciar apenas a conexão/app no celular; depois você faz um desligar/ligar físico dos óculos, preservando o pareamento.
+>
+> <details><summary>Ran a command, searched the web</summary>
+>
+> Searched the web for `site:meta.com/help/smart-glasses restart Ray-Ban Meta glasses turn off on connection Meta AI app`
+>
+> - Ran `adb shell dumpsys package com.olivia.companion | rg -n 'android.permission.CAMERA|granted=true|requested permissions' -A8 -B2; adb shell dumpsys bluetooth_manager | rg -i 'state:|name:|bond|connected' | head -n 80`
+>
+> </details>
+>
+> Confirmei: a Olivia já tem a permissão Android de câmera concedida. O sistema mostra o áudio A2DP conectado, mas o Meta AI perdeu o dispositivo de dados. Vou reiniciar somente os processos Meta AI e Olivia; não vou limpar dados nem desfazer o pareamento. Quando o Meta AI abrir, desligue os óculos pela chave, espere 10 segundos e ligue novamente fora do estojo.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell am force-stop com.olivia.companion; adb shell am force-stop com.facebook.stella; adb shell monkey -p com.facebook.stella -c android.intent.category.LAUNCHER 1`
+>
+> </details>
+</details>
+
+Reiniciei o Meta AI e a Olivia sem apagar dados nem desfazer o pareamento.
+
+Agora faça nos óculos:
+
+1. Desligue pela chave física.
+2. Espere 10 segundos.
+3. Ligue novamente, fora do estojo e com as hastes abertas.
+4. Aguarde o Meta AI mostrar “Conectado”.
+
+O áudio estava conectado, mas o canal de dados/câmera havia caído. Quando aparecer conectado no Meta AI, diga “feito” que eu reabro a Olivia e testo o stream.
+
+> Parece que o fallback que tem após solicitar a permissao nao ta mantendo,o processo foi esse:
+>
+> 1. usuario abriu o app da olivia
+> 2. usuario pediu oi, olivia, gravar
+> 3. sistema abriu o meta e ja veio com prompt de permissao de camera, eu permiti
+> 4. voltou pro app e ficou conectando
+> 5. deu um tempao e disse nao tem permissao
+> 6. eu abrir dnv o app da meta pelo "autorizar olivia no meta ai"  e ainda pediu permissao dnv como se nao tivesse salvo olha os logs tb
+
+<details><summary>41 previous messages</summary>
+
+> Entendi. Isso aponta para um problema no retorno do fluxo de permissão: a tela do Meta AI aparece, mas a concessão não está sendo persistida/confirmada antes da Olivia tentar abrir o stream. Vou correlacionar os logs do momento com o código do callback e corrigir o ciclo de autorização. Estou usando os guardrails Olivia e Android Kotlin porque isso altera diretamente a sessão DAT e o retorno entre apps.
+>
+> <details><summary>Explored a search, ran a command</summary>
+>
+> <details><summary>Explored 2 files, a search</summary>
+>
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+> - Searched for `RequestPermissionContract|startGlassesRegistration|Permission\.CAMERA|rememberLauncherForActivityResult|ActivityResult|onNewIntent|registration` in `android`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+>
+> </details>
+>
+> - Ran `adb logcat -d -v time | rg -i 'OliviaDatGateway|OliviaSessionRuntime|permission|permissions/request|DWA stream|StreamImpl|RegistrationManager|DevicePermission|ActivityTaskManager.*(olivia|stella)|onActivityResult|RequestPermission' | tail -n 500`
+>
+> </details>
+>
+> Os logs mostram algo importante: o Meta AI realmente gravou e sincronizou a permissão (`Permission sync finished ... true / NO_ERROR`). O erro seguinte ocorreu porque, ao voltar, o DAT estava `DISCONNECTED`, não porque a permissão falhou. Além disso, nosso botão abre a solicitação sempre, sem consultar o status salvo — por isso parece pedir novamente. Vou localizar a API de consulta de permissão e ajustar o retorno para esperar simultaneamente “permissão concedida + óculos conectados” antes de iniciar.
+>
+> <details><summary>Explored 4 files, a search, ran 8 commands, searched the web</summary>
+>
+> Searched the web for `site:github.com/facebook/meta-wearables-dat-android RequestPermissionContract check permission Android Wearables PermissionStatus ...`
+>
+> <details><summary>Explored 4 files</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+>
+> </details>
+>
+> - Ran `adb logcat -d -v time | rg '09-18 11:1[5678]:' | rg -i 'Olivia|DAT:|DevicePermission|permission_manifest|ActivityTaskManager.*(olivia|stella)|connectedState|peerConnected|DeviceControlCenter|DWA stream'`
+>
+> - Ran `find ~/.gradle/caches/modules-2/files-2.1 -path '*mwdat*' -type f | sort | head -n 100`
+>
+> - Ran `find /Users/vitorsantana/.gradle/caches/modules-2/files-2.1 -type f \( -name '*mwdat-core*' -o -name '*mwdat-camera*' \) | sort`
+>
+> - Ran `adb logcat -d -v time -s OliviaDatGateway:I OliviaDatGateway:W OliviaSessionRuntime:I DAT:CORE:Wearables:I DAT:STREAM:StreamImpl:I '*:S'`
+>
+> <details><summary>Explored a search</summary>
+>
+> - Searched for `mwdat-(core|camera)|mwdatVersion|wearable` in `android`
+>
+> </details>
+>
+> - Ran `adb logcat -d -v time | rg -i 'checkPermissionStatus|permission status|PermissionStatus|ERROR_CODE_PERMISSION_DENIED|Permission sync finished|DAT preflight' | tail -n 160`
+>
+> - Ran `unzip -l /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/77967dd1eb1c1088e909307e57424633ff5aeea2/mwdat-core-0.9.0.aar | head -n 50; jar tf /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/77967dd1eb1c1088e909307e57424633ff5aeea2/mwdat-core-0.9.0.aar | rg 'classes.jar|Permission|Wearables'`
+>
+> - Ran `tmpdir=$(mktemp -d /tmp/olivia-mwdat.XXXXXX); unzip -q /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/77967dd1eb1c1088e909307e57424633ff5aeea2/mwdat-core-0.9.0.aar classes.jar -d "$tmpdir"; jar tf "$tmpdir/classes.jar" | rg 'Wearables|Permission(Status|Error)?' | head -n 100; javap -classpath "$tmpdir/classes.jar" -public com.meta.wearable.dat.core.Wearables com.meta.wearable.dat.core.types.PermissionStatus com.meta.wearable.dat.core.types.Permission`
+>
+> - Ran `tmpdir=$(mktemp -d /tmp/olivia-mwdat.XXXXXX); unzip -q /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable/mwdat-core/0.9.0/77967dd1eb1c1088e909307e57424633ff5aeea2/mwdat-core-0.9.0.aar classes.jar -d "$tmpdir"; jar tf "$tmpdir/classes.jar" | rg 'core/types/Permission|DatResult' | sort; javap -classpath "$tmpdir/classes.jar" -public 'com.meta.wearable.dat.core.Wearables$RequestPermissionContract' com.meta.wearable.dat.core.types.DatResult`
+>
+> </details>
+>
+> A causa no nosso código ficou clara: usamos `createIntent()` + `startActivity()`, pulando o `ActivityResultContract` oficial. Assim a Olivia nunca recebe o resultado da autorização e tenta iniciar enquanto o link ainda está reconectando. Vou trocar por um launcher registrado no ciclo de vida da `MainActivity`, registrar o resultado `Granted/Denied` e só liberar a tentativa quando o DAT confirmar o estado.
+>
+> <details><summary>Explored 3 files, a search, ran 6 commands, searched the web</summary>
+>
+> Searched the web for `https://github.com/facebook/meta-wearables-dat-android/blob/main/samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/cameraaccess/MainActivity.kt`
+>
+> - Ran `git status --short; git diff -- apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+>
+> <details><summary>Explored 3 files, a search</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+> - Searched for `startGlassesRegistration\(` in `app`
+>
+> </details>
+>
+> - Ran `sed -n '285,320p' apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt; rg -n "rememberCoroutineScope|coroutineScope|scope\.launch" apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt | head -n 30; rg -n "PermissionStatus\." /Users/vitorsantana/Desktop/olivia /Users/vitorsantana/.gradle/caches/modules-2/files-2.1/com.meta.wearable -g '*.kt' -g '*.java' 2>/dev/null | head -n 50`
+>
+> - Ran `adb logcat -d -v time | awk '$2 >= "11:16:35.000" && $2 <= "11:17:15.999"' | rg -i 'Olivia|DAT:|ActivityTaskManager.*(stella|olivia)|Permission|Stream|DeviceState|connectedState'`
+>
+> - Ran `adb logcat -d -v time -s OliviaDatGateway:I OliviaDatGateway:W OliviaVoice:I '*:S' | tail -n 100`
+>
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'`
+>
+> - Ran `adb logcat -d -v time | rg -i 'DeviceState\(connectedState|DAT preflight|DWA stream control error|ERROR_CODE_PERMISSION_DENIED|Permission sync finished' | tail -n 100`
+>
+> </details>
+>
+> Vou aplicar duas correções objetivas: usar o launcher oficial (que consulta o estado salvo e recebe o callback) e ampliar a janela de reconexão DAT, porque os logs mostram que o Meta concluiu a sincronização depois que o timeout curto já estava praticamente vencido. Isso também evita que o botão reabra cegamente a tela de permissão.
+>
+> <details><summary>Edited 4 files</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+29 -3)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+3 -1)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt` (+9 -0)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt` (+13 -0)
+>
+> </details>
+>
+> A correção foi aplicada. Agora vou compilar e reinstalar no Moto G60; isso preserva os dados do app e o registro existente. Depois vou validar no log se o callback retorna `GRANTED` em vez de abrir a autorização novamente.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `git diff --check && git diff -- apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+>
+> </details>
+>
+> Build instalado com sucesso. Vou abrir a Olivia e acionar o botão uma vez para verificar se a permissão persistida retorna imediatamente como `GRANTED`; se abrir o Meta AI novamente, o log vai mostrar se o SDK ainda considera a permissão negada ou se o problema é apenas a conexão de dados.
+>
+> <details><summary>Ran 7 commands</summary>
+>
+> - Ran `adb logcat -c; adb shell am start -n com.olivia.companion/.MainActivity; sleep 2; adb shell uiautomator dump /sdcard/olivia-window.xml >/dev/null; adb shell cat /sdcard/olivia-window.xml`
+> - Ran `adb shell input tap 540 2210; sleep 2; adb shell uiautomator dump /sdcard/olivia-window.xml >/dev/null; adb shell cat /sdcard/olivia-window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|clickable="true"'`
+> - Ran `adb shell input tap 540 1000; sleep 2; adb shell uiautomator dump /sdcard/olivia-window.xml >/dev/null; adb shell cat /sdcard/olivia-window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|clickable="true"'`
+> - Ran `adb shell input tap 540 1835; sleep 4; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb logcat -d -v time -s OliviaDatPermission:I OliviaDatPermission:W '*:S'; adb logcat -d -v time | rg -i 'permissions/request|checkPermission|PermissionSession|Permission status' | tail -n 100`
+> - Ran `adb shell uiautomator dump /sdcard/meta-window.xml >/dev/null; adb shell cat /sdcard/meta-window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|checked="true"|clickable="true"' | tail -n 120`
+> - Ran `sleep 3; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb shell uiautomator dump /sdcard/meta-window.xml >/dev/null; adb shell cat /sdcard/meta-window.xml | sed 's/></>\n</g' | rg 'package="com.facebook.stella"|text="[^"]+"' | tail -n 100; adb logcat -d -v time -s OliviaDatPermission:I OliviaDatPermission:W '*:S'`
+> - Ran `adb logcat -d -v time | rg '11:23:0[5-9]|11:23:1[0-5]' | rg -i 'Permission|DevicePermission|ActivityTaskManager|OliviaDatPermission|DFA|connected device|result'`
+>
+> </details>
+>
+> A validação nova funcionou: o callback oficial retornou `DAT camera permission result=GRANTED`. Então a permissão está salva; o botão ainda abriu o Meta AI porque faltava consultar o status antes de lançar o contrato. Vou fechar essa última lacuna e adicionar uma checagem explícita no preflight da câmera, para a UI não confundir desconexão com falta de autorização.
+>
+> <details><summary>Edited 2 files, ran a command</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+12 -1)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+13 -0)
+> - Ran `git diff --check && ./gradlew installGlassesDebug`
+>
+> </details>
+>
+> A segunda build está instalada. Vou fazer o teste de regressão agora: tocar em “Autorizar” com a permissão já concedida. O resultado esperado é permanecer na Olivia e registrar `already=GRANTED`, sem abrir o Meta AI.
+>
+> <details><summary>Ran 5 commands</summary>
+>
+> - Ran `adb logcat -c; adb shell am start -n com.olivia.companion/.MainActivity; sleep 2; adb shell uiautomator dump /sdcard/window.xml >/dev/null; if adb shell cat /sdcard/window.xml | rg -q 'text="Entrar"'; then adb shell input tap 540 2210; sleep 1; fi; adb shell input tap 540 1000; sleep 2; adb shell input tap 540 1835; sleep 4; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb logcat -d -v time -s OliviaDatPermission:I OliviaDatPermission:W '*:S'`
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'`
+> - Ran `adb logcat -d -v time -s OliviaDatPermission:I OliviaDatPermission:W '*:S'`
+> - Ran `adb shell uiautomator dump /sdcard/window.xml >/dev/null && adb shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"' | head -n 50`
+> - Ran `sleep 6; adb shell uiautomator dump /sdcard/window.xml >/dev/null && adb shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|clickable="true"'`
+>
+> </details>
+>
+> O toque de automação acabou acionando o início do take, então aproveitei como teste real. A Olivia agora está aguardando a conexão DAT com a nova janela de 30 segundos. Vou acompanhar o preflight e confirmar se a permissão aparece como `Granted` antes do stream.
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> - Ran `adb logcat -d -v time -s OliviaDatGateway:I OliviaDatGateway:W OliviaDatPermission:I OliviaDatPermission:W OliviaSessionRuntime:I OliviaVoice:I '*:S' | tail -n 120`
+> - Ran `sleep 8; adb logcat -d -v time -s OliviaDatGateway:I OliviaDatGateway:W OliviaDatPermission:I OliviaDatPermission:W OliviaSessionRuntime:I '*:S' | tail -n 120`
+> - Ran `adb logcat -d -v time | rg -i 'OliviaDatGateway|Wearables SDK|DAT preflight|permission=' | tail -n 100`
+>
+> </details>
+>
+> O callback está corrigido, mas apareceu o bloqueio real restante: o DAT ficou `CONNECTING/COMPATIBLE` por 30 segundos e nem chegou à checagem de permissão. Ou seja, o Meta AI salvou a autorização, porém continuou segurando o canal de dados dos óculos. Vou aguardar a sincronização atual terminar e encerrar apenas o processo do Meta AI; a permissão fica armazenada nos óculos e a Olivia pode assumir o link DAT.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -d -v time | rg -i 'Permission sync finished|OliviaDatPermission|DevicePermissionRepository' | tail -n 80; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'`
+> - Ran `adb shell am force-stop com.facebook.stella; adb shell am start -n com.olivia.companion/.MainActivity`
+>
+> </details>
+>
+> Permissão confirmada e sincronizada (`GRANTED`), e o Meta AI foi encerrado depois da sincronização para liberar o canal DAT. A Olivia está aberta. Diga agora “Oi, Olivia”, espere o sinal e diga “gravar”; estou acompanhando o log ao vivo.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -v time -s OliviaVoice:I OliviaDatGateway:I OliviaDatGateway:W OliviaDatPermission:I OliviaSessionRuntime:I '*:S'`
+> - Ran `adb logcat -d -v time | rg -i '11:25:4[0-9]|11:25:5[0-9]|11:26:' | rg -i 'Olivia|DAT:|Exception|FATAL' | tail -n 200`
+>
+> </details>
+>
+> Ótimo: agora temos prova de que o fallback está mantendo a permissão. O ciclo chegou a `CONNECTED/COMPATIBLE` e a checagem retornou `Granted`. O erro avançou para a etapa seguinte: o serviço de stream DWA estava reiniciando (`SERVICE_NOT_FOUND` e depois `SERVICE_RESTORED`). Vou esperar as tentativas automáticas do SDK e verificar se o primeiro frame chega.
+>
+> <details><summary>Ran a command, searched the web</summary>
+>
+> - Ran `adb logcat -d -v time | rg -i 'OliviaDatGateway|DAT:STREAM|DwaCapability|first_frame|StreamError|DeviceSession|Heartbeat timeout' | tail -n 200`
+>
+> Searched the web for `site:github.com/facebook/meta-wearables-dat-android "openDATGlassesAppUpdate" ...`
+>
+> Searched the web for `site:github.com/facebook/meta-wearables-dat-android/blob/main/samples/CameraAccess AndroidManifest.xml DAM_ENABLED ...`
+>
+> </details>
+>
+> A permissão não é mais o problema. O novo erro `SERVICE_NOT_FOUND` indica que o componente DAT/DWA dentro dos óculos não está disponível, e o SDK 0.9 exige esse componente. Vou fazer o botão, quando a câmera já estiver autorizada, abrir o fluxo oficial de instalar/atualizar o app DAT nos óculos. Também vou limitar o `session.start()` para não ficar preso indefinidamente.
+>
+> <details><summary>Edited 4 files, explored a search, ran a command</summary>
+>
+> <details><summary>Explored a search</summary>
+>
+> - Searched for `permission already|deviceSession.start|Fluxo oficial|Autorizar Olivia` in `VariantRuntimeProvider.kt`
+>
+> </details>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+2 -0)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+1 -1)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt` (+1 -1)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt` (+2 -2)
+>
+> - Ran `git diff --check && ./gradlew installGlassesDebug`
+>
+> </details>
+>
+> a lente do oculus ta piscando a luz, entao ele gravou em algum momento e tav granvaod inada
+>
+> Isso confirma que a sessão de câmera chegou a ser adquirida, mesmo sem a Olivia receber o primeiro frame. Vou encerrá-la agora para apagar a luz e liberar a câmera; depois ajusto o timeout para sempre fechar os recursos quando o DWA trava.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell am force-stop com.olivia.companion; adb logcat -d -v time | rg -i 'OliviaDatGateway|first_frame|DAT:STREAM|CameraState|isStreamingActive|StreamImpl|DwaCapability|Heartbeat timeout' | tail -n 240`
+>
+> </details>
+>
+> A Olivia foi encerrada e o estado dos óculos agora aparece como `isStreamingActive=false`; a luz deve apagar em seguida. Ela não estava gravando um vídeo 3K nativo: era a câmera/stream DAT presa na inicialização. Confirma se a luz apagou enquanto eu termino de instalar a proteção de timeout.
+>
+> A proteção já está instalada: `session.start()` agora também fica dentro do timeout e, em qualquer falha, chama `stop()` nos recursos. Vou abrir somente o fluxo “Conectar Olivia” — sem iniciar câmera — para o Meta AI oferecer a instalação/atualização do componente DAT nos óculos.
+>
+> <details><summary>Ran 5 commands</summary>
+>
+> - Ran `adb logcat -c; adb shell am start -n com.olivia.companion/.MainActivity; sleep 3; adb shell uiautomator dump /sdcard/window.xml >/dev/null; adb shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|clickable="true"'`
+> - Ran `adb shell input tap 540 2210; sleep 2; adb shell input tap 540 1000; sleep 2; adb shell uiautomator dump /sdcard/window.xml >/dev/null; adb shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'Conectar Olivia|Autorizar Olivia|text="Aguardando|clickable="true"'`
+> - Ran `adb shell input tap 540 1835; sleep 5; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb logcat -d -v time | rg -i 'OliviaDatPermission|DATGlassesApp|app update|dat/app|ActivityTaskManager.*stella' | tail -n 120`
+> - Ran `sleep 5; adb logcat -d -v time | rg -i 'OliviaDatPermission|Permission sync finished|DAT camera permission' | tail -n 80; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'`
+> - Ran `adb shell input tap 540 1835; sleep 5; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb logcat -d -v time | rg -i 'OliviaDatPermission|DATGlassesApp|app update|fb-viewapp.*(update|permissions)' | tail -n 120`
+>
+> </details>
+>
+> O SDK 0.9 está devolvendo `Granted` no callback, mas `checkPermissionStatus()` volta indisponível enquanto o link DAT oscila; por isso ele abre a permissão de novo. Vou persistir localmente apenas a confirmação do callback (sem substituir a validação real antes da câmera). Assim o botão segue para “instalar/atualizar DAT nos óculos” em vez de repetir o consentimento.
+>
+> <details><summary>Edited a file, ran 4 commands</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+31 -2)
+> - Ran `git diff --check && ./gradlew installGlassesDebug`
+> - Ran `adb logcat -c; adb shell am start -n com.olivia.companion/.MainActivity; sleep 3; adb shell input tap 540 2210; sleep 2; adb shell input tap 540 1000; sleep 2; adb shell input tap 540 1835`
+> - Ran `sleep 6; adb logcat -d -v time | rg -i 'OliviaDatPermission|Permission sync finished' | tail -n 40; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'`
+> - Ran `adb shell input tap 540 1835; sleep 5; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb logcat -d -v time | rg -i 'OliviaDatPermission|fb-viewapp|DATGlassesApp|app/update|dat_app' | tail -n 100`
+>
+> </details>
+>
+> Agora o fluxo correto abriu: `action=update_dat_app`, não mais `permissions/request`. Olhe a tela do Meta AI e confirme qualquer opção de “Instalar”, “Atualizar” ou “Continuar” para o app DAT nos óculos. Vou ler a tela via ADB para te dizer exatamente o que apareceu.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `sleep 2; adb shell uiautomator dump /sdcard/meta-dat-update.xml >/dev/null; adb shell cat /sdcard/meta-dat-update.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|clickable="true"' | tail -n 160`
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb exec-out screencap -p > /tmp/olivia-meta-dat-update.png`
+> - Ran `adb logcat -d -v time | awk '$2 >= "11:30:39.000"' | rg -i 'dat|update|DFA|Navigation|AppManager|SNApp|manifest|internal error' | tail -n 240`
+> - Ran `adb logcat -d -v time | rg 'AppHub::|com.meta.wearable.dat.developer|registeredSNApps|DAT app' | tail -n 180`
+>
+> </details>
+>
+> O Meta AI verificou o componente nos óculos e encontrou a versão DAT disponível `1029984059`; como não havia atualização pendente, fechou sozinho. Isso é esperado. Agora precisamos repetir o comando com o serviço já aquecido. A proteção garante que, se travar, a câmera será encerrada em 8 segundos.
+>
+> Diga “Oi, Olivia”, espere o sinal e diga “gravar”. Estou monitorando `STARTED`, stream e primeiro frame.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb logcat -c; adb logcat -v time | rg --line-buffered 'OliviaVoice|OliviaDatGateway|DAT:STREAM|DwaCapability|first_frame|DeviceSession'`
+>
+> </details>
+>
+> Dessa vez o wake word entrou, mas o segundo comando ficou como `not understood`. Repita: “Oi, Olivia”, aguarde o bip, e fale apenas “gravar”.
+>
+> A autorização está resolvida, mas o último teste não chegou à câmera: durante 30 segundos o DAT permaneceu `DISCONNECTED/COMPATIBLE`. Portanto agora é um problema do transporte DAT nos óculos, não de permissão. Vou conferir a versão do firmware/componente e o estado de Developer Mode para decidir entre reinstalar o DAT dos óculos ou apenas reiniciar o link.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb logcat -d -v time | rg -i 'firmwareVersion|software version|soc version|com.meta.wearable.dat.developer|registeredSNApps|peerConnectedState|DAT preflight' | tail -n 220`
+> - Ran `adb shell dumpsys package com.facebook.stella | rg -n 'versionName|versionCode' | head -n 10; adb shell dumpsys package com.olivia.companion | rg -n 'versionName|versionCode' | head -n 10`
+>
+> </details>
+</details>
+
+Corrigi o fallback e confirmei nos logs:
+
+- Permissão sincronizada: `GRANTED`.
+- Confirmação agora fica persistida localmente.
+- O botão não repete mais a permissão; segue para `update_dat_app`.
+- Timeout agora encerra a câmera corretamente.
+- O stream ficou `isStreamingActive=false` após a falha.
+
+O bloqueio atual é outro: `registeredSNApps=[]` e o DAT permanece `DISCONNECTED`, indicando que o componente DAT dos óculos precisa ser reinstalado. No Meta AI, desligue o **Modo desenvolvedor**, aguarde concluir, ligue novamente e espere a instalação do DAT finalizar. O SDK 0.9 exige o modelo DAT nos óculos. [Changelog oficial do DAT](https://github.com/facebook/meta-wearables-dat-android/blob/main/CHANGELOG.md)
+
+Quando terminar, diga “feito” e eu testo imediatamente o primeiro frame.
+
+> feito
+
+<details><summary>18 previous messages</summary>
+
+> Perfeito. Vou validar se o componente DAT reapareceu nos óculos e então repetir o fluxo completo até `STARTED` e `first_frame`. Vou seguir os guardrails Olivia/Android; primeiro sem abrir a câmera, apenas lendo conexão e versão.
+>
+> <details><summary>Ran a command</summary>
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+>
+> </details>
+>
+> - Ran `adb devices -l; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb logcat -d -v time | rg -i 'registeredSNApps|com.meta.wearable.dat.developer|DAT preflight|Developer Mode|dev_mode|AppHub::' | tail -n 240`
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+>
+> </details>
+>
+> </details>
+>
+> Instalação confirmada nos logs: `SUCCESS! App DevMode DWA installed` às 11:33:54. Esse era o componente ausente. Vou liberar o Meta AI, abrir a Olivia e testar novamente; agora o esperado é o DWA responder e o frame aparecer.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell am force-stop com.facebook.stella; adb shell am start -n com.olivia.companion/.MainActivity; adb logcat -c`
+>
+> </details>
+>
+> Tudo pronto. Diga “Oi, Olivia”, espere o bip e diga somente “gravar”. Estou monitorando ao vivo.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `adb logcat -v time | rg --line-buffered 'OliviaVoice|OliviaDatGateway|DAT:STREAM|DwaCapability|DeviceSession|first_frame|MediaCodec|HevcFrame'`
+> - Ran `adb logcat -d -v time | rg -i 'OliviaVoice|OliviaDatGateway|FATAL EXCEPTION' | tail -n 100`
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'`
+> - Ran `adb shell uiautomator dump /sdcard/window.xml >/dev/null && adb shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"' | head -n 60`
+>
+> </details>
+>
+> A reinstalação do Developer Mode removeu o registro do app, como esperado: agora o SDK está `registration=AVAILABLE` e ainda não lista dispositivo. Assim que esse timeout terminar, vou tocar em “Conectar Olivia” para refazer somente o registro; depois a permissão persistida será reaproveitada.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb shell uiautomator dump /sdcard/window.xml >/dev/null && adb shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'Conectar Olivia|Configurar áudio|clickable="true"'`
+> - Ran `adb shell input tap 540 1835; sleep 4; adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb logcat -d -v time | rg -i 'RegistrationManager|registration=|startRegistration|Attestation|OliviaDatPermission|ActivityTaskManager.*stella' | tail -n 140`
+>
+> </details>
+>
+> O fluxo de registro abriu corretamente no Meta AI. Autorize/conecte a Olivia nessa tela; depois ele deve voltar sozinho ao app. Estou acompanhando o callback.
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> - Ran `adb shell uiautomator dump /sdcard/meta-registration.xml >/dev/null && adb shell cat /sdcard/meta-registration.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|clickable="true"' | tail -n 120`
+> - Ran `adb logcat -d -v time | rg -i 'RegistrationManager|registration state|Application is already registered|Attestation|registration=REGISTERED|OliviaDatPermission' | tail -n 140`
+> - Ran `adb shell input tap 540 1835; sleep 4; adb logcat -d -v time | rg -i 'fb-viewapp://stella/dat|fb-viewapp://device/permissions|OliviaDatPermission|Application is already registered' | tail -n 40`
+>
+> </details>
+>
+> Registro concluído: o segundo toque já foi direto para `update_dat_app`, então a Olivia está novamente `REGISTERED`. Vou deixar a verificação terminar, liberar o Meta AI e fazer o teste final do stream.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `sleep 6; adb shell am force-stop com.facebook.stella; adb shell am start -n com.olivia.companion/.MainActivity; adb logcat -c`
+>
+> </details>
+>
+> Agora diga “Oi, Olivia”, aguarde o bip e “gravar”.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb logcat -v time | rg --line-buffered 'OliviaVoice|OliviaDatGateway|DAT:STREAM|DwaCapability|DeviceSession|first_frame|MediaCodec|HevcFrame'`
+>
+> </details>
+>
+> O DWA agora funciona e o DAT conectou imediatamente (`CONNECTED/COMPATIBLE`). A única pendência é esperada após desligar/ligar o Developer Mode: ele revogou a permissão da câmera, embora nossa confirmação local ainda estivesse marcada. Vou corrigir a cache para ser invalidada sempre que o DAT real responder `Denied`; depois autorizamos uma última vez.
+>
+> <details><summary>Created a file, edited 2 files, ran a command</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/DatPermissionCache.kt` (+19 -0)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+4 -17)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+2 -0)
+> - Ran `git diff --check && ./gradlew installGlassesDebug`
+>
+> </details>
+>
+> Build instalada. Preciso provocar uma checagem real uma vez para apagar a confirmação antiga; será rápida e não manterá a câmera ligada. Diga novamente “Oi, Olivia” e “gravar”. Depois eu abro automaticamente a autorização final.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb shell am start -n com.olivia.companion/.MainActivity; adb logcat -c; adb logcat -v time | rg --line-buffered 'OliviaVoice|OliviaDatGateway|OliviaDatPermission|first_frame|DAT:STREAM|DwaCapability'`
+>
+> </details>
+</details>
+
+O componente DWA foi instalado com sucesso e a Olivia foi registrada novamente. O app está aberto e ouvindo.
+
+Agora diga: “Oi, Olivia”, espere o bip e depois “gravar”. Isso limpará a autorização antiga; em seguida abriremos a permissão final de câmera.
+
+> se instalou um apk novo vamos ter q pegar o id do app check pra eu atualizar no firebase
+
+<details><summary>4 previous messages</summary>
+
+> Sim — precisamos conferir, mas como foi reinstalação por cima (`install -r`) com o mesmo package e certificado, o App Check debug token normalmente é preservado. Vou buscar o token efetivamente emitido pelo app agora, sem expor outras credenciais, e comparar com o que já estava configurado. Estou usando o fluxo Android Kotlin porque isso envolve o bootstrap do Firebase no APK físico.
+>
+> <details><summary>Explored 3 files, a search, ran 2 commands</summary>
+>
+> <details><summary>Explored a file, a search</summary>
+>
+> - Searched for `AppCheck|app check|DebugAppCheck|debug token|FirebaseAppCheck` in `android`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+>
+> </details>
+>
+> - Ran `adb logcat -d -v time | rg -i 'FirebaseAppCheck|DebugAppCheck|App Check|debug token|DebugAppCheckProvider' | tail -n 160`
+>
+> <details><summary>Explored 4 files</summary>
+>
+> - Read `./apps/android/app/build.gradle.kts`
+> - Read `./apps/android/app/build.gradle.kts`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseAppCheckBootstrap.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseVisualAnalyzerFactory.kt`
+>
+> </details>
+>
+> - Ran `rg -n "olivia.debugAppCheckProvider|FIREBASE_APP_CHECK_DEBUG_TOKEN" apps/android/gradle.properties apps/android/local.properties local.properties .env* 2>/dev/null`
+>
+> </details>
+>
+> O build está usando o provedor Debug do App Check, não Play Integrity. Vou reiniciar somente a Olivia para fazer o SDK imprimir o token atual. Se for o mesmo, não precisa alterar nada no Firebase; se mudou, te passo o novo UUID.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb logcat -c; adb shell am force-stop com.olivia.companion; adb shell am start -n com.olivia.companion/.MainActivity; sleep 5; adb logcat -d -v time | rg -i 'FirebaseAppCheck|DebugAppCheck|debug token|DebugAppCheckProvider|Enter this debug secret'`
+>
+> </details>
+</details>
+
+Sim, o App Check gerou este token debug atual:
+
+`8c7e2891-15a4-4ef4-8fd3-9986fc468996`
+
+Cadastre no Firebase App Check do projeto `olivia-glass`, app Android `com.olivia.companion`.
+
+Não salve esse token no Git. Depois diga “feito” para testarmos o Gemini e o stream.
+
+> olha ai os logs dnv, ficou bom tempo no conectando
+
+<details><summary>11 previous messages</summary>
+
+> Vou correlacionar o comando, estado DAT, permissão e timeout dessa tentativa. Estou usando os guardrails Olivia/Android porque precisamos distinguir reconexão, autorização e inicialização do stream sem deixar a câmera presa.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+>
+> </details>
+>
+> - Ran `adb logcat -d -v time | rg -i 'OliviaVoice|OliviaDatGateway|OliviaDatPermission|DAT:STREAM|DwaCapability|DeviceSession|Permission|first_frame|Heartbeat timeout|SERVICE_NOT_FOUND|SERVICE_RESTORED' | tail -n 420`
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+>
+> </details>
+>
+> - Ran `adb shell dumpsys activity activities | rg 'mResumedActivity|ResumedActivity'; adb shell uiautomator dump /sdcard/window.xml >/dev/null && adb shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"' | head -n 80`
+>
+> </details>
+>
+> Achei: ele ficou “Conectando” porque o DAT permaneceu `CONNECTING/COMPATIBLE` durante toda a janela, enquanto os óculos responderam repetidamente `SERVICE_NOT_FOUND` para o serviço interno. Não chegou à permissão nem à câmera. Vou confirmar o timeout exato e reduzir essa espera para a UI falhar rápido, sem mexer no stream.
+>
+> <details><summary>Explored a search, ran 2 commands</summary>
+>
+> - Ran `adb logcat -d -v time | rg -i 'OliviaDatGateway|SERVICE_NOT_FOUND|App installed successfully|Install completed|DAT camera permission' | tail -n 180`
+>
+> <details><summary>Explored a search</summary>
+>
+> - Searched for `DAT_DEVICE_READY_TIMEOUT_MS|Conectando aos óculos|Não foi possível iniciar o DAT` in `app`
+>
+> </details>
+>
+> - Ran `adb logcat -d -v time | rg -i 'DeviceState\(connectedState|peerConnectedState|registeredSNApps|isSessionVerified' | tail -n 40`
+>
+> </details>
+>
+> Context compaction
+>
+> Source: automatic
+> Status: completed
+>
+> Vou usar os skills `olivia-escopo-final` e `android-kotlin`: o primeiro mantém a correção dentro do fluxo real dos óculos; o segundo orienta o ajuste seguro no timeout e a reinstalação. Pelos logs, já achei que a demora foi exatamente o timeout de 30 segundos do nosso app — vou reduzi-lo e reinstalar.
+>
+> <details><summary>Explored a search, ran a command</summary>
+>
+> <details><summary>Explored 3 files, a search</summary>
+>
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+> - Searched for `DAT_DEVICE_READY_TIMEOUT_MS|awaitDatDeviceReady|DatPreflight|OliviaDat` in `DatGlassesGateway.kt`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 logcat -d -v time -T '09-18 11:39:00.000' | rg 'OliviaDat|OliviaVoice|SERVICE_NOT_FOUND|peerConnectedState|registeredSNApps|isSessionVerified|isStreamingActive' | tail -n 160`
+>
+> </details>
+>
+> Confirmado em duas tentativas: `11:39:51 → 11:40:21` e `11:41:19 → 11:41:49`, exatamente 30 s. O cadastro da Olivia está `REGISTERED`, mas o canal de dados dos óculos está `DISCONNECTED`/`peerConnectedState=Disconnected`; o áudio Bluetooth estar funcionando é um canal separado. Também aparece `SERVICE_NOT_FOUND` para o serviço DAT dos óculos. Vou deixar a tentativa limitada a 15 s para a interface não parecer travada.
+>
+> <details><summary>Edited a file, explored a file</summary>
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+>
+> </details>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+3 -2)
+>
+> </details>
+>
+> O ajuste ficou restrito ao timeout de conexão — suporte necessário ao mesmo fluxo, sem alterar câmera, ROI ou permissões. Agora vou validar o diff e instalar a variante `glassesDebug` no Moto G60. Isso não muda o package ID nem o token do Firebase App Check.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `git diff --check && ./gradlew installGlassesDebug`
+> - Ran `adb -s 0072882177 logcat -c && adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity && sleep 3 && adb -s 0072882177 logcat -d -v time | rg 'OliviaDat|OliviaVoice|SERVICE_NOT_FOUND|peerConnectedState|registeredSNApps|isSessionVerified' | tail -n 100`
+>
+> </details>
+</details>
+
+Os logs confirmam:
+
+- Olivia está `REGISTERED`.
+- O Bluetooth de áudio está conectado.
+- O canal DAT está `DISCONNECTED`.
+- O Meta AI retorna `SERVICE_NOT_FOUND` para o serviço de câmera.
+- Portanto, nesta tentativa não foi erro de permissão — o processo nem chegou nessa etapa.
+
+A espera de 30 segundos era nossa. Reduzi para 15 segundos, compilei e instalei o novo APK com sucesso no Moto G60. Package ID e App Check continuam iguais.
+
+Agora reinicie fisicamente os óculos:
+
+1. Desligue pela chave.
+2. Aguarde 10 segundos.
+3. Ligue novamente fora do estojo, com as hastes abertas.
+4. Não desligue o Modo Desenvolvedor e não desemparelhe.
+5. Aguarde o Meta AI mostrar conectado e tente “Oi, Olivia, gravar”.
+
+O app já está aberto e pronto para o próximo teste.
+
+> olha os logs, segue com loop no conetando aos oculus
+
+<details><summary>17 previous messages</summary>
+
+> Vou checar o ciclo completo nos logs — estado do DAT, serviço dos óculos, permissão e eventual timeout. Estou usando novamente `olivia-escopo-final` e `android-kotlin`, porque qualquer correção precisa preservar o fluxo real da câmera e os estados da sessão.
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 logcat -d -v time | rg 'OliviaDat|OliviaVoice|OliviaSession|SERVICE_NOT_FOUND|peerConnectedState|registeredSNApps|isSessionVerified|isStreamingActive|Permission sync|DAT camera permission|TimeoutCancellation' | tail -n 260`
+>
+> - Ran `adb -s 0072882177 shell dumpsys package com.olivia.companion | rg -n 'versionName|versionCode|firstInstallTime|lastUpdateTime|debuggable|olivia:' | head -n 80`
+>
+> - Ran `adb -s 0072882177 shell dumpsys activity activities | rg -n 'mResumedActivity|com.olivia.companion|com.facebook.stella' | head -n 80`
+>
+> </details>
+>
+> O novo APK está aplicado: agora ele encerra em 15 s, então não é um loop infinito da Olivia. O bloqueio continua antes da permissão/câmera: após reiniciar, os óculos reportam `registeredSNApps=[]`, `isSessionVerified=false` e recusam o serviço DAT (`SERVICE_NOT_FOUND`). Vou rastrear agora se o app DAT instalado nos óculos foi removido, não iniciou no boot ou ficou incompatível com o firmware.
+>
+> <details><summary>Ran 3 commands, searched the web</summary>
+>
+> - Ran `adb -s 0072882177 logcat -d -v time | rg -i 'DevMode DWA|DWA|SNApp|supernova app|app installed|install completed|wearable.dat|app manager|appmanager|serviceId=4|session verified|sessionVerified' | tail -n 350`
+>
+> - Ran `rg -n "mwdat|wearables|meta.*dat|0\.9\.0|DWA|developer" apps/android/{settings.gradle.kts,build.gradle.kts,gradle/libs.versions.toml,app/build.gradle.kts} docs/rules/meta_wearables_dat_android.json 2>/dev/null`
+>
+> Searched the web for `site:wearables.developer.meta.com Device Access Toolkit Android SERVICE_NOT_FOUND developer mode DWA ...`
+>
+> - Ran `sed -n '115,190p' apps/android/app/build.gradle.kts && adb -s 0072882177 logcat -d -v time | rg 'AppHub::(Checker|Coordinator|Installer|Service)|DevModeAppInstallerService|com.meta.wearable.dat.developer' | tail -n 180`
+>
+> </details>
+>
+> Achei um detalhe importante: o pacote base `com.meta.wearable.dat.developer` existe no catálogo e o entitlement foi concedido, mas o Meta AI só fez “check de versão”; não executou instalação/ativação após o reboot. Vou reabrir diretamente a tela oficial de atualização DAT e observar se ela oferece instalar/atualizar ou fecha sem provisionar — esse é o mesmo ponto em que os logs param.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb -s 0072882177 logcat -c && adb -s 0072882177 shell am start -a android.intent.action.VIEW -d 'fb-viewapp://stella/dat?action=update_dat_app&minAppVersion=282&sdkVersion=0.9.0.30.0&appId=39112128198378027&isDevMode=true' com.facebook.stella && sleep 4 && adb -s 0072882177 exec-out screencap -p > /tmp/olivia-meta-dat.png && adb -s 0072882177 logcat -d -v time | rg -i 'AppHub|DevModeAppInstaller|dat.developer|DWA|SERVICE_NOT_FOUND|registeredSNApps|peerConnectedState|IntegrationConnection|update_dat_app' | tail -n 220`
+> - Ran `adb -s 0072882177 shell am start -a android.intent.action.VIEW -d "fb-viewapp://stella/dat?action=update_dat_app\&minAppVersion=282\&sdkVersion=0.9.0.30.0\&appId=39112128198378027\&isDevMode=true" -n com.facebook.stella/com.facebook.wearable.companion.silverstone.main.view.SilverstoneMainActivity && sleep 4 && adb -s 0072882177 exec-out screencap -p > /tmp/olivia-meta-dat.png && adb -s 0072882177 logcat -d -v time | rg -i 'AppHub|DevModeAppInstaller|dat.developer|DWA|SERVICE_NOT_FOUND|registeredSNApps|peerConnectedState|IntegrationConnection|update_dat_app' | tail -n 220`
+>
+> </details>
+>
+> Viewed an image
+>
+> A tela do próprio Meta AI revelou a inconsistência: os óculos mostram “Versão do SDK do DAT: **0.9.0.26.0**”, enquanto o SDK Android 0.9.0 abre o fluxo pedindo **0.9.0.30.0**. Isso explica o runtime instalado, mas o serviço 4 não existir/ser aceito. Vou confirmar no changelog e nos metadados do SDK se essa diferença é incompatibilidade real ou apenas numeração interna antes de alterar dependência.
+>
+> <details><summary>Ran 4 commands, searched the web</summary>
+>
+> Searched the web for `site:github.com/facebook/meta-wearables-dat-android "0.9.0.30.0" ...`
+>
+> - Ran `rg -n 'BLUETOOTH(_SCAN|_CONNECT)?|uses-permission' apps/android/app/src/*/AndroidManifest.xml`
+>
+> - Ran `adb -s 0072882177 shell dumpsys package com.olivia.companion | rg -A4 -B2 'android.permission.BLUETOOTH_(SCAN|CONNECT)|runtime permissions'`
+>
+> - Ran `adb -s 0072882177 shell dumpsys bluetooth_manager | rg -i 'RB Meta|74:55:1A:B6:F6:18|Bonded devices' | head -n 120`
+>
+> - Ran `adb -s 0072882177 shell dumpsys audio | rg -i 'SCO_STATE|mBtScoOnByApp|communication device|RB Meta' | head -n 120`
+>
+> </details>
+>
+> A diferença `0.9.0.26.0` não é o defeito: há relatos do SDK 0.9.0 funcionando com exatamente esse companion. Também confirmei que `BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT` e câmera estão concedidos, não há SCO ativo e os dois endereços Bluetooth são os perfis LE + áudio esperados.
+>
+> O que falta é o “push” das configurações do Modo Desenvolvedor para os óculos: o Meta AI mostra o DAT verde, mas `registeredSNApps=[]` prova que o runtime não registrou no boot. Vou inspecionar a ação disponível na linha dos óculos sem alterar pareamento.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null && adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg -n 'Modo de desenvolvedor|RB Meta|DAT|Instal|Atual|SDK|clickable="true"' | head -n 120`
+> - Ran `adb -s 0072882177 logcat -c && adb -s 0072882177 shell input tap 540 1090 && sleep 3 && adb -s 0072882177 exec-out screencap -p > /tmp/olivia-meta-dat-row.png && adb -s 0072882177 logcat -d -v time | rg -i 'AppHub|DevModeAppInstaller|dat.developer|DWA|SERVICE_NOT_FOUND|install|update' | tail -n 180`
+>
+> </details>
+>
+> Viewed an image
+>
+> <details><summary>Ran 3 commands</summary>
+>
+> - Ran `git diff -- apps/android/app/build.gradle.kts apps/android/app/src/glasses/AndroidManifest.xml && rg -n 'APPLICATION_ID|CLIENT_TOKEN|DAM_ENABLED|mwdatApplicationId|mwdatClientToken' apps/android/app/src apps/android/app/build/intermediates/merged_manifests/glassesDebug/processGlassesDebugManifest/AndroidManifest.xml 2>/dev/null | head -n 120`
+> - Ran `adb -s 0072882177 shell input keyevent KEYCODE_BACK && sleep 1 && adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null && adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg -n 'Olivia|Conectar|Meta AI|Gravar|clickable="true"' | head -n 140`
+> - Ran `adb -s 0072882177 shell input tap 540 714 && sleep 2 && adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null && adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg -n 'Olivia|Desenvolvedor|Conect|Permiss|Câmera|Camera|Instal|Atual|clickable="true"' | head -n 180 && adb -s 0072882177 exec-out screencap -p > /tmp/olivia-connected-apps.png`
+>
+> </details>
+>
+> Viewed an image
+>
+> <details><summary>Searched the web</summary>
+>
+> Searched the web for `https://github.com/facebook/meta-wearables-dat-android/blob/main/CHANGELOG.md`
+>
+> </details>
+>
+> A inspeção fechou o diagnóstico: não há correção adicional no timeout que resolva isso. O Meta AI afirma que o DAT base está instalado (verde), mas os óculos não registram nenhum app DAT e devolvem `SERVICE_NOT_FOUND`. Esse estado coincide com uma falha conhecida de provisionamento do runtime no lado Meta, não com o código de preview/ROI da Olivia. Vou devolver o celular à Olivia e manter o stream desligado para não deixar a câmera ativa.
+>
+> <details><summary>Explored 3 files, a search, ran a command</summary>
+>
+> - Ran `adb -s 0072882177 shell am force-stop com.olivia.companion && adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity && sleep 2 && adb -s 0072882177 logcat -d -v time | rg 'OliviaDat|OliviaVoice|isStreamingActive|SERVICE_NOT_FOUND' | tail -n 80`
+>
+> <details><summary>Explored 4 files, a search</summary>
+>
+> - Searched for `conectando.*(óculos|oculos)|aguardando frame|não foi possível iniciar|nao foi possivel iniciar|start failed|glasses.*connect` in `main`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+>
+> </details>
+>
+> </details>
+</details>
+
+Não é loop infinito da Olivia: ela tenta por 15 segundos e falha. Os logs mostram:
+
+- Olivia: `REGISTERED`
+- Modo desenvolvedor: ativo
+- Permissões Bluetooth/câmera: concedidas
+- DAT nos óculos: verde, versão `0.9.0.26.0`
+- Canal de áudio: conectado
+- Canal DAT: `peerConnectedState=Disconnected`
+- Runtime: `registeredSNApps=[]`
+- Erro repetido: `SERVICE_NOT_FOUND`, serviço 4
+- Nenhuma permissão de câmera ou frame chega a ser solicitado
+
+A causa é o runtime DAM dentro dos óculos, não a preview da Olivia. No SDK 0.9 o DAM é obrigatório e não pode ser desativado, conforme o [changelog oficial](https://github.com/facebook/meta-wearables-dat-android/blob/main/CHANGELOG.md). Existe um relato com exatamente `registeredSNApps=[]`, `isSessionVerified=false` e `peerConnectedState=Disconnected`, atribuído ao provisionamento no lado Meta: [issue #137](https://github.com/facebook/meta-wearables-dat-android/issues/137).
+
+Deixei a Olivia aberta e confirmei que nenhuma câmera/stream ficou ativo.
+
+Para o hackathon, o caminho técnico mais rápido agora é migrar temporariamente para DAT 0.8 com `DAM_ENABLED=false`, desviando desse serviço quebrado nos óculos. Isso exige adaptar `addCamera()` para a API `addStream()` do 0.8 e atualizar nossa regra técnica. Posso seguir com esse fallback.
+
+> o mais importnate no momento é de fato conseguirmos gravar com as cameras dos osculos e refeber no app da olivia pra faszer preview e grabar o take dps, faca o que precisar pra isso pode ler as docs deles tambem
+>
+> [https://wearables.developer.meta.com/docs/reference](https://wearables.developer.meta.com/docs/reference)
+>
+> as docs tao ai tambem , considere tambemtudo o que ja. tentamos ate agora, precisamos resolver isso asap, precisamos mesmo atender os rquiesitos e fazer a gravacao guncionar corretament arrumando os fluxos de&#x20;
+>
+> ## . IA — 🟡 quase, depende de 2 travas ainda não confirmadas
+>
+> - Token de debug do App Check foi cadastrado, mas você foi interrompido antes de confirmar se resolveu ("persiste" foi a última palavra).
+> - Mesmo resolvendo o App Check, ainda falta o DAT chegar em `STARTED` + primeiro frame real (item 2) — sem frame chegando, o Gemini nunca é chamado de verdade.
+> - **Falta:** confirmar as duas coisas juntas — DAT entrega frame E Gemini responde sem `FIREBASE_CONFIGURATION_UNAVAILABLE`.
+>
+> ## 2. Frame (câmera/microfone) — 🔴 é o bloqueio principal hoje
+>
+> - Conforme 01-real-glasses-connection.md:52-53: `PASS_HARDWARE` continua pendente. Registro DAT ainda não estabilizou em `REGISTERED`+device `CONNECTED`+`COMPATIBLE` de forma confiável (última tentativa: ficou em "conectando" e depois voltou erro).
+> - Microfone (wake word/Rhino) já está confirmado funcionando localmente — só a câmera/DAT que falta.
+> - **Falta:** um `STARTED` + primeiro frame real reproduzível, não só uma vez por sorte.
+>
+> E esse bug atual pro olivia gravar de fato funcionar
+
+<details><summary>7 previous messages</summary>
+
+> Vou trabalhar até destravar a câmera real: revisar o fluxo contra a documentação da Meta, investigar a conexão antes de mudar o SDK e validar no Moto G60 o primeiro frame, a preview e a resposta do Gemini. Também vou conferir o caminho de gravação do take, porque receber o stream e salvar o vídeo são capacidades distintas.
+>
+> <details><summary>Explored 5 files, ran 5 commands, searched the web</summary>
+>
+> - Ran `git status --short; rg --files docs/hackaton-day-prod docs/rules apps/android | rg 'AGENTS.md|01-real|05-|06-|Gateway|Coordinator|VariantRuntime|libs.versions|DatPermission|Recording|Firebase|Gemini'`
+>
+> - Ran `cat docs/rules/meta_wearables_dat_android.json docs/rules/olivia-contracts.json docs/rules/olivia_backlog.json`
+>
+> Searched the web for `https://wearables.developer.meta.com/docs/reference`
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+>
+> </details>
+>
+> - Ran `adb devices; adb -s 0072882177 logcat -d -v brief -s OliviaDatGateway OliviaDatPermission OliviaFirebaseAI OliviaSessionRuntime | tail -n 90; rg --files /Users/vitorsantana/.gradle/caches | rg 'mwdat-(core|camera).*(aar|jar)$'`
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+> - Read `./apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt`
+> - Read `./docs/hackaton-day-prod/01-real-glasses-connection.md`
+>
+> </details>
+>
+> - Ran `curl -sS https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/AGENTS.md; curl -sS https://api.github.com/repos/facebook/meta-wearables-dat-android/git/trees/main?recursive=1`
+>
+> - Ran `adb devices; adb -s 0072882177 logcat -d -v brief -s OliviaDatGateway OliviaDatPermission OliviaFirebaseAI OliviaSessionRuntime | tail -n 60; rg --files /Users/vitorsantana/.gradle/caches | rg 'mwdat-(core|camera).*(aar|jar)$'`
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt`
+> - Read `./docs/hackaton-day-prod/01-real-glasses-connection.md`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseVisualAnalyzerFactory.kt`
+>
+> </details>
+>
+> </details>
+>
+> Encontrei um bug concreto no app: o timeout lança `CancellationException`, e o coordenador a propaga deixando a sessão em `STARTING`. Isso explica a tela presa em “conectando”, mesmo depois dos 15 segundos.
+>
+> Vou corrigir esse tratamento e coletar os erros internos do DAT. A conclusão anterior de “falha comprovada no servidor da Meta” foi forte demais: os logs mostram indisponibilidade, mas ainda precisamos separar transporte, autorização e runtime.
+>
+> <details><summary>Explored 3 files, ran 4 commands</summary>
+>
+> - Ran `adb -s 0072882177 logcat -d --pid=4691 -v time | rg -i 'dat|connect|bluetooth|permission|error|fail|scan|l2cap|gatt' | tail -n 150`
+>
+> - Ran `curl -sS 'https://api.github.com/repos/facebook/meta-wearables-dat-android/git/trees/main?recursive=1' | jq -r '.tree[].path' | rg 'CameraAccess.*(Session|Recorder|ViewModel|Manifest)|debugging|permissions'; sed -n '1,180p' apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseAppCheckBootstrap.kt; cat apps/android/app/src/glasses/AndroidManifest.xml; sed -n '1,180p' apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./docs/rules/architecture-diagram.json`
+> - Read `./apps/android/app/src/androidTest/kotlin/com/olivia/companion/infra/FirebaseAccessIntegrationTest.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseGeminiVisualTransport.kt`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 shell cmd bluetooth_manager help; cat docs/hackaton-day-prod/03-native-recording-and-storage.md; rg -n 'catch|Cancellation|timeout|start' apps/android/core/src/test/kotlin/com/olivia/core/SessionCoordinatorTest.kt | head -n 65; rg --files -g AGENTS.md -g '!node_modules' -g '!third_party'`
+>
+> - Ran `curl -sS https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/camera/CameraViewModel.kt | sed -n '1,245p'; cat apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt`
+>
+> </details>
+>
+> O erro mais específico está no Bluetooth do Moto: o DAT conecta, descobre os serviços e negocia o MTU, mas a leitura GATT expira repetidamente em 2 s. Vou reiniciar o Bluetooth do celular para testar esse transporte; o áudio dos óculos vai desconectar brevemente.
+>
+> Também confirmei no exemplo oficial que a Meta salva o stream recebido em MP4 no celular. Vou tratar essa opção como take do stream, com sua resolução real; ela não equivale à gravação nativa 3K.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb -s 0072882177 shell am force-stop com.olivia.companion; adb -s 0072882177 shell am force-stop com.facebook.stella; adb -s 0072882177 shell svc bluetooth disable`
+>
+> </details>
+>
+> System error
+>
+> You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 2:27 PM.
+</details>
+
+> prossiga
+
+<details><summary>36 previous messages</summary>
+
+> <details><summary>Edited a file, explored 3 files, ran 3 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell svc bluetooth enable; sed -n '90,150p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+52 -9)
+>
+> - Ran `./gradlew installGlassesDebug`
+>
+> - Ran `curl -sS https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/stream/VideoRecorder.kt | head -n 220; adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity`
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+>
+> </details>
+>
+> </details>
+>
+> Durante os testes, mantenha os óculos ligados, abertos e no rosto. Eles estão assim agora?
+> - Sim, estão no rosto
+> - Ainda vou colocar
+>
+> <details><summary>Edited a file, ran 2 commands</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+6 -3)
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|content-desc="[^"]+"' | cut -c1-420`
+>
+> </details>
+>
+> **Durante os testes, mantenha os óculos ligados, abertos e no rosto. Eles estão assim agora?**
+>
+> Sim, estão no rosto
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity; adb -s 0072882177 shell input tap 540 2210; adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|content-desc="[^"]+"' | cut -c1-500`
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity; sleep 2; adb -s 0072882177 shell input tap 540 2210; sleep 1; adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|content-desc="[^"]+"'`
+> - Ran `adb -s 0072882177 shell input tap 540 2210; sleep 1; adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|content-desc="[^"]+"'`
+> - Ran `adb -s 0072882177 shell input tap 960 2280; sleep 1; adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|content-desc="[^"]+"'`
+>
+> </details>
+>
+> A correção do estado preso já está instalada. Agora o app também registra as transições e os erros específicos da sessão DAT, para localizar a falha sem confundi-la com permissão negada. Vou iniciar um teste pela tela, com o Bluetooth reiniciado e os óculos no rosto.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell input swipe 550 2000 550 850 450; adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"|content-desc="[^"]+"'`
+> - Ran `sed -n '175,260p' apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt; rg --files apps/android/app/src/androidTestGlasses | rg -i 'dat|hardware'; sed -n '1,140p' apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt; cat apps/android/AGENTS.md 2>/dev/null`
+>
+> </details>
+>
+> A Olivia já está na tela de gravação com a correção instalada. Diga “Oi, Olivia”, aguarde o sinal e diga “gravar”; avise quando terminar esse comando.
+> - Falei o comando
+> - Não reconheceu a voz
+>
+> <details><summary>Edited 2 files, explored 2 files, 2 searches, a list, ran 4 commands</summary>
+>
+> - Ran `adb -s 0072882177 logcat -d -v time -s OliviaDatGateway OliviaDatPermission OliviaFirebaseVisual OliviaVisualTiming | tail -n 40; sed -n '1,160p' apps/android/app/src/androidTestGlasses/kotlin/com/olivia/companion/session/DatMockDeviceKitIntegrationTest.kt; sed -n '1,125p' apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+27 -17)
+>
+> - Ran `adb -s 0072882177 logcat -d -v time -s OliviaDatGateway OliviaDatPermission OliviaVoice | tail -n 25; sed -n '250,430p' docs/rules/olivia-contracts.json`
+>
+> <details><summary>Explored 3 files, 2 searches, a list</summary>
+>
+> - Searched for `fun DebugActions` in `RecordingScreen.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Listed files in `testing`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Searched for `metrics|GEMINI|analysis_result|source=` in `SessionRuntime.kt`
+>
+> </details>
+>
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt` (+5 -3)
+>
+> - Ran `./gradlew installGlassesDebug`
+>
+> - Ran `adb -s 0072882177 logcat -d -v time -s OliviaDatGateway OliviaDatPermission OliviaVoice | tail -n 30`
+>
+> </details>
+>
+> Corrigi também o cache de permissão: uma confirmação antiga em memória podia continuar valendo depois de a permissão ser revogada. Agora a consulta real ao DAT decide o fluxo, e erro de conexão não apaga a autorização.
+>
+> Incluí controles de iniciar/parar apenas no APK debug físico. Assim consigo repetir os testes pelo ADB; a voz continua sendo o fluxo principal.
+>
+> **A Olivia já está na tela de gravação com a correção instalada. Diga “Oi, Olivia”, aguarde o sinal e diga “gravar”; avise quando terminar esse comando.**
+>
+> Falei o comando
+>
+> <details><summary>Ran 8 commands, searched the web</summary>
+>
+> - Ran `adb -s 0072882177 logcat -d -v time -s OliviaDatGateway OliviaDatPermission OliviaVoice | tail -n 45; curl -sS 'https://repo.maven.apache.org/maven2/com/meta/wearable/mwdat-core/maven-metadata.xml'`
+>
+> - Ran `adb -s 0072882177 logcat -d --pid=6302 -v brief | rg -A3 -B1 'GattReader|GattHandler|OliviaDatGateway' | tail -n 60; adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity`
+>
+> - Ran `curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'`
+>
+> - Ran `rg -n 'addCamera|removeCamera|dat.camera.Camera|CameraState|DatResult|pairGlasses' apps/android/app/src/glasses apps/android/app/src/androidTestGlasses; curl -sSLo /tmp/olivia-mwdat-core-0.8.0.aar https://repo.maven.apache.org/maven2/com/meta/wearable/mwdat-core/0.8.0/mwdat-core-0.8.0.aar; curl -sSLo /tmp/olivia-mwdat-camera-0.8.0.aar https://repo.maven.apache.org/maven2/com/meta/wearable/mwdat-camera/0.8.0/mwdat-camera-0.8.0.aar; mkdir -p /tmp/olivia-dat08-core /tmp/olivia-dat08-camera; unzip -o -q /tmp/olivia-mwdat-core-0.8.0.aar classes.jar -d /tmp/olivia-dat08-core; unzip -o -q /tmp/olivia-mwdat-camera-0.8.0.aar classes.jar -d /tmp/olivia-dat08-camera; jar tf /tmp/olivia-dat08-camera/classes.jar | rg '(Stream|Camera).*Kt|Stream.class'; jar tf /tmp/olivia-dat08-core/classes.jar | rg 'DatConfiguration|Crash|Analytics'`
+>
+> - Ran `javap -p -c -classpath /tmp/olivia-dat08-core/classes.jar com.meta.wearable.dat.core.internal.configuration.DatConfiguration | rg -n -A12 -B6 'CRASH|DAM|Crash|crash|ENABLED|analytics'; javap -p -classpath /tmp/olivia-dat08-camera/classes.jar com.meta.wearable.dat.camera.SessionStreamExtensionsKt; adb -s 0072882177 shell input tap 540 2210; sleep 1; adb -s 0072882177 shell input tap 960 2280; sleep 1; adb -s 0072882177 shell input swipe 550 2050 550 700 450; adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^"]+"'`
+>
+> - Ran `curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_dat_docs","arguments":{"query":"Android GATT read characteristic timeout 05acbe9f connecting Bluetooth DAT troubleshooting","max_results":4}}}'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 1499; sleep 5; adb -s 0072882177 logcat -d -v time -s OliviaDatGateway OliviaDatPermission | tail -n 30; javap -c -p -classpath /tmp/olivia-dat08-core/classes.jar com.meta.wearable.dat.core.internal.crashreporting.CrashReporter | rg -A16 -B5 'analytics|Enabled|initialize|setup'`
+>
+> - Ran `javap -c -p -classpath /tmp/olivia-dat08-core/classes.jar com.meta.wearable.dat.core.internal.crashreporting.CrashReporter | head -n 210; adb -s 0072882177 logcat -d -v time -s OliviaDatGateway | tail -n 10; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'Não foi|Conectando'`
+>
+> Searched the web for `"05acbe9f" "timeout" ...`
+>
+> </details>
+>
+> O teste após reiniciar o Bluetooth repetiu o timeout GATT. A correção da Olivia funcionou: desta vez a falha virou erro recuperável, sem manter `STARTING`.
+>
+> Vou reiniciar o Moto para eliminar o estado preso da pilha Bluetooth antes de testar outra versão do SDK. Enquanto ele volta, vou corrigir um problema no decoder que também impediria a preview: pacotes HEVC com configuração e imagem no mesmo buffer estavam sendo descartados.
+>
+> <details><summary>Edited a file, ran a command</summary>
+>
+> - Ran `adb -s 0072882177 reboot`
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt` (+36 -4)
+>
+> </details>
+>
+> O Moto está reiniciando para limpar a falha Bluetooth. Quando aparecer a tela de bloqueio, desbloqueie o celular e avise.
+> - Celular desbloqueado
+> - Ainda reiniciando
+>
+> <details><summary>Edited 2 files, ran 3 commands</summary>
+>
+> - Ran `adb devices; curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_dat_docs","arguments":{"query":"Android camera record save video stream native recording simultaneous camera recording frames","max_results":3}}}' | sed 's/^data: //' | jq -r '.result.structuredContent.results'`
+> - Ran `cat apps/android/app/src/main/kotlin/com/olivia/companion/media/AndroidLocalRecordingSource.kt; cat apps/android/app/src/main/kotlin/com/olivia/companion/session/PostTakeController.kt; cat apps/android/app/src/glasses/kotlin/com/olivia/companion/ActiveBackend.kt; rg -n 'video|Vídeo|Importar|uri|Export' apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/Take* apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt; cat apps/android/app/src/main/res/xml/*paths*`
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseAppCheckBootstrap.kt` (+8 -0)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt` (+1 -1)
+> - Ran `adb -s 0072882177 shell getprop sys.boot_completed; adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity; ./gradlew installGlassesDebug`
+>
+> </details>
+>
+> **O Moto está reiniciando para limpar a falha Bluetooth. Quando aparecer a tela de bloqueio, desbloqueie o celular e avise.**
+>
+> Celular desbloqueado
+>
+> <details><summary>Edited a file, explored 3 files, a search, ran 3 commands</summary>
+>
+> <details><summary>Explored 3 files, a search</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/TakeScreen.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+> - Read `./apps/android/core/src/main/kotlin/com/olivia/core/TimelinePostProcessor.kt`
+> - Searched for `hasDemoRecording|prepareDemo` in `android`
+>
+> </details>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt` (+1 -1)
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity; sleep 2; adb -s 0072882177 shell input tap 540 2210; sleep 1; adb -s 0072882177 shell input tap 960 2280; sleep 1; adb -s 0072882177 shell input swipe 550 2050 550 700 450; adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null; adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="(Iniciar|Entrar|Conect|Não foi|.*sessão)'`
+>
+> - Ran `./gradlew assembleGlassesDebug`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 1500; sleep 4; adb -s 0072882177 logcat -d -v time -s OliviaDatGateway OliviaDatPermission | tail -n 30; adb -s 0072882177 logcat -d -v brief | rg -A2 'GattReader2.*timed|GattHandler.*LOW' | tail -n 15`
+>
+> </details>
+>
+> Mesmo após o reboot completo, a leitura GATT continua expirando. Vou executar a comparação com DAT 0.8 e DAM desativado, usando a API de câmera dessa versão. Esse teste vai mostrar se o caminho anterior consegue estabelecer a sessão no mesmo hardware; ainda não é uma solução confirmada.
+>
+> <details><summary>Edited 3 files, ran 2 commands</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/AndroidManifest.xml` (+2 -0)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+2 -8)
+> - Wrote `./apps/android/gradle/libs.versions.toml` (+1 -1)
+> - Ran `cp app/build/outputs/apk/glasses/debug/app-glasses-debug.apk /tmp/olivia-dat09-before-comparison.apk; ./gradlew installGlassesDebug`
+> - Ran `adb -s 0072882177 logcat -d -v time -s OliviaDatGateway | tail -n 15; curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"search_dat_docs","arguments":{"query":"Developer mode Android sdk app id client token 0 bluetooth connection known issues firmware","max_results":3}}}' | sed 's/^data: //' | jq -r '.result.structuredContent.results'`
+>
+> </details>
+>
+> Context compaction
+>
+> Source: automatic
+> Status: completed
+>
+> O log mais recente mostrou um avanço: após o reboot, o DAT chegou a `CONNECTED/COMPATIBLE`, mas a consulta de câmera retornou `Denied`. Vou conferir a instalação e concluir esse fluxo de autorização antes de testar novamente os frames.
+>
+> <details><summary>Edited 3 files, explored 3 files, a search, a list, ran 3 commands</summary>
+>
+> - Ran `git status --short`
+>
+> - Ran `adb -s 0072882177 shell pidof com.olivia.companion`
+>
+> <details><summary>Explored 2 files, a search, a list</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt`
+> - Searched for `mwdat|DAM_ENABLED` in `libs.versions.toml`
+> - Listed files in `olivia-dat09-before-comparison.apk`
+>
+> </details>
+>
+> - Wrote `./apps/android/app/src/glasses/AndroidManifest.xml` (+1 -1)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+8 -2)
+> - Wrote `./apps/android/gradle/libs.versions.toml` (+1 -1)
+>
+> - Ran `adb -s 0072882177 install -r /tmp/olivia-dat09-before-comparison.apk`
+>
+> <details><summary>Explored 4 files</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Read `./docs/hackaton-day-prod/01-real-glasses-connection.md`
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+>
+> </details>
+>
+> </details>
+>
+> Vou manter o DAT 0.9: ele já demonstrou conexão após o reboot, então ainda não há evidência para justificar o downgrade. Continuo usando as skills de Android e escopo da Olivia para corrigir o fluxo sem confundir preview DAT com gravação nativa 3K.
+>
+> <details><summary>Explored a file, a search, ran 5 commands</summary>
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 logcat -d -t 600 -s OliviaDatGateway:I OliviaDatPermission:I OliviaAppCheck:I '*:S'`
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity`
+>
+> <details><summary>Explored a file, a search</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseAppCheckBootstrap.kt`
+> - Searched for `voiceNavigation|START_RECORDING|registration|Permission` in `SessionRuntime.kt`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell input tap 960 2280
+> adb -s 0072882177 shell input swipe 550 2050 550 700 450
+> adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null
+> adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]'`
+>
+> - Ran `adb -s 0072882177 logcat -d -s OliviaAppCheck:I OliviaDatPermission:I '*:S'`
+>
+> - Ran `adb -s 0072882177 shell input tap 510 1833
+> adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null
+> adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^" ]'`
+>
+> </details>
+>
+> O Firebase App Check passou: o próprio APK registrou `APP_CHECK_READY`. Não precisamos cadastrar outro token agora. Abri a ação de autorização da câmera para verificar o retorno do Meta AI.
+>
+> <details><summary>Explored 3 files, a search, a list, ran 8 commands, searched the web</summary>
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null && adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^" ]'
+> adb -s 0072882177 logcat -d -t 500 -s OliviaDatPermission:I OliviaDatGateway:I '*:S'`
+>
+> Searched the web for `https://wearables.developer.meta.com/docs/reference`
+>
+> - Ran `adb -s 0072882177 logcat -d -s OliviaDatPermission:I OliviaDatGateway:I '*:S'
+> adb -s 0072882177 shell dumpsys activity activities | rg 'mResumedActivity'`
+>
+> - Ran `curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_dat_docs","arguments":{"query":"Android 0.9 RequestPermissionContract camera permission Denied device session STARTED","max_results":3}}}' | sed 's/^data: //' | jq -r '.result.structuredContent.results'`
+>
+> - Ran `adb -s 0072882177 shell input keyevent KEYCODE_BACK
+> adb -s 0072882177 shell input tap 540 2126
+> adb -s 0072882177 logcat -v time -s OliviaDatGateway:I OliviaDatPermission:I OliviaAppCheck:I OliviaFirebaseVisual:I OliviaVisualTiming:I '*:S'`
+>
+> <details><summary>Explored a file, a search, a list</summary>
+>
+> - Listed files in `android`
+> - Searched for `ViewModel|LiveSession|DatPermission|Test`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity
+> adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null && adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^" ]'`
+>
+> - Ran `rg -n 'permission|Denied|authorize|Autori' apps/android/app/src/main/kotlin/com/olivia/companion/ui apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt apps/android/app/src/glasses/kotlin/com/olivia/companion/*.kt`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126`
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/OliviaApp.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 shell input tap 510 1833
+> adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null && adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^" ]'`
+>
+> </details>
+>
+> O Meta AI abriu a tela de permissão agora. Confirme a câmera para a Olivia (se houver “Sempre permitir”, escolha essa opção) e me avise quando voltar ao app.
+>
+> **O Meta AI abriu a tela de permissão agora. Confirme a câmera para a Olivia (se houver “Sempre permitir”, escolha essa opção) e me avise quando voltar ao app.**
+>
+> cliquei
+>
+> Achei mais um problema no fluxo: o botão consultava a permissão antes de o canal DAT conectar e acabava abrindo uma tela de atualização. Agora a conexão está confirmada e o prompt correto apareceu. Vou fazer o comando “gravar” aguardar a autorização e continuar a mesma tentativa ao voltar do Meta AI.
+>
+> <details><summary>Explored 4 files, a search, ran 6 commands</summary>
+>
+> <details><summary>Explored a file, a search</summary>
+>
+> - Read `./docs/rules/meta_wearables_dat_android.json`
+> - Searched for `INT-04|INT-06|permission|registration|native_recording_gate|session_states` in `architecture-diagram.json`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null && adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^" ]'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126`
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/DatPermissionCache.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 shell pidof com.olivia.companion
+> adb -s 0072882177 logcat -d -b crash -t 80 | rg 'signal|HEVC|Media|olivia|backtrace|Fatal|SIG'`
+>
+> - Ran `adb -s 0072882177 logcat -d --pid=13393 -t 1800 | rg -i 'hevc|codec|imageReader|csd|video|frame|error|exception' | tail -n 100`
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null && adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]'`
+>
+> - Ran `rg -n 'suspend fun start|state =|snapshot|startCapture|STARTING' apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt; sed -n '250,370p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; curl -sS https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/camera/CameraViewModel.kt | rg -n -C 6 'addCamera|videoStream|start\(|state.collect'`
+>
+> </details>
+>
+> A autorização retornou `GRANTED`, e os óculos chegaram a `session=STARTED` e `stream=STREAMING`. Ainda não apareceu um frame decodificado no preview. Vou investigar agora a entrega e a decodificação do vídeo; nessa tentativa, a permissão já passou.
+>
+> <details><summary>Edited a file, ran 3 commands</summary>
+>
+> - Ran `sed -n '100,137p' apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt; sed -n '410,465p' apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt; adb -s 0072882177 logcat -d --pid=13393 | rg -i 'VideoReceiver|VideoFrame|Hevc|MediaCodec|ImageReader|Streaming|[EW]/|Exception' | tail -n 50`
+> - Ran `curl -sS https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/camera/CameraViewModel.kt | sed -n '340,390p'; javap -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar com.meta.wearable.dat.camera.types.VideoFrame`
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt` (+33 -36)
+> - Ran `adb -s 0072882177 shell am force-stop com.olivia.companion`
+>
+> </details>
+>
+> O vídeo chegou ao decodificador, mas o app sofreu um crash nativo ao acessar os planos de imagem do `ImageReader` no Moto G60. Troquei esse caminho pela leitura direta do `MediaCodec`; vou instalar e testar se os frames passam a chegar ao preview.
+>
+> <details><summary>Edited 3 files, explored 3 files, ran a command</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt` (+58 -22)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+6 -9)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt` (+3 -1)
+>
+> - Ran `./gradlew installGlassesDebug`
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Read `./docs/hackaton-day-prod/README.md`
+>
+> </details>
+>
+> </details>
+>
+> System error
+>
+> You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 4:53 PM.
+</details>

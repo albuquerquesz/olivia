@@ -1,13 +1,16 @@
 package com.olivia.companion.session
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageFormat
+import androidx.activity.ComponentActivity
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.util.Log
 import com.olivia.companion.GlassesBackend
 import com.olivia.companion.audio.AndroidAudioFeedback
+import com.olivia.companion.audio.AudioTimingSink
 import com.olivia.core.AudioMode
 import com.olivia.core.AnalysisFailure
 import com.olivia.core.CaptureHeartbeat
@@ -134,6 +137,14 @@ interface SessionRuntime : AutoCloseable {
 /** Variant boundary: mock stays offline; the glasses source set owns the DAT/Firebase wiring. */
 interface BackendRuntimeProvider {
     fun create(context: Context): SessionRuntime
+
+    /** Registers variant-owned activity-result contracts before the activity reaches STARTED. */
+    fun registerGlassesPermissionLauncher(activity: ComponentActivity): Result<Unit> =
+        Result.success(Unit)
+
+    /** Starts the official DAT/Meta AI registration flow for a physical backend. */
+    fun startGlassesRegistration(activity: Activity): Result<Unit> =
+        Result.failure(UnsupportedOperationException("Registro DAT indisponível nesta variante"))
 }
 
 object SessionRuntimeFactory {
@@ -143,6 +154,22 @@ object SessionRuntimeFactory {
         provider.create(context.applicationContext)
     } catch (_: Throwable) {
         UnavailableSessionRuntime()
+    }
+
+    fun startGlassesRegistration(activity: Activity): Result<Unit> = try {
+        val providerClass = Class.forName("com.olivia.companion.VariantRuntimeProvider")
+        val provider = providerClass.getField("INSTANCE").get(null) as BackendRuntimeProvider
+        provider.startGlassesRegistration(activity)
+    } catch (error: Throwable) {
+        Result.failure(error)
+    }
+
+    fun registerGlassesPermissionLauncher(activity: ComponentActivity): Result<Unit> = try {
+        val providerClass = Class.forName("com.olivia.companion.VariantRuntimeProvider")
+        val provider = providerClass.getField("INSTANCE").get(null) as BackendRuntimeProvider
+        provider.registerGlassesPermissionLauncher(activity)
+    } catch (error: Throwable) {
+        Result.failure(error)
     }
 }
 
@@ -185,7 +212,14 @@ internal class LiveSessionRuntime(
     private val clock: OliviaClock,
 ) : SessionRuntime {
     private val runtimeScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val audio = AndroidAudioFeedback(context, clock, AudioMode.VOICE)
+    private val audio = AndroidAudioFeedback(
+        context,
+        clock,
+        AudioMode.VOICE,
+        timingSink = AudioTimingSink { stage, durationMs ->
+            Log.i(LOG_TAG, "audio_timing stage=$stage ms=$durationMs")
+        },
+    )
     override val audioStatus = audio.status
     override val audioStatusMessage = audio.statusMessage
     private val _connection = MutableStateFlow(GlassesConnection.UNAVAILABLE)
