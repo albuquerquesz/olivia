@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -157,14 +158,16 @@ fun OliviaWelcomeScreen(
 
 @Composable
 private fun OnboardingIntro() {
-    Column {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         OnboardingVisualCard()
-        Spacer(modifier = Modifier.height(320.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         OnboardingHeading(
+            modifier = Modifier.fillMaxWidth(),
             title = "Grave com as mãos livres",
             description = "A Olivia observa o enquadramento, a luz e o horizonte, e orienta você por áudio.",
             titleFontSize = 28,
             verticalSpacing = 16.dp,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -245,12 +248,17 @@ private fun OnboardingVisualCard(imageRes: Int? = null) {
 
 @Composable
 private fun OnboardingHeading(
+    modifier: Modifier = Modifier,
     title: String,
     description: String? = null,
     titleFontSize: Int = 24,
     verticalSpacing: Dp = 8.dp,
+    textAlign: TextAlign = TextAlign.Start,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(verticalSpacing)) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+    ) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall.copy(
@@ -258,12 +266,14 @@ private fun OnboardingHeading(
                 lineHeight = (titleFontSize + 8).sp,
                 fontWeight = FontWeight.Bold,
             ),
+            textAlign = textAlign,
         )
         description?.let {
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = textAlign,
             )
         }
     }
