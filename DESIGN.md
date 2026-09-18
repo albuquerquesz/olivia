@@ -18,8 +18,8 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 | Fundo | #F1F3F7 |
 | Superfície | #FAFBFD |
 | Painel principal e ação/seleção | #BFDFFD |
-| Ação principal (topo) | #D9EEFF |
-| Ação principal (base) | #A4D1F3 |
+| Ação principal (topo) | #C9E5FA |
+| Ação principal (base) | #96C8ED |
 | Texto sobre ação principal | #151A21 |
 | Texto principal e no azul | #151A21 |
 | Texto secundário no branco | #526174 |
