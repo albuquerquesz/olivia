@@ -53,7 +53,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.olivia.companion.session.ExportState
 import com.olivia.companion.session.ExportStatus
 import com.olivia.companion.session.TakeSummary
-import com.olivia.companion.session.confirmationLabel
 import com.olivia.companion.session.eventTitle
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.ui.OliviaPage
@@ -84,7 +83,7 @@ fun OliviaTakeScreen(
         }
     }
 
-    OliviaPage(onNavigateBack = onNavigateBack) {
+    OliviaPage(onNavigateBack = onNavigateBack, verticalSpacing = 16.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
                 "Revisão do take",
@@ -292,9 +291,6 @@ private fun SuggestedCutsSection(take: TakeSummary) {
 private fun SuggestedCutRow(cut: SuggestedCut, durationMs: Long) {
     val total = durationMs.coerceAtLeast(1L)
     val startFraction = (cut.startMs.toFloat() / total).coerceIn(0f, 1f)
-    val cutFraction = ((cut.endMs - cut.startMs).toFloat() / total).coerceIn(0.04f, 1f)
-    val visibleStart = startFraction.coerceAtMost(0.94f)
-    val visibleWidth = cutFraction.coerceAtMost(1f - visibleStart).coerceAtLeast(0.04f)
     val colors = MaterialTheme.colorScheme
 
     Row(
@@ -305,8 +301,8 @@ private fun SuggestedCutRow(cut: SuggestedCut, durationMs: Long) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "${formatOffset(cut.startMs)}–${formatOffset(cut.endMs)}",
-            modifier = Modifier.width(72.dp),
+            formatOffset(cut.startMs),
+            modifier = Modifier.width(40.dp),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = colors.primary,
         )
@@ -317,18 +313,13 @@ private fun SuggestedCutRow(cut: SuggestedCut, durationMs: Long) {
                 .clip(CircleShape)
             .background(colors.surfaceVariant),
         ) {
-            Row(modifier = Modifier.fillMaxSize()) {
-                Spacer(Modifier.weight(visibleStart))
+            if (startFraction > 0f) {
                 Box(
                     modifier = Modifier
-                        .weight(visibleWidth)
+                        .fillMaxWidth(startFraction)
                         .fillMaxHeight()
                         .background(colors.primary, CircleShape),
                 )
-                val remaining = 1f - visibleStart - visibleWidth
-                if (remaining > 0f) {
-                    Spacer(Modifier.weight(remaining))
-                }
             }
         }
         Text(
@@ -384,7 +375,6 @@ private fun TimelineSection(events: List<TimelineEvent>) {
 @Composable
 private fun TimelineRow(event: TimelineEvent, isLast: Boolean) {
     val colors = MaterialTheme.colorScheme
-    val confirmation = confirmationLabel(event)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -435,16 +425,6 @@ private fun TimelineRow(event: TimelineEvent, isLast: Boolean) {
                     fontWeight = FontWeight.Normal,
                 ),
             )
-            if (confirmation != null) {
-                Text(
-                    confirmation,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        letterSpacing = 0.6.sp,
-                        fontWeight = FontWeight.Normal,
-                    ),
-                    color = colors.onSurfaceVariant,
-                )
-            }
         }
     }
 }
