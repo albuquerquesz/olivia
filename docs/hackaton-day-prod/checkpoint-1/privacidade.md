@@ -37,13 +37,15 @@ caminho.
 
 ## O que falta
 
-- Nada de código pendente. O único ponto de atenção **operacional** (não de código): o token de
-  debug do Firebase App Check foi extraído do log hoje para ser cadastrado no Console — ele não
-  deve ficar em nenhum arquivo do repositório nem em evidência anexada, só no Console do Firebase.
+- Nada de código pendente. O token de debug do Firebase App Check foi cadastrado no Console hoje e
+  **confirmado funcionando no físico** (`APP_CHECK_READY` observado no log durante a sessão real) —
+  ponto operacional resolvido, não precisa de mais ação. Só reforçando: esse token nunca deve ficar
+  em nenhum arquivo do repositório nem em evidência anexada, só no Console do Firebase.
 
 ## Como demonstrar na banca
 
 Explicar a arquitetura, não precisa de hardware ligado:
+
 1. Mostrar o prompt do Gemini ([FirebaseGeminiVisualTransport.kt:202-212](../../../apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseGeminiVisualTransport.kt#L202-L212)) e o schema fechado — a IA só pode devolver coordenadas, nunca descrição de conteúdo sensível.
 2. Explicar que o frame é efêmero: decodifica, analisa, descarta — nunca grava.
 3. Explicar que a transcrição (Whisper) só roda local, só depois de `STOPPED`, nunca ao vivo.

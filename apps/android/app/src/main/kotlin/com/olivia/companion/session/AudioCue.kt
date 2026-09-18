@@ -44,6 +44,7 @@ internal fun cueFor(signal: SessionSignal): AudioCue = when (signal) {
     SessionSignal.ANALYSIS_RESTORED, SessionSignal.AUDIO_RESTORED -> AudioCue.CONNECTION_RESTORED
     SessionSignal.VOICE_COMMAND_ERROR -> AudioCue.VOICE_COMMAND_ERROR
     SessionSignal.VOICE_INPUT_UNAVAILABLE -> AudioCue.VOICE_INPUT_UNAVAILABLE
+    SessionSignal.TARGET_FRAMED -> AudioCue.CONNECTION_RESTORED
 }
 
 internal fun spokenTextFor(direction: Direction, magnitude: Double?): String {
@@ -67,4 +68,5 @@ internal fun spokenTextFor(signal: SessionSignal): String = when (signal) {
     SessionSignal.AUDIO_RESTORED -> "Áudio retomado"
     SessionSignal.VOICE_COMMAND_ERROR -> "Não entendi o comando"
     SessionSignal.VOICE_INPUT_UNAVAILABLE -> "Comandos de voz indisponíveis"
+    SessionSignal.TARGET_FRAMED -> "Enquadramento correto"
 }

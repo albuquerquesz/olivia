@@ -89,6 +89,9 @@ public enum class SessionSignal {
 
     /** O reconhecimento local não está disponível neste aparelho/configuração. */
     VOICE_INPUT_UNAVAILABLE,
+
+    /** A peça voltou a ficar bem enquadrada depois de um desvio; confirmação positiva, não correção. */
+    TARGET_FRAMED,
 }
 
 /**

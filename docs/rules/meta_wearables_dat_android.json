@@ -30,7 +30,10 @@
     },
     "artifact_repository": "Maven Central (com.meta.wearable)",
     "registered_integration_credentials": {
-      "names": ["MWDAT_APPLICATION_ID", "MWDAT_CLIENT_TOKEN"],
+      "names": [
+        "MWDAT_APPLICATION_ID",
+        "MWDAT_CLIENT_TOKEN"
+      ],
       "alternative": "mwdat_application_id e mwdat_client_token em local.properties",
       "handling": "Nunca versionar; usar secret de CI e local.properties ignorado pelo Git. Em Developer Mode, usar os placeholders explícitos 0/0."
     },
@@ -61,7 +64,14 @@
   ],
   "sdd_capability_review": {
     "date": "2026-09-12",
-    "tasks": ["INT-00", "BE-00", "BE-12", "INT-04", "INT-05", "INT-06"],
+    "tasks": [
+      "INT-00",
+      "BE-00",
+      "BE-12",
+      "INT-04",
+      "INT-05",
+      "INT-06"
+    ],
     "setup_spec": "docs/hackaton-day-prod/01-real-glasses-connection.md",
     "native_spec": "docs/hackaton-day-prod/03-native-recording-and-storage.md",
     "status": "native_recording_blocked_by_dat_0_9_0",
@@ -79,8 +89,17 @@
   },
   "physical_preview_checkpoint": {
     "date": "2026-09-18",
-    "tasks": ["BE-00", "INT-04"],
-    "dependencies": ["SH-04", "FE-00", "FE-02", "BE-02", "INT-00"],
+    "tasks": [
+      "BE-00",
+      "INT-04"
+    ],
+    "dependencies": [
+      "SH-04",
+      "FE-00",
+      "FE-02",
+      "BE-02",
+      "INT-00"
+    ],
     "mode": "glassesDebug físico, DAT 0.9.0, Developer Mode 0/0, MockDeviceKit=false",
     "decoder": "HEVC Annex B aceita configuração e imagem no mesmo pacote; saída YUV flexível via MediaCodec.getOutputImage, sem ImageReader/SurfaceImage no Moto G60. csd-0 é entregue somente pelo MediaFormat, sem reenvio explícito após start.",
     "startup_readiness": "Após STREAMING, startCapture aguarda até 25 s pelo primeiro heartbeat de frame decodificado; timeout limpa recursos. O coordenador consome esse heartbeat ao retornar do adapter, antes de liberar o lock ao watchdog. Na captura ativa, 4 s sem frame continuam gerando DEGRADED.",
@@ -89,6 +108,23 @@
     "current_evidence": "Após timeouts GATT iniciais, reinício dos óculos/transporte/apps restabeleceu CONNECTED/COMPATIBLE e câmera Granted. Frames DAT NV21 720×1280 às 12:22 e 12:24; operador confirmou preview acompanhando movimentos. Pausa/retomada/encerramento exercitados por debug. APP_CHECK_READY; ROI ainda expira no limite original de 2 s.",
     "validation": "Correções de decoder e início compiladas/instaladas por installGlassesDebug; PASS_HARDWARE para câmera/preview, sem medição de atraso cena→tela ou áudio acústico. Teste de regressão do coordenador adicionado, sem executar suíte automatizada.",
     "privacy": "Somente estados e metadados agregados como evidência; nenhum frame, áudio bruto ou credencial persistido."
+  },
+  "latency_investigation": {
+    "date": "2026-09-18",
+    "tasks": [
+      "BE-00",
+      "BE-02",
+      "INT-04"
+    ],
+    "capture_fps": 24,
+    "decision": "Retomada do fix solicitado: MEDIUM/24, decoder interno DAT, NV21 direto na GPU e tracking em worker separado. Sampling remoto continua em 0,5 fps. MEDIUM é experimento de diagnóstico, não aceite do alvo 720×1280 nem da latência.",
+    "decoder_fix": "Drenagem de saída em thread própria a cada 5 ms, independente de novos pacotes; planos YUV obtidos uma vez e luminância copiada por linha. Mantém MediaCodec sem Surface/ImageReader e resolução HIGH.",
+    "instrumentation": "Debug mede chegada de pacote DAT antes do decoder, espera enqueue→output no MediaCodec, conversão YUV→NV21 e publicação do preview. Somente contagens/intervalos/flags, sem bytes ou respostas do modelo.",
+    "measurement_limit": "PTS e relógio do celular não têm origem sincronizada comprovada. Diferença de durações desde o primeiro frame mede drift relativo, não latência absoluta nem localiza sozinha o gargalo. FrameStamp.receivedAt é criado após decode; não prova frescor da cena para ROI.",
+    "physical_2fps_evidence": "129 frames, 13:37:50–13:38:53: espera codec p50/p95 9/18 ms; conversão 20/32 ms; publicação preview 13/79 ms (128 amostras). Cores normais confirmadas; atraso visual continua. Formato do codec reduziu de 736×1280 para 512×896, incluindo alinhamento: HIGH não garantiu resolução constante.",
+    "documentation_review": "docs/hackaton-day-prod/checkpoint-1/investigacao-latencia-dat.md",
+    "next_control": "Medição isolada raw reproduziu backlog; comparar compressed=true mantendo MEDIUM/24. Medição absoluta cena→tela e resolução-alvo seguem pendentes.",
+    "diagnostic_activity": "CameraDiagnosticActivity somente em glassesDebug; iniciar com processo Olivia limpo. Reutiliza gateway e GPU, sem SessionRuntime, ROI, Gemini, wake word ou TTS. Extra compressed=true compara decoder Olivia; não equivale ao decoder software→Surface oficial. Frames apenas em memória."
   },
   "agent_reference": {
     "static_docs": "https://wearables.developer.meta.com/llms.txt",

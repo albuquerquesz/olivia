@@ -113,5 +113,5 @@ public class FrameSampler(
         lastAnalysisStartedAtMs?.let { now.monotonicMs - it >= analysisIntervalMs } ?: true
 
     private fun isExpired(frame: Frame, now: ClockReading): Boolean =
-        now.monotonicMs - frame.stamp.receivedAt.monotonicMs > maxFrameAgeMs
+        frame.stamp.ageMs(now) > maxFrameAgeMs
 }

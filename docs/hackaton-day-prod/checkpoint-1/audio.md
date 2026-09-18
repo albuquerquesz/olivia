@@ -1,6 +1,16 @@
 # Áudio — checkpoint técnico 1
 
-## Status: pronto no código e no roteamento físico; falta confirmar que é a fala da Olivia (não áudio genérico)
+## Status: `PASS_HARDWARE` — confirmado no físico hoje
+
+Atualização 18/09, sessão física no Moto G60 + Ray-Ban: o operador ouviu a correção de enquadramento
+("vire para a direita") saindo dos óculos durante uma sessão real, com Gemini analisando e ROI
+rodando. Isso fecha a pendência que este arquivo tinha antes ("confirmar que é a fala da Olivia,
+não áudio genérico").
+
+**Atenção operacional:** essa confirmação está registrada aqui nesta pasta, mas a linha "voz/tons
+nos óculos" na [matriz de evidência principal](../05-privacy-and-evidence.md#L22-L34) ainda está
+`PENDING` — quem estiver atualizando esse arquivo no aparelho precisa marcar `PASS_HARDWARE` lá
+também, com horário/log, pra não ficar dois estados divergentes entre as duas pastas.
 
 Ver [02-bluetooth-and-dat.md](../02-bluetooth-and-dat.md#L19-L22): *"Ouvir voz e todos os tons nos
 Ray-Ban é a única prova de áudio físico."* Isso é sobre a **saída** de áudio (orientação). O
@@ -44,16 +54,17 @@ Duas camadas de fallback, ambas automáticas:
    (`AndroidAudioFeedback.kt:242-278`) — reproduzir é só `track.play()`, sem custo de síntese.
 
 ## O que falta
- 
-- Confirmar especificamente que o som ouvido foi uma **`Correction` da Olivia** (voz ou tom),
-  não áudio genérico do sistema (música, notificação, etc.). É rápido de testar: não depende do
-  DAT/câmera, só precisa de uma correção disparada (real ou de teste) enquanto o Bluetooth está
-  conectado.
+
+- Nada bloqueante. Falta só **repetir e sanitizar a evidência**: horário exato, direção da
+  correção, e confirmar se foi modo `VOICE` ou `SIGNAL` — pra virar uma linha completa na matriz
+  de evidência, não só um relato verbal.
+- Medir a meta de ~900 ms end-to-end (frame → áudio) continua pendente — ver `bateria.md`. O áudio
+  em si já toca; o que ainda não foi medido é o quão rápido ele toca depois do desvio.
 
 ## Como demonstrar na banca
 
-1. Com os Ray-Ban conectados por Bluetooth, disparar uma correção (durante uma sessão real ou um
-   teste dirigido) e deixar a banca ouvir a frase em pt-BR saindo dos óculos.
+1. Repetir o mesmo teste de hoje com os Ray-Ban conectados: disparar uma correção durante uma
+   sessão real e deixar a banca ouvir a frase em pt-BR saindo dos óculos — já reproduzido uma vez.
 2. Mostrar o modo Sinal como alternativa mais barata em bateria, se o tempo permitir.
 3. Citar o cooldown de 4 s como parte do design de não sobrecarregar a pessoa com áudio.
 

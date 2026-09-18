@@ -4,7 +4,11 @@ import android.media.Image
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.os.Build
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
+import com.olivia.companion.BuildConfig
 import java.nio.ByteBuffer
 
 /**
@@ -18,13 +22,30 @@ import java.nio.ByteBuffer
 internal class HevcFrameDecoder(
     private val width: Int,
     private val height: Int,
-    private val onFrame: (width: Int, height: Int, nv21: ByteArray) -> Unit,
+    private val onFrame: (width: Int, height: Int, nv21: ByteArray, presentationTimeUs: Long) -> Unit,
     private val onUnavailable: () -> Unit,
 ) : AutoCloseable {
     private val codec = MediaCodec.createDecoderByType(MediaFormat.MIMETYPE_VIDEO_HEVC)
     private var cachedConfig: ByteArray? = null
     private var active = false
     private var closed = false
+    private val queuedAtNanos = LinkedHashMap<Long, Long>()
+    private var outputCount = 0L
+    private val outputThread = HandlerThread("OliviaHevcOutput").apply { start() }
+    private val outputHandler = Handler(outputThread.looper)
+    private val outputDrain = object : Runnable {
+        override fun run() {
+            synchronized(this@HevcFrameDecoder) {
+                if (closed || !active) return
+                runCatching { drain() }.onFailure {
+                    Log.w("OliviaHevcDecoder", "output_failed type=${it.javaClass.simpleName}")
+                    onUnavailable()
+                    return
+                }
+                outputHandler.postDelayed(this, OUTPUT_POLL_MS)
+            }
+        }
+    }
 
     @Synchronized
     fun enqueue(buffer: ByteBuffer, presentationTimeUs: Long, isCodecConfig: Boolean) {
@@ -36,9 +57,17 @@ internal class HevcFrameDecoder(
             if (config.isNotEmpty()) {
                 cachedConfig = ((cachedConfig ?: ByteArray(0)) + config).distinctConfigNals()
             }
+            if (BuildConfig.DEBUG && (config.isNotEmpty() || packet.hasIrapNal())) {
+                Log.i("OliviaHevcDecoder", "access_unit config=${config.isNotEmpty()} irap=${packet.hasIrapNal()} bytes=${packet.size}")
+            }
             // Glasses can put VPS/SPS/PPS and the first keyframe in one access unit.
             // It is a picture packet as well: never discard it merely for containing CSD.
             if (!packet.hasPictureNal()) {
+                // Initial CSD is supplied by configure/start. A later standalone configuration
+                // (e.g. adaptive resolution) must still reach the running decoder.
+                if (active && config.isNotEmpty()) {
+                    queue(packet, presentationTimeUs, MediaCodec.BUFFER_FLAG_CODEC_CONFIG)
+                }
                 return
             }
             if (!active) {
@@ -47,13 +76,13 @@ internal class HevcFrameDecoder(
                 // csd-0 is submitted automatically by MediaCodec.start(). Sending a second
                 // codec-config buffer here violates that contract and can disrupt startup.
                 active = true
+                outputHandler.post(outputDrain)
             }
             queue(
                 packet,
                 presentationTimeUs,
                 if (packet.hasIrapNal()) MediaCodec.BUFFER_FLAG_KEY_FRAME else 0,
             )
-            drain()
         }.onFailure {
             Log.w("OliviaHevcDecoder", "decode_failed type=${it.javaClass.simpleName}")
             onUnavailable()
@@ -65,6 +94,11 @@ internal class HevcFrameDecoder(
         // Flexible YUV exposes CPU-readable planes directly from MediaCodec, without a Surface.
         val format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_HEVC, width, height)
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
+        // Requests minimal buffering permitted by the codec; required reference/reorder
+        // dependencies are still respected. Output must also be drained independently of input.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            format.setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
+        }
         cachedConfig?.let { format.setByteBuffer("csd-0", ByteBuffer.wrap(it)) }
         codec.configure(format, null, null, 0)
         codec.start()
@@ -72,10 +106,17 @@ internal class HevcFrameDecoder(
 
     private fun queue(packet: ByteArray, presentationTimeUs: Long, flags: Int) {
         val index = codec.dequeueInputBuffer(INPUT_TIMEOUT_US)
-        if (index < 0) return
+        if (index < 0) {
+            if (BuildConfig.DEBUG) Log.w("OliviaHevcDecoder", "input_unavailable")
+            return
+        }
         val input = requireNotNull(codec.getInputBuffer(index))
         input.clear()
         input.put(packet)
+        if (BuildConfig.DEBUG) {
+            queuedAtNanos[presentationTimeUs] = System.nanoTime()
+            if (queuedAtNanos.size > 128) queuedAtNanos.remove(queuedAtNanos.keys.first())
+        }
         codec.queueInputBuffer(index, 0, packet.size, presentationTimeUs, flags)
     }
 
@@ -84,12 +125,22 @@ internal class HevcFrameDecoder(
         while (true) {
             when (val index = codec.dequeueOutputBuffer(info, OUTPUT_TIMEOUT_US)) {
                 MediaCodec.INFO_TRY_AGAIN_LATER -> return
-                MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> Unit
+                MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> if (BuildConfig.DEBUG) {
+                    val format = codec.outputFormat
+                    Log.i("OliviaHevcDecoder", "output_format width=${format.getInteger(MediaFormat.KEY_WIDTH)} " +
+                        "height=${format.getInteger(MediaFormat.KEY_HEIGHT)}")
+                }
                 else -> if (index >= 0) {
                     try {
                         codec.getOutputImage(index)?.use { image ->
+                            val outputAt = System.nanoTime()
+                            val queuedAt = queuedAtNanos.remove(info.presentationTimeUs)
                             val crop = image.cropRect
-                            onFrame(crop.width(), crop.height(), image.toNv21())
+                            val nv21 = image.toNv21()
+                            if (BuildConfig.DEBUG) Log.i("OliviaHevcDecoder",
+                                "decode_timing output=${outputCount++} codec_wait_ms=${queuedAt?.let { (outputAt - it) / 1_000_000 }} " +
+                                    "convert_ms=${(System.nanoTime() - outputAt) / 1_000_000} pending=${queuedAtNanos.size}")
+                            onFrame(crop.width(), crop.height(), nv21, info.presentationTimeUs)
                         }
                     } finally {
                         codec.releaseOutputBuffer(index, false)
@@ -103,10 +154,13 @@ internal class HevcFrameDecoder(
     override fun close() {
         if (closed) return
         closed = true
+        outputHandler.removeCallbacksAndMessages(null)
         if (active) runCatching { codec.stop() }
         runCatching { codec.release() }
         cachedConfig?.fill(0)
         cachedConfig = null
+        queuedAtNanos.clear()
+        outputThread.quitSafely()
     }
 
     private fun ByteBuffer.copyRemaining(): ByteArray = duplicate().let { source ->
@@ -172,23 +226,46 @@ internal class HevcFrameDecoder(
         val y = planes[0]
         val u = planes[1]
         val v = planes[2]
-        var yOffset = 0
-        for (row in 0 until height) for (column in 0 until width) {
-            output[yOffset++] = y.byteAt(row + crop.top, column + crop.left)
+        // Image.Plane.buffer is an Android getter, not a cheap field. Fetch each buffer/stride
+        // once instead of calling into Image for every one of ~1.4 million output bytes.
+        val yBuffer = y.buffer.duplicate()
+        val yStart = yBuffer.position() + crop.top * y.rowStride + crop.left * y.pixelStride
+        val yRowStride = y.rowStride
+        val yPixelStride = y.pixelStride
+        for (row in 0 until height) {
+            val source = yStart + row * yRowStride
+            val destination = row * width
+            if (yPixelStride == 1) {
+                yBuffer.position(source)
+                yBuffer.get(output, destination, width)
+            } else {
+                for (column in 0 until width) output[destination + column] =
+                    yBuffer.get(source + column * yPixelStride)
+            }
         }
+        val uBuffer = u.buffer
+        val vBuffer = v.buffer
+        val uRowStride = u.rowStride
+        val vRowStride = v.rowStride
+        val uPixelStride = u.pixelStride
+        val vPixelStride = v.pixelStride
+        val uStart = uBuffer.position() + crop.top / 2 * uRowStride + crop.left / 2 * uPixelStride
+        val vStart = vBuffer.position() + crop.top / 2 * vRowStride + crop.left / 2 * vPixelStride
         var offset = width * height
-        for (row in 0 until height / 2) for (column in 0 until width / 2) {
-            output[offset++] = v.byteAt(row + crop.top / 2, column + crop.left / 2)
-            output[offset++] = u.byteAt(row + crop.top / 2, column + crop.left / 2)
+        for (row in 0 until height / 2) {
+            val uRow = uStart + row * uRowStride
+            val vRow = vStart + row * vRowStride
+            for (column in 0 until width / 2) {
+                output[offset++] = vBuffer.get(vRow + column * vPixelStride)
+                output[offset++] = uBuffer.get(uRow + column * uPixelStride)
+            }
         }
         return output
     }
 
-    private fun Image.Plane.byteAt(row: Int, column: Int): Byte =
-        buffer.get(buffer.position() + row * rowStride + column * pixelStride)
-
     private companion object {
         const val INPUT_TIMEOUT_US = 10_000L
         const val OUTPUT_TIMEOUT_US = 0L
+        const val OUTPUT_POLL_MS = 5L
     }
 }

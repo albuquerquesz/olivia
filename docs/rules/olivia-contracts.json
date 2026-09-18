@@ -243,8 +243,8 @@
   },
   "capture_contract": {
     "capture_id": "CaptureId(sessionId, generation > 0)",
-    "frame_stamp": "FrameStamp(capture, sequence >= 0, receivedAt: ClockReading)",
-    "timestamp_semantics": "receivedAt é chegada ao app, não timestamp físico de exposição do sensor.",
+    "frame_stamp": "FrameStamp(capture, sequence >= 0, receivedAt: ClockReading, sourceBacklogMs >= 0 = 0)",
+    "timestamp_semantics": "receivedAt é chegada ao app após decode, não timestamp físico de exposição do sensor. sourceBacklogMs estima apenas atraso adicional relativo à melhor entrega observada por PTS; ageMs soma esse atraso ao tempo local. Não detecta atraso fixo anterior ao primeiro frame. Preview mantém apenas o frame mais recente; análise e orientação rejeitam idade estimada acima de 750 ms, com sampling remoto máximo de 0,5 fps.",
     "frame": "Frame(stamp, width > 0, height > 0, format, origin, bytes); não serializável.",
     "heartbeat": "CaptureHeartbeat(capture, receivedAtMonotonicMs >= 0); sem bytes.",
     "fence": "CaptureFence.open cria geração crescente; invalidate cancela aceitação. accepts exige geração ativa e STARTED, ou DEGRADED sem CAPTURE_UNAVAILABLE para permitir recuperação de análise/áudio. Usar no contexto serializado do coordenador.",

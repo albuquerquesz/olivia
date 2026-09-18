@@ -1,0 +1,1578 @@
+# Conectar Oculus à gravação Android
+
+> continue de onde parou
+>
+> User context
+>
+> Attachments:
+> - # Conectar Oculus à gravação Android > estamos no hackaton > > /Users/vitorsant…: `~/.codex/attachments/28d0dd96-ba56-4ae8-80c6-d15fc2be45c1/pasted-text.txt`
+
+<details><summary>38 previous messages</summary>
+
+> Vou ler o histórico anexado e conferir o estado do projeto para retomar de onde parou. Também vou usar a skill de escopo da Olivia para manter a continuação alinhada ao protótipo.
+>
+> <details><summary>Explored 3 files, a list, ran 4 commands</summary>
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `~/.codex/attachments/28d0dd96-ba56-4ae8-80c6-d15fc2be45c1/pasted-text.txt`
+> - Read `./.agents/skills/olivia-escopo-final/SKILL.md`
+>
+> </details>
+>
+> - Ran `git status --short`
+>
+> <details><summary>Explored 2 files, a list</summary>
+>
+> - Read `~/.codex/attachments/28d0dd96-ba56-4ae8-80c6-d15fc2be45c1/pasted-text.txt`
+> - Read `./.agents/skills/android-kotlin/SKILL.md`
+> - Listed files in `rules`
+>
+> </details>
+>
+> - Ran `adb devices -l; rg -n '^>|build|compil|instal|teste|autoriz|pode|sim' /Users/vitorsantana/.codex/attachments/28d0dd96-ba56-4ae8-80c6-d15fc2be45c1/pasted-text.txt | tail -n 70`
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `./docs/rules/meta_wearables_dat_android.json`
+> - Read `./docs/rules/olivia-contracts.json`
+>
+> </details>
+>
+> - Ran `cat docs/rules/architecture-diagram.json; jq '.. | objects | select(.code? == "INT-04" or .code? == "BE-00" or .code? == "INT-06" or .code? == "BE-02")' docs/rules/olivia_backlog.json; cat docs/hackaton-day-prod/README.md`
+>
+> - Ran `cat apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt; cat apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt; adb -s 0072882177 shell dumpsys package com.olivia.companion | rg 'lastUpdateTime|versionName'; adb -s 0072882177 logcat -d -t 500 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I '*:S'`
+>
+> </details>
+>
+> A conversa parou após a troca do decodificador que causava crash no Moto G60. O histórico já confirma permissão de câmera e stream iniciado; falta confirmar o preview com essa correção. O Moto continua conectado ao ADB. Vou usar também a skill Android/Kotlin e retomar esse checkpoint de `INT-04`/`BE-00`.
+>
+> <details><summary>Explored 5 files, 2 searches, ran 7 commands</summary>
+>
+> <details><summary>Explored a file, 2 searches</summary>
+>
+> - Searched for `^> [^>\-< ]|^#|^[A-Za-zÀ-ú]` in `pasted-text.txt`
+> - Searched for `pode|instal|build|compil|test|contin|sim|faz|quero|precis`
+> - Read `./docs/rules/architecture-diagram.json`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity
+> adb -s 0072882177 shell uiautomator dump /sdcard/window.xml >/dev/null
+> adb -s 0072882177 shell cat /sdcard/window.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]'
+> stat -f '%Sm %N' apps/android/app/build/outputs/apk/glasses/debug/app-glasses-debug.apk apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt`
+>
+> - Ran `adb -s 0072882177 shell dumpsys window | rg 'mCurrentFocus|mShowingLockscreen|isStatusBarKeyguard|mDreamingLockscreen'; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]'; adb -s 0072882177 logcat -d -t 1200 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I OliviaAppCheck:I '*:S'`
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+>
+> </details>
+>
+> - Ran `jq '.. | objects | select(.code? == "INT-04" or .code? == "BE-00" or .code? == "BE-02") | {code,title,dependencies,definition_of_done}' docs/rules/olivia_backlog.json; rg --files -g AGENTS.md -g '!node_modules' -g '!third_party'; cat docs/hackaton-day-prod/05-privacy-and-evidence.md`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]'`
+>
+> <details><summary>Explored 3 files</summary>
+>
+> - Read `./AGENTS.md`
+> - Read `./docs/hackaton-day-prod/06-runbook-and-checklists.md`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126
+> adb -s 0072882177 logcat -v time -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I OliviaVisualTiming:I OliviaFirebaseVisual:I '*:S'`
+>
+> - Ran `git diff -- apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt; rg -n 'Log\.|TAG|preview' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseGeminiVisualTransport.kt`
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]'`
+>
+> </details>
+>
+> O Moto está conectado, mas a tentativa atual ficou em CONNECTING no DAT. Os óculos estão ligados, abertos e no rosto agora?
+> - Sim, estão no rosto
+> - Vou colocar agora
+>
+> <details><summary>Ran a command, searched the web</summary>
+>
+> - Ran `adb -s 0072882177 logcat -d --pid=14607 -t 3000 | rg -i 'gatt.*(timed|timeout|fail)|GattReader.*(timed|fail)|SERVICE_NOT_FOUND|peerConnectedState|isSessionVerified|linkState' | sed -E 's/([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/<device>/g' | tail -n 25; rg -n -C 4 'timeout|withTimeout|startCapture|start\(' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt; rg --files docs/hackaton-day-prod/checkpoint-1`
+>
+> Searched the web for `https://developer.android.com/reference/android/media/MediaCodec`
+>
+> </details>
+>
+> **O Moto está conectado, mas a tentativa atual ficou em CONNECTING no DAT. Os óculos estão ligados, abertos e no rosto agora?**
+>
+> Sim, estão no rosto
+>
+> O APK corrigido já estava instalado. Nesta retomada, o Firebase confirmou `APP_CHECK_READY` e o DAT reconheceu um dispositivo registrado e compatível, mas a leitura Bluetooth expirou antes de abrir a câmera. Vou registrar esse estado e revisar o decoder enquanto confirmamos que os óculos estão disponíveis para a próxima tentativa.
+>
+> <details><summary>Edited a file, explored 2 files, ran 3 commands, searched the web</summary>
+>
+> Searched the web for `'automatically submitted'`
+>
+> - Ran `sed -n '1,180p' docs/hackaton-day-prod/01-real-glasses-connection.md; sed -n '295,375p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; sed -n '85,150p' apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt; rg -n 'Hevc|codec' apps/android/app/src/androidTestGlasses/kotlin/com/olivia/companion/session/*`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126
+> adb -s 0072882177 logcat -d -t 200 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I '*:S'`
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `./apps/android/app/src/androidTestGlasses/kotlin/com/olivia/companion/session/DatGlassesGatewayInstrumentedTest.kt`
+> - Read `./docs/hackaton-day-prod/checkpoint-1/README.md`
+>
+> </details>
+>
+> - Ran `adb -s 0072882177 logcat -d -t 500 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I '*:S'
+> adb -s 0072882177 shell pm list packages | rg 'meta|facebook.stella'
+> rg --files apps/android/app/src/androidTestGlasses | head -n 20`
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt` (+2 -1)
+>
+> </details>
+>
+> Achei um ajuste adicional no decoder: ele enviava a configuração HEVC duas vezes. Removi o envio duplicado, conforme o contrato do `MediaCodec`. Vou instalar essa correção e conferir a conexão pelo Meta AI antes de repetir o preview. [Referência Android](https://developer.android.com/reference/android/media/MediaCodec#CSD)
+>
+> <details><summary>Ran 11 commands</summary>
+>
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `adb -s 0072882177 shell am force-stop com.olivia.companion
+> adb -s 0072882177 shell monkey -p com.facebook.stella 1 >/dev/null
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-meta-state.xml && adb -s 0072882177 shell cat /sdcard/olivia-meta-state.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 50`
+> - Ran `adb -s 0072882177 shell input tap 330 1425
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-meta-state.xml && adb -s 0072882177 shell cat /sdcard/olivia-meta-state.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 40`
+> - Ran `adb -s 0072882177 shell input tap 310 902
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-meta-state.xml && adb -s 0072882177 shell cat /sdcard/olivia-meta-state.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 25
+> adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity`
+> - Ran `shasum -a 256 apps/android/app/build/outputs/apk/glasses/debug/app-glasses-debug.apk; git rev-parse --short HEAD; rg -n 'MWDAT_USE_MOCK_DEVICE_KIT' apps/android/app/build/generated/source/buildConfig/glasses/debug/com/olivia/companion/BuildConfig.java`
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="(Iniciar|Entrar|.*DAT|.*sessão)'`
+> - Ran `adb -s 0072882177 shell input tap 540 2126`
+> - Ran `python3 - <<'PY'
+> from pathlib import Path
+> p = Path('docs/rules/meta_wearables_dat_android.json')
+> s=p.read_text()
+> needle='  "agent_reference": {'
+> insert='''  "physical_preview_checkpoint": {
+>     "date": "2026-09-18",
+>     "tasks": ["BE-00", "INT-04"],
+>     "dependencies": ["SH-04", "FE-00", "FE-02", "BE-02", "INT-00"],
+>     "mode": "glassesDebug físico, DAT 0.9.0, Developer Mode 0/0, MockDeviceKit=false",
+>     "decoder": "HEVC Annex B aceita configuração e imagem no mesmo pacote; saída YUV flexível via MediaCodec.getOutputImage, sem ImageReader/SurfaceImage no Moto G60. csd-0 é entregue somente pelo MediaFormat, sem reenvio explícito após start.",
+>     "permission_flow": "Aguardar link CONNECTED/COMPATIBLE antes de consultar CAMERA; Denied abre RequestPermissionContract e o comando original aguarda o resultado por até 90 s. Erro de consulta não equivale a revogação.",
+>     "previous_session_evidence": "Histórico anexado registra CAMERA=GRANTED, sessão DAT STARTED e stream STREAMING, seguido de crash nativo no ImageReader. Isso não comprova frame decodificado nem STARTED no coordenador Olivia.",
+>     "current_evidence": "Retomada às 12:14–12:16: APP_CHECK_READY, registration=REGISTERED, dev_mode=true e devices=1 COMPATIBLE; tentativas encerradas em 15 s por timeout de conexão, com leituras GATT expirando em 2000 ms. Preview físico ainda pendente.",
+>     "validation": "Correção de configuração HEVC compilada e instalada por installGlassesDebug; primeiro frame físico ainda não validado.",
+>     "privacy": "Somente estados e metadados agregados como evidência; nenhum frame, áudio bruto ou credencial persistido."
+>   },
+> '''
+> assert needle in s
+> p.write_text(s.replace(needle,insert+needle))
+> PY`
+> - Ran `adb -s 0072882177 logcat -d -t 1000 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I OliviaAppCheck:I '*:S'
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 22`
+> - Ran ``python3 - <<'PY'
+> from pathlib import Path
+> for name in ['README.md','06-runbook-and-checklists.md']:
+>  p=Path('docs/hackaton-day-prod')/name
+>  s=p.read_text().replace('- [ ] Ativar Developer Mode no Meta AI para o Ray-Ban e concluir o registro local.', '- [x] Developer Mode e registro local confirmados: `REGISTERED`, `dev_mode=true`, um device compatível.').replace('- [ ] Ativar Developer Mode no Meta AI e concluir registro DAT local.', '- [x] Developer Mode e registro local confirmados: `REGISTERED`, `dev_mode=true`, um device compatível.')
+>  s=s.replace('a tela física não expõe ações de debug nem canvas sintético.', 'a tela física usa preview DAT; controles manuais existem apenas no build debug para diagnóstico.')
+>  anchor='## Modos' if name=='README.md' else '## 08:00–09:00'
+>  pos=s.index(anchor)
+>  s=s[:pos]+'''### Retomada às 12:14–12:18
+>
+> - [x] `APP_CHECK_READY` observado no APK instalado, sem novo cadastro de token.
+> - [x] Mantido DAT `0.9.0`; decoder usa saída direta `MediaCodec.getOutputImage` para evitar o caminho `ImageReader` que sofreu crash.
+> - [x] Removido envio duplicado da configuração HEVC; `installGlassesDebug` compilou e instalou a correção no Moto G60.
+> - [ ] Primeiro frame/preview da correção: tentativas desta retomada ficaram em `CONNECTING`/`DISCONNECTED`, com timeout GATT antes da câmera.
+>
+> O histórico anterior registra câmera autorizada, sessão DAT `STARTED` e stream `STREAMING`.
+> Esses estados do SDK não comprovam `STARTED` da Olivia, que exige heartbeat de frame decodificado.
+> Registro/autorização inicial não é mais o bloqueio observado. Evidência detalhada em
+> [retomada física](checkpoint-1/retomada-dat.md).
+>
+> '''+s[pos:]
+>  p.write_text(s)
+> p=Path('docs/hackaton-day-prod/01-real-glasses-connection.md')
+> s=p.read_text().replace('Conclusão: o bloqueio atual é autorização/attestation', 'Conclusão naquela tentativa inicial: o bloqueio era autorização/attestation')
+> s += '''
+> ## Retomada física — 18/09, 12:14–12:18
+>
+> Registro e Developer Mode confirmados nesta retomada: `REGISTERED`, `dev_mode=true`,
+> `devices=1`, `COMPATIBLE`. O diagnóstico inicial de attestation acima é histórico.
+> A câmera autorizada e o stream iniciado constam no histórico anterior, mas o preview ainda
+> não tem aceite: o crash nativo motivou a troca do decoder para saída direta MediaCodec.
+> A correção adicional remove o envio duplicado de CSD; compilação/instalação concluídas.
+> Nesta retomada, o transporte voltou a expirar na leitura GATT antes de abrir a câmera.
+> Ver [evidência da retomada](checkpoint-1/retomada-dat.md). `PASS_HARDWARE` segue pendente.
+> '''
+> p.write_text(s)
+> p=Path('docs/hackaton-day-prod/05-privacy-and-evidence.md')
+> s=p.read_text().replace('| DAT físico / primeiro frame | `PENDING — AUTHORIZATION_BLOCKED` | `registration=AVAILABLE`, `devices=0`; Meta AI retornou `Attestation failed` | Autorizar package/certificado/release channel no Developer Center |', '| DAT físico / primeiro frame | `PENDING — GATT_TIMEOUT` | Retomada: `REGISTERED`, `dev_mode=true`, um device `COMPATIBLE`; leitura GATT expira antes da câmera | Decoder corrigido e instalado; primeiro frame/preview pendentes |')
+> s += '\nRetomada às 12:14–12:18: o bloqueio inicial de registro foi superado. `APP_CHECK_READY` observado.\nEvidência atual e separação do histórico em [retomada DAT](checkpoint-1/retomada-dat.md).\n'
+> p.write_text(s)
+> PY``
+> - Ran `adb -s 0072882177 logcat -d -t 500 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I '*:S'`
+>
+> </details>
+>
+> A correção compilou e foi instalada com sucesso. A nova tentativa repetiu o timeout Bluetooth antes de chegar à câmera; portanto, ainda não dá para validar o decoder. Atualizei os checklists para refletir o avanço real: registro e App Check confirmados, primeiro frame ainda pendente.
+>
+> A leitura Bluetooth dos óculos continua expirando, mesmo após reabrir o Meta AI. Desligue os Ray-Ban pelo interruptor, aguarde 10 segundos, ligue e coloque no rosto; avise quando estiverem prontos para eu repetir a conexão.
+> - Reiniciei e estão no rosto
+> - Ainda reiniciando
+>
+> **A leitura Bluetooth dos óculos continua expirando, mesmo após reabrir o Meta AI. Desligue os Ray-Ban pelo interruptor, aguarde 10 segundos, ligue e coloque no rosto; avise quando estiverem prontos para eu repetir a conexão.**
+>
+> como eu reinicio pelo interruptor
+>
+> <details><summary>Created a file, ran a command, searched the web</summary>
+>
+> - Wrote `./docs/hackaton-day-prod/checkpoint-1/retomada-dat.md` (+53 -0)
+>
+> - Ran `git diff --check; python3 - <<'PY'
+> import json
+> from pathlib import Path
+> json.loads(Path('docs/rules/meta_wearables_dat_android.json').read_text())
+> print('JSON de regras legível.')
+> PY
+>  git diff --stat`
+>
+> Searched the web for `site.ray-ban.com Meta turn off power switch left temple restart glasses`
+>
+> </details>
+>
+> Na parte interna da **haste esquerda**, perto da dobradiça, há uma pequena chave deslizante:
+>
+> 1. Deslize **para trás, afastando das lentes**, para desligar.
+> 2. Aguarde **10 segundos**.
+> 3. Deslize **em direção às lentes** para ligar.
+> 4. Espere o sinal de inicialização e coloque os óculos no rosto.
+>
+> Esse procedimento apenas desliga e liga os óculos; mantém o pareamento. [Instruções oficiais Ray-Ban](https://www.ray-ban.com/uk/c/frequently-asked-questions-ray-ban-meta-smart-glasses)
+>
+> Avise quando terminar de desligar e ligar os óculos para eu retomar a tentativa no Moto.
+> - Reiniciei e estão no rosto
+> - Não encontrei a chave
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `git diff -- docs/rules/meta_wearables_dat_android.json docs/hackaton-day-prod/README.md docs/hackaton-day-prod/06-runbook-and-checklists.md | head -n 155; adb -s 0072882177 shell dumpsys activity services com.olivia.companion | rg 'DatStreamingService|ServiceRecord'`
+>
+> </details>
+>
+> **Avise quando terminar de desligar e ligar os óculos para eu retomar a tentativa no Moto.**
+>
+> Reiniciei e estão no rosto
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126
+> adb -s 0072882177 logcat -d -t 400 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I '*:S'`
+>
+> </details>
+>
+> Vou repetir com os óculos reiniciados. Estou acompanhando separadamente conexão, permissão e primeiro frame para identificar até onde esta tentativa chega.
+>
+> <details><summary>Ran 13 commands, searched the web</summary>
+>
+> - Ran `adb -s 0072882177 logcat -d --pid=15303 -t 500 | rg -i 'GattReader2.*timed|GattHandler.*failed|OliviaDat|first_frame|OliviaHevc|linkState' | tail -n 15; adb -s 0072882177 shell dumpsys bluetooth_manager | rg 'state:|enabled:|mConnectionState:|mPlayingA2dpDevice' | head -n 12`
+>
+> Searched the web for `site.github.com/facebook/meta-wearables-dat-android "readCharacteristic" "timed" ...`
+>
+> - Ran `adb -s 0072882177 logcat -d -t 400 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I '*:S'
+> adb -s 0072882177 shell am force-stop com.olivia.companion
+> adb -s 0072882177 shell am force-stop com.facebook.stella
+> adb -s 0072882177 shell svc bluetooth disable`
+>
+> - Ran `adb -s 0072882177 shell svc bluetooth enable
+> adb -s 0072882177 shell monkey -p com.facebook.stella 1 >/dev/null`
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-meta-state.xml && adb -s 0072882177 shell cat /sdcard/olivia-meta-state.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 28`
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity`
+>
+> - Ran `curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_dat_docs","arguments":{"query":"Android GATT readCharacteristic timeout connection troubleshooting glasses restart","max_results":3}}}' | python3 -c 'import sys,json; s=sys.stdin.read(); print(s[:18000])'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="(Iniciar|Entrar|.*sessão)'`
+>
+> - Ran `adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 22
+> adb -s 0072882177 logcat -d -t 1200 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I OliviaAppCheck:I '*:S'`
+>
+> - Ran `adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="Iniciar sessão'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126`
+>
+> - Ran `curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_dat_docs","arguments":{"query":"device not connecting Android troubleshooting Bluetooth Developer Mode","max_results":2}}}' | python3 -c 'import sys,json; s=sys.stdin.read(); rows=[json.loads(x[6:]) for x in s.splitlines() if x.startswith("data: ")]; [print(r.get("result",{}).get("structuredContent",{}).get("results","")) for r in rows]'`
+>
+> - Ran `adb -s 0072882177 logcat -d -t 600 -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I '*:S'
+> adb -s 0072882177 shell dumpsys package com.olivia.companion | rg 'android.permission.BLUETOOTH_(SCAN|CONNECT): granted|lastUpdateTime'`
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 24
+> adb -s 0072882177 logcat -d -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I '*:S' | tail -n 25`
+>
+> </details>
+>
+> Agora a conexão passou: câmera autorizada, stream ativo e **primeiro frame real de 720×1280 decodificado**, sem o crash anterior. O frame demorou a chegar e a tela já havia entrado em erro; vou conferir essa transição para fazer o preview acompanhar a captura.
+>
+> <details><summary>Edited 2 files, ran 3 commands, searched the web</summary>
+>
+> - Ran `rg -n -C 8 'STARTING|checkCaptureHealth|onCaptureHeartbeat' apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt; adb -s 0072882177 logcat -d --pid=16530 -s OliviaSessionRuntime:I OliviaVisualTiming:I OliviaFirebaseVisual:I OliviaHevcDecoder:I '*:S' | tail -n 35; sed -n '255,302p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; sed -n '515,560p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+>
+> - Ran `adb -s 0072882177 logcat -d --pid=16530 | rg -i 'codec.*(format|configure|delay|latency|name)|c2\.qti|OMX.qcom|HEVC|first_frame' | tail -n 50; rg -n 'minSdk|targetSdk' apps/android/app/build.gradle.kts; sed -n '390,480p' apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt; sed -n '1,70p' apps/android/core/src/test/kotlin/com/olivia/core/SessionCoordinatorTest.kt`
+>
+> Searched the web for `site.developer.android.com MediaFormat KEY_LOW_LATENCY decoder`
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+6 -0)
+> - Wrote `./apps/android/core/src/main/kotlin/com/olivia/core/SessionCoordinator.kt` (+6 -0)
+>
+> - Ran `tail -n 100 apps/android/core/src/test/kotlin/com/olivia/core/SessionCoordinatorTest.kt; adb -s 0072882177 shell am force-stop com.olivia.companion`
+>
+> </details>
+>
+> O problema da tela está localizado: o watchdog de quatro segundos contava também a espera inicial pelo vídeo. Ajustei o início para aguardar um frame decodificado, com timeout próprio, e entregar essa evidência ao coordenador antes de liberar o watchdog. Durante a captura, a regra de quatro segundos sem frame continua igual.
+>
+> <details><summary>Edited a file, ran 8 commands</summary>
+>
+> - Wrote `./apps/android/core/src/test/kotlin/com/olivia/core/SessionCoordinatorTest.kt` (+25 -1)
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `python3 - <<'PY'
+> from pathlib import Path
+> p=Path('docs/rules/meta_wearables_dat_android.json')
+> s=p.read_text().replace('    "permission_flow":', '    "startup_readiness": "Após STREAMING, startCapture aguarda até 25 s pelo primeiro heartbeat de frame decodificado; timeout limpa recursos. O coordenador consome esse heartbeat ao retornar do adapter, antes de liberar o lock ao watchdog. Na captura ativa, 4 s sem frame continuam gerando DEGRADED.",\n    "permission_flow":')
+> p.write_text(s)
+> p=Path('docs/rules/olivia-contracts.json')
+> s=p.read_text().replace('Coordenador aplicará quatro segundos sem heartbeat de captura quando esperado;', 'Inicialização DAT tem timeout próprio de até 25 s para o primeiro frame após STREAMING; ao retornar de startCapture, o coordenador consome heartbeat da mesma geração antes de liberar o watchdog. Coordenador aplicará quatro segundos sem heartbeat de captura quando esperado;')
+> p.write_text(s)
+> PY`
+> - Ran `git diff --check; python3 - <<'PY'
+> from pathlib import Path
+> import json
+> for name in ['olivia-contracts.json','meta_wearables_dat_android.json']:
+>  json.loads((Path('docs/rules')/name).read_text())
+> print('Regras JSON legíveis.')
+> PY`
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null`
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null
+> adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="Iniciar sessão'`
+> - Ran `adb -s 0072882177 shell input tap 540 2126
+> adb -s 0072882177 logcat -v time -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I OliviaFirebaseVisual:I OliviaSessionRuntime:I '*:S'`
+> - Ran ``python3 - <<'PY'
+> from pathlib import Path
+> p=Path('docs/hackaton-day-prod/checkpoint-1/retomada-dat.md')
+> s=p.read_text().replace('Status: `PENDING — GATT_TIMEOUT`. Ainda sem aceite de primeiro frame/preview físico.', 'Status: primeiro frame físico confirmado; aceite de preview e lifecycle ainda em validação.')
+> s += '''
+> ## Avanço após reinício — 12:21–12:24
+>
+> Após reinício físico dos óculos informado pelo operador e reinício do transporte/apps no Moto:
+>
+> - Meta AI mostrou óculos conectados e bateria 75% (leitura pontual, sem medição de consumo).
+> - 12:21:45: DAT `CONNECTED/COMPATIBLE`.
+> - 12:21:46: câmera `Granted`, sessão DAT `STARTED`.
+> - 12:21:49: stream `STREAMING`.
+> - 12:22:04: `first_frame origin=DAT format=NV21 width=720 height=1280`.
+>
+> Não houve novo crash no decoder nessa tentativa. A tela já estava em `ERROR` porque o watchdog
+> contou o período de inicialização como falta de frame. Corrigido em `BE-00`/`FE-02`: o gateway
+> aguarda até 25 s pelo primeiro frame após o stream iniciar, e o coordenador consome o heartbeat
+> já publicado antes de liberar o lock. O watchdog de captura ativa continua em 4 s.
+>
+> Segunda compilação/instalação concluída com sucesso. Incluído teste de regressão de início lento
+> com heartbeat e degradação após 4 s; teste automatizado ainda não executado.
+> '''
+> p.write_text(s)
+> PY
+> shasum -a 256 apps/android/app/build/outputs/apk/glasses/debug/app-glasses-debug.apk``
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 30`
+>
+> </details>
+>
+> O app agora recebeu frames reais e exibiu o componente de preview. Você vê no Moto a imagem da câmera dos óculos acompanhando seus movimentos?
+> - Sim, a imagem acompanha
+> - Aparece, mas está travada ou errada
+> - Ainda não aparece imagem
+>
+> O preview real já apareceu na interface, e a sessão passou pelo início com o tom de confirmação. A captura continua funcionando. O próximo bloqueio é separado: a análise está retornando `TIMEOUT`, então vou verificar o caminho de ROI enquanto você confere a imagem no Moto.
+>
+> **O app agora recebeu frames reais e exibiu o componente de preview. Você vê no Moto a imagem da câmera dos óculos acompanhando seus movimentos?**
+>
+> a imagemm acompanha, mas tem aquele delay, ne , acho q e esperado
+>
+> <details><summary>Explored 2 files, a search</summary>
+>
+> - Searched for `TIMEOUT|timeout|Timeout|Deadline|deadline` in `HybridVisualAnalyzer.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseVisualAnalyzerFactory.kt`
+>
+> </details>
+>
+> Sim, alguma defasagem é esperada: o stream atual chega a 2 fps e ainda passa pelo Bluetooth e pela decodificação. A análise usa 0,5 fps. Ainda não medimos o atraso entre a cena e a tela, então não vou afirmar que o atraso observado está dentro da meta.
+>
+> Sua confirmação fecha o checkpoint do preview físico. Vou conferir pausa e encerramento; a análise de ROI ainda está falhando por timeout.
+>
+> <details><summary>Explored 3 searches, ran 4 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell input tap 540 1930
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="(Retomar|Terminar|.*paus.*|.*Paus.*)' 
+> adb -s 0072882177 logcat -d --pid=16980 -s OliviaVisualTiming:I '*:S' | tail -n 28
+> cat apps/android/core/src/main/kotlin/com/olivia/core/GeminiFrameAnalyzer.kt | head -n 155`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 1930
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="(Retomar|Pausar|Terminar|.*indispon.*)'`
+>
+> <details><summary>Explored a search</summary>
+>
+> - Searched for `timeout|2.000|2 s|2000|8.000|8000|latência|900` in `olivia-contracts.json`
+>
+> </details>
+>
+> - Ran `cat apps/android/core/src/main/kotlin/com/olivia/core/HybridVisualAnalyzer.kt | head -n 210; cat apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseGeminiVisualTransport.kt | head -n 115; cat docs/hackaton-day-prod/04-live-loop-and-guidance.md; jq '.. | objects | select(.code? == "BE-03") | {code,title,dependencies}' docs/rules/olivia_backlog.json`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2090
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 14
+> adb -s 0072882177 shell dumpsys activity services com.olivia.companion | rg 'DatStreamingService|ServiceRecord'`
+>
+> <details><summary>Explored 2 searches</summary>
+>
+> - Searched for `fun recordingConnectionLabel|fun recordingPanelMessage` in `RecordingScreen.kt`
+> - Searched for `maxAge|age|stale|history` in `RoiMotionTracker.kt`
+>
+> </details>
+>
+> </details>
+>
+> Pausa, retomada e encerramento responderam, e o serviço de câmera foi removido ao terminar. Na IA, a preparação local levou poucos milissegundos, mas todas as chamadas foram canceladas no limite de dois segundos. Vou usar no APK de diagnóstico a janela de oito segundos já usada com MockDeviceKit para medir a resposta e verificar a ROI.
+>
+> <details><summary>Edited 2 files, ran 10 commands</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/ai/FirebaseVisualAnalyzerFactory.kt` (+7 -6)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt` (+5 -0)
+> - Ran `./gradlew installGlassesDebug`
+> - Ran `python3 - <<'PY'
+> from pathlib import Path
+> p=Path('docs/rules/olivia-contracts.json')
+> s=p.read_text().replace('  "planned_analysis_contract_v3": {', '  "diagnostic_remote_timeout": {\n    "tasks": ["BE-03", "INT-04"],\n    "debug_and_mock_ms": 8000,\n    "physical_release_ms": 2000,\n    "reason": "Em 18/09, chamadas com frames físicos no Moto expiraram repetidamente em 2 s antes de uma resposta. glassesDebug usa janela de diagnóstico de 8 s para medir aquisição ROI. Não altera sampling 0,5 fps, cooldown de 4 s ou a meta de latência, ainda não validada."\n  },\n  "planned_analysis_contract_v3": {')
+> p.write_text(s)
+> PY`
+> - Ran ``python3 - <<'PY'
+> from pathlib import Path
+> for name in ['README.md','06-runbook-and-checklists.md']:
+>  p=Path('docs/hackaton-day-prod')/name
+>  s=p.read_text().replace('- [ ] Observar `STARTED` + primeiro frame real no APK físico.', '- [x] Primeiro frame real `NV21 720×1280`, início com tom e preview acompanhando movimentos confirmados.').replace('- [ ] `STARTED` e primeiro frame real observados.', '- [x] Primeiro frame real `NV21 720×1280`, início com tom e preview acompanhando movimentos confirmados.').replace('- [ ] Marcar `PASS_HARDWARE` somente após esse primeiro frame e preview observáveis.', '- [x] `PASS_HARDWARE` para câmera/preview; confirmação visual do operador, sem salvar imagens.').replace('- [ ] Evidência `PASS_HARDWARE` salva sem anexar frame.', '- [x] Evidência `PASS_HARDWARE` de câmera/preview registrada sem anexar frame.')
+>  s=s.replace('- [ ] Primeiro frame/preview da correção: tentativas desta retomada ficaram em `CONNECTING`/`DISCONNECTED`, com timeout GATT antes da câmera.', '- [x] Timeout GATT superado após reinício dos óculos e do transporte/apps no Moto; frames físicos chegaram às 12:22 e 12:24.\n- [x] Watchdog de início corrigido: aguarda primeiro frame; preserva 4 s de degradação na captura ativa.\n- [x] Pausa/retomada/encerramento exercitados por controles de diagnóstico; serviço de câmera removido ao encerrar.\n- [ ] ROI/Gemini: timeout repetido em 2 s; APK debug com janela de diagnóstico de 8 s em validação.')
+>  s=s.replace('### Retomada às 12:14–12:18','### Retomada física — a partir de 12:14')
+>  p.write_text(s)
+> p=Path('docs/hackaton-day-prod/05-privacy-and-evidence.md')
+> s=p.read_text().replace('| DAT físico / primeiro frame | `PENDING — GATT_TIMEOUT` | Retomada: `REGISTERED`, `dev_mode=true`, um device `COMPATIBLE`; leitura GATT expira antes da câmera | Decoder corrigido e instalado; primeiro frame/preview pendentes |', '| DAT físico / primeiro frame | `PASS_HARDWARE` | Frames `DAT NV21 720×1280` às 12:22 e 12:24; preview acompanhando movimentos confirmado pelo operador | Atraso visual não medido; não prova vídeo nativo, ROI ou áudio acústico |')
+> p.write_text(s)
+> p=Path('docs/hackaton-day-prod/checkpoint-1/retomada-dat.md')
+> s=p.read_text().replace('Status: primeiro frame físico confirmado; aceite de preview e lifecycle ainda em validação.', 'Status: `PASS_HARDWARE` para câmera/preview. ROI/Gemini e áudio acústico ainda pendentes.')
+> s += '''
+> ## Preview confirmado — 12:24–12:27
+>
+> No APK `2d0ade025044db7f3cd3aa282b06228ff1e02c3750186f895eb0321252b6be2c`:
+>
+> - 12:24:40: primeiro frame `DAT NV21 720×1280` e callback do tom inicial.
+> - UI exibiu `Prévia ao vivo do stream da câmera dos óculos`; operador confirmou que a imagem
+>   acompanha os movimentos, com atraso perceptível. Não há medição cena→tela.
+> - Pausar exibiu `Orientação pausada`; retomar voltou a entregar frame da nova geração.
+> - Terminar removeu o preview e o serviço `DatStreamingService`; controle voltou a `Iniciar sessão`.
+> - Análise permaneceu degradada por `TIMEOUT` repetido em 2 s; captura e preview continuaram.
+>
+> Essa evidência fecha câmera/preview, sem provar gravação nativa, comando de voz no novo APK,
+> qualidade da ROI, feedback ouvido nos óculos ou meta de 900 ms.
+>
+> O próximo APK de diagnóstico usa 8 s para chamadas Gemini, como o MockDeviceKit já usava,
+> para medir resposta completa. Release físico mantém 2 s. Sampling e cooldown não foram alterados.
+> '''
+> p.write_text(s)
+> PY``
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null`
+> - Ran `git diff --check; shasum -a 256 apps/android/app/build/outputs/apk/glasses/debug/app-glasses-debug.apk`
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null
+> adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="Iniciar sessão'`
+> - Ran `adb -s 0072882177 shell input tap 540 2126
+> adb -s 0072882177 logcat -v time -s OliviaDatGateway:I OliviaDatPermission:I OliviaHevcDecoder:I OliviaFirebaseVisual:I OliviaVisualTiming:I OliviaSessionRuntime:I '*:S'`
+> - Ran ``python3 - <<'PY'
+> from pathlib import Path
+> p=Path('docs/rules/meta_wearables_dat_android.json')
+> s=p.read_text().replace('Retomada às 12:14–12:16: APP_CHECK_READY, registration=REGISTERED, dev_mode=true e devices=1 COMPATIBLE; tentativas encerradas em 15 s por timeout de conexão, com leituras GATT expirando em 2000 ms. Preview físico ainda pendente.', 'Após timeouts GATT iniciais, reinício dos óculos/transporte/apps restabeleceu CONNECTED/COMPATIBLE e câmera Granted. Frames DAT NV21 720×1280 às 12:22 e 12:24; operador confirmou preview acompanhando movimentos. Pausa/retomada/encerramento exercitados por debug. APP_CHECK_READY; ROI ainda expira no limite original de 2 s.').replace('Correção de configuração HEVC compilada e instalada por installGlassesDebug; primeiro frame físico ainda não validado.', 'Correções de decoder e início compiladas/instaladas por installGlassesDebug; PASS_HARDWARE para câmera/preview, sem medição de atraso cena→tela ou áudio acústico. Teste de regressão do coordenador adicionado, sem executar suíte automatizada.')
+> p.write_text(s)
+> p=Path('docs/hackaton-day-prod/01-real-glasses-connection.md')
+> s=p.read_text().replace('Ver [evidência da retomada](checkpoint-1/retomada-dat.md). `PASS_HARDWARE` segue pendente.', 'Esse timeout foi superado após reinício dos óculos/transporte/apps. Às 12:24, o preview mostrou frames físicos 720×1280 e o operador confirmou imagem acompanhando movimentos. `PASS_HARDWARE` para câmera/preview; demais capacidades independentes continuam pendentes. Ver [evidência da retomada](checkpoint-1/retomada-dat.md).')
+> p.write_text(s)
+> PY``
+> - Ran `rg -n 'max.*Age|historySize|history|max.*Lag|reconcile' apps/android/core/src/main/kotlin/com/olivia/core/*Track* | head -n 25; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="(.*peça.*|.*análise.*|.*Análise.*|.*DAT.*)'`
+> - Ran `adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="[^" ]|content-desc="[^" ]' | head -n 14; adb -s 0072882177 logcat -d --pid=17491 -s OliviaSessionRuntime:I OliviaFirebaseVisual:I '*:S' | tail -n 16`
+>
+> </details>
+>
+> A IA respondeu com o frame real, o app validou o formato da resposta e a interface chegou a “Orientação enviada; aguardando a correção”. As duas primeiras respostas completas levaram cerca de 1,85 s e 3,68 s. O caminho de análise está funcionando, mas a meta de 900 ms ainda não foi atingida.
+>
+> O app já emitiu orientações por voz nesta sessão. Você ouviu as instruções nos alto-falantes dos Ray-Ban?
+> - Sim, ouvi nos óculos
+> - Ouvi só no celular
+> - Não ouvi
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `adb -s 0072882177 logcat -d --pid=17491 -s OliviaVisualTiming:I OliviaFirebaseVisual:I '*:S' | python3 -c 'import sys,re,statistics,math; s=sys.stdin.read(); v=[int(x) for x in re.findall(r"stage=SDK_ROUND_TRIP ms=(\d+)",s)]; print("SDK_ROUND_TRIP completed_ms=",v); print("n=",len(v)); print("p50_ms=",statistics.median(v) if v else None); print("p95_nearest_rank_ms=",sorted(v)[math.ceil(.95*len(v))-1] if v else None); print("provider_failure_types=",re.findall(r"visual classify failed: (\w+)",s))'
+> adb -s 0072882177 logcat -d --pid=17491 -s OliviaSessionRuntime:I '*:S' | tail -n 14`
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="(.*indispon.*|.*frame.*|.*câmera.*|.*Orientação.*|.*corre.*|.*peça.*|.*área.*|.*DAT.*)'`
+>
+> </details>
+>
+> System error
+>
+> You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 5:13 PM.
+</details>
+
+> da uma olhada nessas infos aq q eu tava rebugand o com o claude
+>
+> estou achando q noss hvec decode esta ruim ou algo do tipo, pq ta tudo com muuuito delay que nao tinha esse delay qnd fiz os testes com o wearables emulator, investigue
+>
+> User context
+>
+> Attachments:
+> - beu o contexto, logo dps tipo 1 sec vejo a luz do fone acessa de gravando mas s…: `~/.codex/attachments/bfdb9a15-32d2-4f80-9a5e-de363ed438cc/pasted-text.txt`
+
+<details><summary>43 previous messages</summary>
+
+> Vou ler o diagnóstico do Claude e investigar o atraso separando chegada do pacote DAT, decodificação HEVC e atualização do preview. A comparação com o emulador é relevante: no código atual, ele usa frames brutos e não passa pelo mesmo decoder dos óculos físicos.
+>
+> <details><summary>Explored 3 files, ran 3 commands</summary>
+>
+> <details><summary>Explored 4 files</summary>
+>
+> - Read `~/.codex/attachments/bfdb9a15-32d2-4f80-9a5e-de363ed438cc/pasted-text.txt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt`
+>
+> </details>
+>
+> - Ran `tail -n 150 /Users/vitorsantana/.codex/attachments/bfdb9a15-32d2-4f80-9a5e-de363ed438cc/pasted-text.txt; git status --short; rg -n 'DAT_FRAME_RATE|frame_arrival|packet|pts|last.*Frame|onFrame|Hevc|observeFrames' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt; adb devices -l`
+>
+> - Ran `sed -n '60,110p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt; sed -n '195,330p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt; tail -n 30 apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt; git log -3 --oneline; cat docs/rules/meta_wearables_dat_android.json`
+>
+> - Ran `adb -s 0072882177 shell pidof com.olivia.companion
+> adb -s 0072882177 logcat -d -s OliviaDatGateway:I OliviaHevcDecoder:I '*:S' | tail -n 35
+> rg -n -A 35 'encodePreview' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; sed -n '1,85p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+>
+> </details>
+>
+> O material ainda não permite atribuir todo o atraso ao Bluetooth. O log chamado `frame_arrival` é emitido **depois** do nosso decoder, e `capture_lag_ms` mede a variação em relação ao primeiro frame, não o atraso absoluto.
+>
+> Há também um ponto concreto no código: a saída do `MediaCodec` só é consultada quando chega outro pacote. Um frame já decodificado pode ficar esperando o próximo pacote para ser entregue. Vou medir esse tempo e o custo da conversão para NV21 antes de alterar o fluxo.
+>
+> <details><summary>Edited 3 files, explored a file, ran 11 commands, searched the web</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+12 -0)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt` (+19 -2)
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt` (+5 -0)
+>
+> - Ran `./gradlew installGlassesDebug`
+>
+> - Ran `git diff --check; python3 - <<'PY'
+> from pathlib import Path
+> p=Path('docs/rules/meta_wearables_dat_android.json')
+> s=p.read_text().replace('  "agent_reference": {', '''  "latency_investigation": {
+>     "date": "2026-09-18",
+>     "tasks": ["BE-00", "BE-02", "INT-04"],
+>     "capture_fps": 6,
+>     "decision": "Usuário autorizou no diagnóstico anexado maior frequência de preview/tracking em troca de bateria; captura passou de 2 para 6 fps. Análise remota mantém seu sampler separado.",
+>     "instrumentation": "Debug mede chegada de pacote DAT antes do decoder, espera enqueue→output no MediaCodec, conversão YUV→NV21 e publicação do preview. Somente contagens/intervalos/flags, sem bytes ou respostas do modelo.",
+>     "measurement_limit": "PTS e relógio do celular não têm origem sincronizada comprovada. Diferença de durações desde o primeiro frame mede drift relativo, não latência absoluta nem localiza sozinha o gargalo."
+>   },
+>   "agent_reference": {''')
+> p.write_text(s)
+> PY`
+>
+> - Ran `adb -s 0072882177 logcat -T 1 -v time -s OliviaDatGateway:I OliviaHevcDecoder:I OliviaSessionRuntime:I '*:S' > /tmp/olivia-decoder-baseline.log`
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null
+> adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="Iniciar sessão'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126
+> rg 'DAT |packet_arrival|decode_timing|preview_timing' /tmp/olivia-decoder-baseline.log | tail -n 8`
+>
+> Searched the web for `'asynchronously' in https://developer.android.com/reference/android/media/MediaCodec`
+>
+> - Ran `tail -n 24 /tmp/olivia-decoder-baseline.log; rg -n 'compressVideo|DAT_FRAME_RATE|ImageReader|dequeueOutputBuffer' <(git show 5da09f7ecd908e40df02c0ea00b7cb973882b5c8:apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt) <(git show 5da09f7ecd908e40df02c0ea00b7cb973882b5c8:apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt)`
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `/tmp/olivia-decoder-baseline.log`
+>
+> </details>
+>
+> - Ran `rg --files /Users/vitorsantana/.gradle/caches | rg 'mwdat-camera-0.9.0.*(jar|aar)$' | head -n 5
+> python3 - <<'PY'
+> import re,statistics,collections
+> s=open('/tmp/olivia-decoder-baseline.log').read()
+> for key in ['codec_wait_ms','convert_ms','decoded_to_publish_ms','pts_gap_ms']:
+>  v=[int(x) for x in re.findall(r'\b'+key+r'=(-?\d+)',s)]
+>  print(key, 'n=',len(v),'median=',statistics.median(v) if v else None,'max=',max(v) if v else None)
+> print('\n'.join(s.splitlines()[:23]))
+> PY`
+>
+> - Ran `curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"search_dat_docs","arguments":{"query":"Android StreamConfiguration frameRate supported 2 7 15 24 30","max_results":3}}}' | python3 -c 'import sys,json; [print(json.loads(x[6:]).get("result",{}).get("structuredContent",{}).get("results","")) for x in sys.stdin.read().splitlines() if x.startswith("data: ")]'`
+>
+> - Ran `javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar com.meta.wearable.dat.camera.types.StreamConfiguration | head -n 190
+> jar tf /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar | rg -i 'FrameRate|VideoEncoder|StreamConfig'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2090
+> python3 - <<'PY'
+> import re,statistics
+> s=open('/tmp/olivia-decoder-baseline.log').read()
+> for key in ['codec_wait_ms','convert_ms','decoded_to_publish_ms']:
+>  v=[int(x) for x in re.findall(r'\b'+key+r'=(\d+)',s)]
+>  print(key,'n',len(v),'p50',statistics.median(v) if v else None,'max',max(v) if v else None)
+> PY`
+>
+> </details>
+>
+> A medição confirmou dois problemas no app: a espera dentro do decoder chegou a **1,54 s**, e a conversão para NV21 teve mediana de **60,5 ms**. A publicação do preview teve mediana de apenas **10 ms**.
+>
+> Encontrei também uma configuração inválida: o DAT aceita **2, 7, 15, 24 ou 30 fps**, mas o código estava pedindo 6. Os timestamps recebidos estavam separados por cerca de 500 ms, compatíveis com 2 fps. Vou corrigir para 7 fps, retirar a dependência do próximo pacote para drenar o decoder e otimizar a cópia dos planos. [Referência DAT](https://wearables.developer.meta.com/docs/reference/android/dat/latest/com_meta_wearable_dat_camera_types_streamconfiguration)
+>
+> <details><summary>Edited 2 files, explored a file, ran 6 commands</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+5 -8)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt` (+54 -13)
+>
+> - Ran `./gradlew installGlassesDebug`
+>
+> - Ran `git diff --check; sed -n '20,135p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt; python3 - <<'PY'
+> from pathlib import Path
+> p=Path('docs/rules/meta_wearables_dat_android.json')
+> s=p.read_text().replace('"capture_fps": 6', '"capture_fps": 7').replace('captura passou de 2 para 6 fps. Análise remota mantém seu sampler separado.', 'captura solicitada passou de 2 para 6 fps no diagnóstico anterior; corrigida para 7 porque os valores documentados são 2/7/15/24/30. Análise remota mantém seu sampler separado.')
+> s=s.replace('    "instrumentation":', '    "decoder_fix": "Drenagem de saída em thread própria a cada 5 ms, independente de novos pacotes; planos YUV obtidos uma vez e luminância copiada por linha. Mantém MediaCodec sem Surface/ImageReader e resolução HIGH.",\n    "instrumentation":')
+> p.write_text(s)
+> PY`
+>
+> - Ran `adb -s 0072882177 logcat -T 1 -v time -s OliviaDatGateway:I OliviaHevcDecoder:I OliviaSessionRuntime:I '*:S' > /tmp/olivia-decoder-fixed.log`
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null
+> adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="Iniciar sessão'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126
+> python3 - <<'PY'
+> import re,statistics,math,json
+> from pathlib import Path
+> s=Path('/tmp/olivia-decoder-baseline.log').read_text()
+> s='\n'.join(x for x in s.splitlines() if '(23227)' in x)
+> r={}
+> for key in ['codec_wait_ms','convert_ms','decoded_to_publish_ms']:
+>  v=[int(x) for x in re.findall(r'\b'+key+r'=(\d+)',s)]
+>  r[key]={'n':len(v),'p50':statistics.median(v),'p95':sorted(v)[math.ceil(.95*len(v))-1],'max':max(v)}
+> print(json.dumps(r))
+> Path('/tmp/olivia-decoder-baseline-stats.json').write_text(json.dumps(r,indent=2))
+> PY`
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `/tmp/olivia-decoder-fixed.log`
+> - Read `/tmp/olivia-decoder-fixed.log`
+>
+> </details>
+>
+> </details>
+>
+> O APK com as correções está instalado. A comparação parou antes do decoder: o DAT voltou a falhar na conexão Bluetooth. Vou restabelecer a conexão e repetir a medição mantendo a resolução 720×1280.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell am force-stop com.olivia.companion
+> adb -s 0072882177 shell am force-stop com.facebook.stella
+> adb -s 0072882177 shell svc bluetooth disable`
+> - Ran `adb -s 0072882177 shell svc bluetooth enable
+> adb -s 0072882177 shell monkey -p com.facebook.stella 1 >/dev/null
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-meta-state.xml && adb -s 0072882177 shell cat /sdcard/olivia-meta-state.xml | sed 's/></>\n</g' | rg 'conectado|Bateria em|desconectado'`
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-meta-latest.xml && adb -s 0072882177 shell cat /sdcard/olivia-meta-latest.xml | sed 's/></>\n</g' | rg 'conectado|Bateria em|desconectado'
+> adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity`
+> - Ran `git diff --numstat; git status --short`
+>
+> </details>
+>
+> O Meta AI agora mostra “óculos não conectados”. Eles continuam ligados, abertos e no rosto para medir o decoder corrigido?
+> - Sim, estão no rosto
+> - Vou colocar e ligar agora
+>
+> **O Meta AI agora mostra “óculos não conectados”. Eles continuam ligados, abertos e no rosto para medir o decoder corrigido?**
+>
+> Sim, estão no rosto
+>
+> <details><summary>Explored 2 files, a search, ran 4 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2210
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml >/dev/null
+> adb -s 0072882177 shell input tap 500 1000
+> adb -s 0072882177 shell uiautomator dump /sdcard/olivia-resume.xml && adb -s 0072882177 shell cat /sdcard/olivia-resume.xml | sed 's/></>\n</g' | rg 'text="Iniciar sessão'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126
+> adb -s 0072882177 shell dumpsys bluetooth_manager | rg 'enabled:|state: ON|mConnectionState:' | head -n 8`
+>
+> <details><summary>Explored 2 files, a search</summary>
+>
+> - Read `/tmp/olivia-decoder-fixed.log`
+> - Read `./apps/android/app/src/androidTestGlasses/kotlin/com/olivia/companion/session/DatMockDeviceKitIntegrationTest.kt`
+> - Searched for `testImplementation|androidTestImplementation` in `build.gradle.kts`
+>
+> </details>
+>
+> - Ran `tail -n 25 /tmp/olivia-decoder-fixed.log
+> python3 - <<'PY'
+> import re,statistics,math
+> s=open('/tmp/olivia-decoder-fixed.log').read()
+> s='\n'.join(x for x in s.splitlines() if '(24610)' in x)
+> for key in ['codec_wait_ms','convert_ms','decoded_to_publish_ms','pts_gap_ms']:
+>  v=[int(x) for x in re.findall(r'\b'+key+r'=(\d+)',s)]
+>  print(key,'n',len(v),'p50',statistics.median(v) if v else None,'p95',sorted(v)[math.ceil(.95*len(v))-1] if v else None,'max',max(v) if v else None)
+> PY`
+>
+> - Ran `head -n 33 /tmp/olivia-decoder-fixed.log
+> adb -s 0072882177 shell input tap 540 2090
+> adb -s 0072882177 logcat -d --pid=24610 | rg -i 'abr|bitrate|bandwidth|adaptive|fps|frame.?rate' | tail -n 18`
+>
+> </details>
+>
+> A correção reduziu a espera no decoder: a mediana caiu de **100,5 ms para 12 ms**, com a fila interna vazia nos frames medidos.
+>
+> Mas apareceu outro gargalo: com 7 fps válidos, os timestamps avançam 142 ms por frame, enquanto os pacotes chegam bem mais devagar. A fila está crescendo **antes da entrada do nosso decoder**. Isso mostra por que aumentar o FPS, sozinho, pode piorar o atraso. Vou comparar o caminho de decodificação oferecido pelo próprio SDK.
+>
+> <details><summary>Ran 4 commands</summary>
+>
+> - Ran `jar tf /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar | rg -i 'decoder|StreamImpl|Video.*(Receiver|Processor)|ConfigHandler|VideoStream' | head -n 45
+> javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar com.meta.wearable.dat.camera.internal.abr.FrameRateAdaptiveVideoConfigHandler | head -n 170`
+> - Ran `curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"search_dat_docs","arguments":{"query":"Android compressVideo false true HEVC raw I420 latency bandwidth","max_results":3}}}' | python3 -c 'import sys,json; [print(json.loads(x[6:]).get("result",{}).get("structuredContent",{}).get("results","")) for x in sys.stdin.read().splitlines() if x.startswith("data: ")]'`
+> - Ran `javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar com.meta.wearable.dat.camera.internal.StreamImpl > /tmp/olivia-streamimpl.txt
+> rg -n -C 7 'getCompressVideo|Decoder|Adaptive|latencyTracker|onVideoFrame' /tmp/olivia-streamimpl.txt | head -n 150
+> jar tf /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar | rg 'codec/.*Decoder'`
+> - Ran `jar tf /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar | rg 'coordinator/.*(Event|Video)' | head -n 32
+> javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar com.meta.wearable.dat.camera.internal.codec.VideoDecoderBufferHandler | rg -n -C 3 'ImageReader|onFrame|toI420|toNV21|MediaCodec|Image|ByteBuffer' | head -n 75`
+>
+> </details>
+>
+> Context compaction
+>
+> Source: automatic
+> Status: completed
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `sed -n '1290,1370p' /tmp/olivia-streamimpl.txt; git diff --stat; rg -n 'compressVideo|DAT_FRAME_RATE|latency_investigation' apps/android docs/rules/meta_wearables_dat_android.json`
+>
+> </details>
+>
+> Vou comparar agora com a decodificação do próprio SDK da Meta, mantendo resolução e taxa iguais. Isso vai ajudar a separar o atraso do nosso decoder daquele que já chega acumulado pelo DAT.
+>
+> <details><summary>Edited a file, explored 2 files, a search, a list, ran 14 commands</summary>
+>
+> <details><summary>Explored 2 files, a search, a list</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Listed files in `android`
+> - Searched for `gradlew|JAVA_HOME|assembleGlasses` in `retomada-dat.md`
+>
+> </details>
+>
+> - Ran `sed -n '200,250p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt; cat apps/android/with-jdk.sh; adb -s 0072882177 shell pidof com.olivia.companion`
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+5 -7)
+>
+> - Ran `./with-jdk.sh ./gradlew installGlassesDebug --console=plain > /tmp/olivia-raw-build.log 2>&1`
+>
+> - Ran `tail -25 /tmp/olivia-raw-build.log; ls /opt/homebrew/opt/openjdk* /Applications/Android\ Studio.app/Contents/jbr/Contents/Home 2>/dev/null; cat apps/android/local.properties | cut -d= -f1`
+>
+> - Ran `/usr/libexec/java_home -V; ls /tmp | rg -i 'jdk|java'; ls -d /Applications/*/Contents/jbr/Contents/Home /Users/vitorsantana/.gradle/jdks/* /Users/vitorsantana/Library/Java/JavaVirtualMachines/* 2>/dev/null`
+>
+> - Ran `JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home ./with-jdk.sh ./gradlew installGlassesDebug --console=plain > /tmp/olivia-raw-build.log 2>&1`
+>
+> - Ran `javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar com.meta.wearable.dat.camera.internal.codec.VideoDecoder | rg -n -C 5 'color|format|19|latency'`
+>
+> - Ran `tail -8 /tmp/olivia-raw-build.log; sed -n '85,110p' docs/rules/meta_wearables_dat_android.json; adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity`
+>
+> - Ran `tail -5 /tmp/olivia-raw-build.log; adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-raw.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-raw.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text")]'`
+>
+> - Ran `adb -s 0072882177 logcat -T 1 -v time -s OliviaDatGateway:I OliviaHevcDecoder:I OliviaSessionRuntime:I '*:S' > /tmp/olivia-decoder-sdk.log`
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-raw.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-raw.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text")]'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2210; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-raw.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-raw.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text")]'`
+>
+> - Ran `adb -s 0072882177 shell input tap 500 1000; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-raw.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-raw.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text")]'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126; tail -10 /tmp/olivia-decoder-sdk.log`
+>
+> <details><summary>Explored a file</summary>
+>
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt`
+>
+> </details>
+>
+> - Ran `tail -18 /tmp/olivia-decoder-sdk.log; adb -s 0072882177 logcat -d -T 100 -v brief -s 'DAT:STREAM:VideoDecoder' '*:S'`
+>
+> </details>
+>
+> Está rodando agora a comparação com o decoder da Meta no Moto. A imagem tem cores normais? Ao mexer a mão na frente dos óculos, o atraso continua de vários segundos ou ficou claramente menor?
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar 'com.meta.wearable.dat.camera.internal.codec.VideoDecoderBufferHandler$onOutputBuffer$1' | tail -110; tail -14 /tmp/olivia-decoder-sdk.log`
+>
+> </details>
+>
+> A comparação com o decoder da Meta também está acumulando atraso. Portanto, há dois problemas: corrigimos uma espera desnecessária no nosso decoder, mas o fluxo a 7 fps também está chegando atrasado antes dele. Vou verificar a taxa sustentável e se a rota de áudio Bluetooth está interferindo.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `rg -n 'startBluetoothSco|setCommunicationDevice|MODE_IN_COMMUNICATION|bluetoothSco|SCO|stopBluetooth' apps/android/app/src; sed -n '1,150p' apps/android/app/src/main/kotlin/com/olivia/companion/audio/AndroidAudioFeedback.kt; tail -8 /tmp/olivia-decoder-sdk.log`
+> - Ran `adb -s 0072882177 shell dumpsys audio | rg -i 'sco|mode owner|mMode=|MODE_IN_COMMUNICATION|mBluetoothScoOn' | head -22; sed -n '420,445p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt; cat /tmp/olivia-decoder-baseline-stats.json`
+>
+> </details>
+>
+> **Está rodando agora a comparação com o decoder da Meta no Moto. A imagem tem cores normais? Ao mexer a mão na frente dos óculos, o atraso continua de vários segundos ou ficou claramente menor?**
+>
+> a imagem ate ta ok, o problema é só um baita delai tipo eu movo a cara e so dps de uns bons segundos q variam atualiza ali na preview
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `tail -8 /tmp/olivia-decoder-sdk.log; adb -s 0072882177 shell cmd wifi status | rg 'frequency|Frequency|RSSI|Link speed'`
+>
+> </details>
+>
+> Isso confirma que trocar o decoder sozinho não resolve. Vou manter a correção do nosso decoder e comparar novamente a 2 fps, em 720×1280: no teste a 7 fps, o atraso acumulado cresceu dezenas de segundos. O canal de chamada Bluetooth estava inativo, então não encontrei evidência de interferência por essa rota de áudio.
+>
+> <details><summary>Edited a file, ran 2 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2090`
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+7 -5)
+> - Ran `JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home ./with-jdk.sh ./gradlew installGlassesDebug --console=plain > /tmp/olivia-final-build.log 2>&1`
+>
+> </details>
+>
+> eu pensei em jogar o teste a 30 fps
+>
+> | ConfigValor no commit de madrugadaValor de hoje (antes das minhas mudanças) |                                       |                                        |
+> | --------------------------------------------------------------------------- | ------------------------------------- | -------------------------------------- |
+> | `DAT_FRAME_RATE` (pedido à câmera)                                          | **2**                                 | 2 (subi pra 6→7 hoje)                  |
+> | `VideoQuality`                                                              | `HIGH`                                | `HIGH` (sem mudança)                   |
+> | `compressVideo`                                                             | `false` no mock (`!useRawMockFrames`) | mesma lógica, só que físico usa `true` |
+> | Análise Gemini (`analysisIntervalMs`)                                       | **2.000ms = 0,5fps**                  | 2.000ms = 0,5fps (sem mudança)         |
+> | Timeout Gemini no mock                                                      | **8.000ms**                           | 8.000ms no mock/debug (igual)          |
+> | Timeout Gemini em produção                                                  | 2.000ms                               | 2.000ms (sem mudança)                  |
+> | Modelo Gemini                                                               | `gemini-3.5-flash-lite`               | mesmo                                  |
+> | Frame enviado ao Gemini                                                     | reduzido a 512px, JPEG qualidade 80   | mesmo                                  |
+>
+> ## A resposta direta: nada na config de IA/sampling mudou
+>
+> O Gemini **sempre** usou 0,5fps (1 frame a cada 2s), **sempre** com o mesmo modelo, mesma redução de imagem, mesmo JPEG — isso não mudou nada entre madrugada e hoje. E o `DAT_FRAME_RATE` pedido também já era 2 no mock, igual ao físico original.
+>
+> ## Então por que o vídeo "parecia" mais fps no mock?
+>
+> Porque o `compressVideo=false` faz o MockDeviceKit entregar o feed **da câmera nativa do Android** (`CameraFacing.BACK`) — e o Camera2/CameraX do próprio Android normalmente entrega preview a \~30fps por padrão, **independente do&#x20;****`frameRate=2`****&#x20;que a gente configurou**. Esse campo `frameRate` no `StreamConfiguration` é um parâmetro pra moldar o **stream Bluetooth real** (que precisa de banda limitada) — no mock, como não existe transporte Bluetooth nenhum, não há nada pra "moldar", então o MockDeviceKit provavelmente não aplica esse throttle e simplesmente repassa a câmera nativa no ritmo dela.
+>
+> **Ou seja**: o "2fps" configurado nunca foi de fato o que rolava no mock — era só um número decorativo que o MockDeviceKit ignorava, porque ele nunca precisou respeitar limite de banda nenhum. Isso reforça o que eu falei antes: a comparação madrugada-vs-hoje não é "a mesma pipeline ficou mais lenta" — é "a configuração sempre disse 2fps, só que só no físico ela é realmente aplicada e vira um limite de verdade".
+>
+> oq acha?
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `python3 - <<'PY'
+> import re,json,statistics
+> for path,pid in [('/tmp/olivia-decoder-fixed.log',24610),('/tmp/olivia-decoder-sdk.log',25156)]:
+>  lines=[s for s in open(path) if f'({pid})' in s]
+>  result={}
+>  for key in ['codec_wait_ms','convert_ms','decoded_to_publish_ms','capture_lag_ms','gap_ms','pts_gap_ms']:
+>   vals=[int(m.group(1)) for s in lines for m in [re.search(r'(?<![\w])'+key+r'=(-?\d+)',s)] if m]
+>   if vals: result[key]={'n':len(vals),'p50':statistics.median(vals),'p95':sorted(vals)[int((len(vals)-1)*.95)],'max':max(vals),'last':vals[-1]}
+>  print(path,json.dumps(result))
+> PY`
+>
+> </details>
+>
+> Vale testar 30 fps. O DAT tem adaptação de qualidade/taxa que pode se comportar diferente nessa configuração; precisamos medir, porque aumentar o pedido também pode aumentar a fila.
+>
+> A tabela faz sentido. Já a afirmação de que o mock ignorava os 2 fps ainda é hipótese: não medimos a cadência dele. O que confirmamos é que ele usava câmera local e outro caminho de decodificação. Vou testar 30 fps com o decoder corrigido, mantendo o Gemini em 0,5 fps.
+>
+> <details><summary>Edited a file, ran 9 commands, searched the web</summary>
+>
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+3 -3)
+>
+> - Ran `JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home ./with-jdk.sh ./gradlew installGlassesDebug --console=plain > /tmp/olivia-30-build.log 2>&1`
+>
+> - Ran `tail -6 /tmp/olivia-30-build.log; rg -n 'previewWorker|preview_timing|Channel\(|BufferOverflow|collectLatest|flowOn' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+>
+> - Ran `adb -s 0072882177 logcat -T 1 -v time -s OliviaDatGateway:I OliviaHevcDecoder:I OliviaSessionRuntime:I '*:S' > /tmp/olivia-decoder-30.log`
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity`
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-30.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-30.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text")]'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2210; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-30-home.xml > /dev/null; adb -s 0072882177 shell input tap 500 1000; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-30-session.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-30-session.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text")]'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126; tail -7 /tmp/olivia-decoder-30.log; sed -n '260,295p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+>
+> Searched the web for `https://wearables.developer.meta.com/docs/reference/android/dat/latest/com_meta_wearable_dat_camera_types_streamconfiguration`
+>
+> - Ran `tail -12 /tmp/olivia-decoder-30.log`
+>
+> - Ran `head -20 /tmp/olivia-decoder-30.log; adb -s 0072882177 logcat -d -T 2500 -v brief | rg -i 'FrameRateAdaptive|video.*(bitrate|quality|resolution)|adapt.*(video|rate)|bitrate.*[0-9]' | tail -25`
+>
+> </details>
+>
+> O teste pedindo 30 fps já está rodando no Moto. Comparando com o anterior, o movimento ficou mais fluido? O atraso da sua mão/cabeça até aparecer na tela diminuiu ou continua de vários segundos?
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `python3 - <<'PY'
+> import re,statistics
+> p='/tmp/olivia-decoder-30.log'; lines=open(p).readlines()
+> for key in ['codec_wait_ms','convert_ms','pending','decoded_to_publish_ms','capture_lag_ms']:
+>  v=[int(m.group(1)) for l in lines for m in [re.search(r'\b'+key+r'=(-?\d+)',l)] if m]
+>  if v: print(key,'n',len(v),'p50',statistics.median(v),'p95',sorted(v)[int(.95*(len(v)-1))],'max',max(v),'last',v[-1])
+> print(''.join(lines[-4:]))
+> PY`
+>
+> </details>
+>
+> **O teste pedindo 30 fps já está rodando no Moto. Comparando com o anterior, o movimento ficou mais fluido? O atraso da sua mão/cabeça até aparecer na tela diminuiu ou continua de vários segundos?**
+>
+> a tela ainda estava com super delay e em determinado momento so ficou tudo verde, ou seja, nao era fps o bug, e outra coisa
+>
+> Os 30 fps foram aceitos: os timestamps dos óculos avançam em cerca de 33 ms. Porém, nessa primeira janela chegaram só cerca de 4 frames por segundo ao app, e a defasagem cresceu aproximadamente 23 segundos. O decoder ficou com espera mediana de 15 ms; aumentar a taxa, neste enlace, não eliminou a fila.
+>
+> <details><summary>Ran a command</summary>
+>
+> - Ran `git diff -- apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt | head -150; rg -n 'BE-00|BE-02|INT-04' docs/rules/olivia_backlog.json`
+>
+> </details>
+>
+> A tela verde é um sintoma novo de corrupção do vídeo, não só atraso. Vou interromper esse teste e verificar erros do codec, perda de pacotes e mudanças de formato. Você tem razão: aumentar o FPS não resolveu; precisamos localizar também essa falha.
+>
+> <details><summary>Edited 2 files, ran 9 commands</summary>
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2090; rg 'failed|unavailable|first_frame|pts_gap_ms=-|capture_lag_ms' /tmp/olivia-decoder-30.log | tail -12; adb -s 0072882177 logcat -d -v time --pid=26179 | rg -i 'codec|corrupt|error|format|drop|overflow|underflow|late frame|quality|bit.?rate' | tail -90`
+> - Ran `rg -n 'fill\(0\)|dispose\(|bytes\.fill|frame\.bytes|copy\(bytes' apps/android/app/src/main apps/android/core/src | head -100; sed -n '390,490p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; adb -s 0072882177 logcat -d -v time --pid=26179 | rg -i 'CCodec|OMX|output format|resolution|input_unavailable|decode_failed|output_failed|corrupt' | head -65`
+> - Ran `rg -n 'discard|release|clear|erase' apps/android/core/src/main/kotlin/com/olivia/core/Frame* apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt | tail -45; rg 'input_unavailable|decode_failed|output_failed' /tmp/olivia-decoder-30.log; adb -s 0072882177 logcat -d -v time --pid=26179 | rg -v 'OliviaHevcDecoder|OliviaDatGateway|OliviaSessionRuntime|Firebase|TrafficStats|Choreographer' | tail -65`
+> - Ran `rg -n -C 7 'MutableSharedFlow|BufferOverflow|videoStream' /tmp/olivia-streamimpl.txt | head -120; sed -n '715,737p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; python3 - <<'PY'
+> import re,collections
+> for f in ['fixed','30']:
+>  l=[s for s in open('/tmp/olivia-decoder-'+f+'.log') if 'packet_arrival' in s]
+>  vals=[int(m.group(1)) for s in l for m in [re.search(r'pts_gap_ms=(-?\d+)',s)] if m]
+>  print(f,collections.Counter(vals).most_common(15))
+> PY`
+> - Ran `rg -n 'pts_gap_ms=689|pts_gap_ms=66|pts_gap_ms=50' /tmp/olivia-decoder-30.log; jar tf /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar | rg 'EncodedVideo|VideoEvent|VideoAvailable|StreamEventCoordinator' | head -25`
+> - Ran `rg 'config=true' /tmp/olivia-decoder-30.log; javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar 'com.meta.wearable.dat.camera.internal.StreamImpl$videoEventListener$2' | tail -80; sed -n '1,100p' apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Ran `javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar 'com.meta.wearable.dat.camera.internal.StreamImpl$videoEventListener$2$1' | head -210; sed -n '95,112p' docs/rules/meta_wearables_dat_android.json`
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/HevcFrameDecoder.kt` (+13 -1)
+> - Wrote `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt` (+5 -4)
+> - Ran `JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home ./with-jdk.sh ./gradlew installGlassesDebug --console=plain > /tmp/olivia-2-build.log 2>&1`
+> - Ran `python3 - <<'PY'
+> import re,statistics
+> for f,pid in [('baseline',23227),('fixed',24610),('sdk',25156),('30',26179)]:
+>  lines=[s for s in open('/tmp/olivia-decoder-'+f+'.log') if f'({pid})' in s]
+>  frames=[s for s in lines if 'frame_arrival' in s]; arrivals=[s for s in lines if 'packet_arrival' in s]
+>  print(f,'frames',len(frames))
+>  if frames: print(frames[0].strip(),frames[-1].strip())
+>  if arrivals: print('packets',len(arrivals),'first',arrivals[0].split('packet_arrival')[-1].strip(),'last',arrivals[-1].split('packet_arrival')[-1].strip())
+> PY`
+>
+> </details>
+>
+> Achei um risco concreto no caminho HEVC: uma configuração nova recebida durante o stream era guardada, mas não enviada ao codec. Corrigi esse caso e acrescentei logs de mudanças de formato. Ainda não dá para atribuir a tela verde a ele: também apareceu um salto nos timestamps compatível com frames ausentes. Estou repetindo a configuração original de 2 fps com essas correções para comparar.
+>
+> <details><summary>Ran 6 commands, searched the web</summary>
+>
+> - Ran `adb -s 0072882177 logcat -T 1 -v time -s OliviaDatGateway:I OliviaHevcDecoder:I OliviaSessionRuntime:I '*:S' > /tmp/olivia-decoder-2.log`
+>
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity; tail -5 /tmp/olivia-2-build.log`
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-2-welcome.xml > /dev/null; adb -s 0072882177 shell input tap 540 2210; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-2-home.xml > /dev/null; adb -s 0072882177 shell input tap 500 1000; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-2-session.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-2-session.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text")]'`
+>
+> - Ran `adb -s 0072882177 shell input tap 540 2126; git status --short`
+>
+> - Ran `tail -16 /tmp/olivia-decoder-2.log; rg -n 'sampling|analysisIntervalMs|analysisTimeout|8_000|2_000' apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt apps/android/core/src/main/kotlin/com/olivia/core/SessionConfig.kt`
+>
+> Searched the web for `site.github.com/facebook/meta-wearables-dat-android latency delay green ...`
+>
+> - Ran `tail -15 /tmp/olivia-decoder-2.log`
+>
+> </details>
+>
+> Agora está no Moto a versão corrigida em 720×1280 e 2 fps. A imagem voltou às cores normais? Movendo a mão, ainda vê vários segundos de atraso ou agora ela acompanha em pequenos saltos?
+>
+> <details><summary>Ran a command, searched the web</summary>
+>
+> Searched the web for `https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/CHANGELOG.md`
+>
+> - Ran `python3 - <<'PY'
+> import re,statistics
+> lines=open('/tmp/olivia-decoder-2.log').readlines()
+> for key in ['codec_wait_ms','convert_ms','decoded_to_publish_ms','capture_lag_ms']:
+>  v=[int(m.group(1)) for l in lines for m in [re.search(r'\b'+key+r'=(-?\d+)',l)] if m]
+>  if v: print(key,'n',len(v),'p50',statistics.median(v),'p95',sorted(v)[int(.95*(len(v)-1))],'max',max(v),'last',v[-1])
+> print(''.join([l for l in lines if 'access_unit' in l or 'output_format' in l])); print(''.join(lines[-4:]))
+> PY`
+>
+> </details>
+>
+> Os novos logs mostraram algo importante: mesmo pedindo `HIGH`, o SDK reduziu a resolução durante a sessão. A 2 fps, a fila inicial está escoando, em vez de crescer como nos testes a 7 e 30. Isso aponta para uma limitação ou falha antes do nosso decoder, mas ainda falta confirmar visualmente se o atraso restante ficou aceitável.
+>
+> <details><summary>Explored 2 files, a search</summary>
+>
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Searched for `first_frame|failed|unavailable|output_format` in `olivia-decoder-2.log`
+>
+> </details>
+>
+> **Agora está no Moto a versão corrigida em 720×1280 e 2 fps. A imagem voltou às cores normais? Movendo a mão, ainda vê vários segundos de atraso ou agora ela acompanha em pequenos saltos?**
+>
+> voltou as cores nornais mas ainda ta bem travada a preview, com uns delay meo zuado, tipo eu viro a cabeca e so vejo na preview 3 segundos dps as veses mais
+</details>
+
+> **Agora está no Moto a versão corrigida em 720×1280 e 2 fps. A imagem voltou às cores normais? Movendo a mão, ainda vê vários segundos de atraso ou agora ela acompanha em pequenos saltos?**
+> voltou as cores nornais mas ainda ta bem travada a preview, com uns delay meo zuado, tipo eu viro a cabeca e so vejo na preview 3 segundos dps as veses mais
+>
+> para prosseguir, quero que vovce consulte novamente a dcoumentacao deles[https://wearables.developer.meta.com/docs/reference/android/dat/0.9/com\_meta\_wearable\_dat\_camera\_types\_streamconfiguration/](https://wearables.developer.meta.com/docs/reference/android/dat/0.9/com_meta_wearable_dat_camera_types_streamconfiguration/)
+>
+> como funiona, como recomenadam, se alguem ja fez um coded open source voltado pra isso, se no SDK deles do github ja tem algo do tipo, se no wearanle kit ja tem um decoder do video, sei la coisas do tipo pra tentar fe fato pegar isso namoral sem esses delays estranhos q estao quebrando o ROI e a preivew
+
+<details><summary>6 previous messages</summary>
+
+> Vou revisar a documentação da versão 0.9, o exemplo oficial e implementações públicas para comparar com o nosso fluxo. A medição atual confirma que a correção do decoder não resolveu o atraso de 3 segundos que você vê; vou investigar também como o SDK entrega e descarta frames antes do preview e da análise de ROI.
+>
+> <details><summary>Explored a file, a search, ran 5 commands, searched the web</summary>
+>
+> Searched the web for `https://wearables.developer.meta.com/docs/reference/android/dat/0.9/com_meta_wearable_dat_camera_types_streamconfiguration/`
+>
+> - Ran `cat .agents/skills/olivia-escopo-final/SKILL.md; cat .agents/skills/android-kotlin/SKILL.md; rg --files -g AGENTS.md; git status --short`
+>
+> Searched the web for `github Ray Ban Meta Android HEVC decoder latency videoStream compressVideo ...`
+>
+> - Ran `curl -sS -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' https://mcp.developer.meta.com/wearables -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' > /tmp/olivia-meta-tools.sse; python3 - <<'PY'
+> import json
+> for l in open('/tmp/olivia-meta-tools.sse'):
+>  if l.startswith('data: '):
+>   for t in json.loads(l[6:]).get('result',{}).get('tools',[]): print(t['name'],json.dumps(t.get('inputSchema',{})))
+> PY`
+>
+> - Ran `python3 - <<'PY'
+> import urllib.request,json
+> u='https://api.github.com/repos/facebook/meta-wearables-dat-android/git/trees/main?recursive=1'
+> d=json.load(urllib.request.urlopen(u))
+> open('/tmp/olivia-meta-tree.json','w').write(json.dumps(d))
+> for e in d['tree']:
+>  p=e['path']
+>  if any(x in p.lower() for x in ['stream','decoder','camera','video']) and p.endswith(('.kt','.md')): print(p)
+> PY`
+>
+> - Ran `python3 - <<'PY'
+> import urllib.request,pathlib,concurrent.futures
+> root='samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/'
+> paths=[root+'stream/HevcDecoder.kt',root+'stream/VideoCaptureHandler.kt',root+'camera/CameraViewModel.kt',root+'ui/CameraScreen.kt','samples/CameraAccess/README.md']
+> out=pathlib.Path('/tmp/olivia-meta-official'); out.mkdir(exist_ok=True)
+> def fetch(p):
+>  s=urllib.request.urlopen('https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/'+p).read().decode(); (out/pathlib.Path(p).name).write_text(s); print(p,len(s))
+> with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex: list(ex.map(fetch,paths))
+> PY`
+>
+> - Ran `python3 - <<'PY'
+> import urllib.request,json,concurrent.futures
+> queries=['StreamConfiguration Android 0.9 compressVideo default decoder HEVC raw I420 frameRate','Android streaming video adaptive bitrate latency Bluetooth HIGH MEDIUM LOW recommendations']
+> def run(q):
+>  req=urllib.request.Request('https://mcp.developer.meta.com/wearables',data=json.dumps({'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'search_dat_docs','arguments':{'query':q,'max_results':3}}}).encode(),headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream'})
+>  s=urllib.request.urlopen(req).read().decode(); print('QUERY',q)
+>  for l in s.splitlines():
+>   if l.startswith('data: '): print(json.dumps(json.loads(l[6:]).get('result',{}),ensure_ascii=False))
+> with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex: list(ex.map(run,queries))
+> PY`
+>
+> <details><summary>Explored a file, a search</summary>
+>
+> - Read `/tmp/olivia-meta-official/HevcDecoder.kt`
+> - Searched for `StreamConfiguration|compressVideo|videoStream|frameRate|videoQuality|conflate|buffer\(|decode|render|Surface|onFrame|Dispatchers` in `VideoCaptureHandler.kt`
+>
+> </details>
+>
+> </details>
+>
+> Encontrei duas referências úteis no código oficial: o SDK já tem decoder interno, e o sample `CameraAccess` também inclui um `HevcDecoder` próprio, com saída direta para a tela e preferência por decoder de software. Vou comparar essas escolhas com as nossas. Também há relatos públicos de atraso acumulado, mas são relatos de outros ambientes, não prova da causa no Moto.
+>
+> <details><summary>Ran 14 commands, searched the web</summary>
+>
+> Searched the web for `https://pub.dev/packages/meta_wearables_dat_flutter/changelog`
+>
+> - Ran `rg -n -C 4 'CoroutineScope|DatGlassesGateway|Dispatchers|FRAME_RATE' apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt /tmp/olivia-meta-official/CameraViewModel.kt; javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar com.meta.wearable.dat.camera.internal.codec.CodecFactory > /tmp/olivia-codecfactory.txt; cat /tmp/olivia-codecfactory.txt | head -190; adb -s 0072882177 shell dumpsys media.codec | rg -i 'hevc|decoder|codec' | head -18`
+>
+> - Ran `python3 - <<'PY'
+> import urllib.request,json,concurrent.futures,pathlib
+> repos=['przemek-nowicki/meta-lens-ai','Andrew-Polinski/flutter_meta_wearables_dat']
+> def read(repo):
+>  try:
+>   d=json.load(urllib.request.urlopen('https://api.github.com/repos/'+repo)); b=d['default_branch']; tree=json.load(urllib.request.urlopen('https://api.github.com/repos/'+repo+'/git/trees/'+b+'?recursive=1')); print(repo,b,d.get('license',{}))
+>   pathlib.Path('/tmp/'+repo.replace('/','-')+'-tree.json').write_text(json.dumps(tree))
+>   for e in tree['tree']:
+>    p=e['path']
+>    if any(x in p.lower() for x in ['stream','decoder','wearable','camera']) and p.endswith('.kt'):print(p)
+>  except Exception as e: print(repo,type(e).__name__,e)
+> with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:list(ex.map(read,repos))
+> PY`
+>
+> - Ran `python3 - <<'PY'
+> import urllib.request,json,pathlib
+> repo='przemek-nowicki/meta-lens-ai'; p='android/app/src/main/java/com/metalens/app/stream/StreamViewModel.kt'
+> s=urllib.request.urlopen('https://raw.githubusercontent.com/'+repo+'/main/'+p).read().decode(); pathlib.Path('/tmp/olivia-metalens-StreamViewModel.kt').write_text(s)
+> for name in ['flutter_meta_wearables_dat','meta_wearables_dat_flutter']:
+>  d=json.load(urllib.request.urlopen('https://pub.dev/api/packages/'+name)); pub=d['latest']['pubspec']; print(name,pub.get('repository'),pub.get('homepage'))
+> PY
+> rg -n -C 3 'compressVideo|StreamConfiguration|conflate|videoStream|decode|YuvTo|frameRate|Dispatchers' /tmp/olivia-metalens-StreamViewModel.kt | head -145
+> sed -n '28,52p' apps/android/app/src/glasses/kotlin/com/olivia/companion/VariantRuntimeProvider.kt
+> javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/4a0c755b65d537cae1208f7389b87460/transformed/mwdat-camera-0.9.0/jars/classes.jar com.meta.wearable.dat.camera.internal.codec.VideoDecoder | head -78`
+>
+> - Ran `python3 - <<'PY'
+> import urllib.request,json
+> queries=['StreamConfiguration compressVideo default false internal decoder Android','camera green frames folded hinges doff unworn Android stream']
+> for q in queries:
+>  req=urllib.request.Request('https://mcp.developer.meta.com/wearables',data=json.dumps({'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'search_dat_docs','arguments':{'query':q,'max_results':2}}}).encode(),headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream'})
+>  for l in urllib.request.urlopen(req).read().decode().splitlines():
+>   if l.startswith('data: '): print(json.loads(l[6:]).get('result',{}).get('structuredContent',{}).get('results',''))
+> PY`
+>
+> Searched the web for `https://raw.githubusercontent.com/facebook/meta-wearables-dat-android/main/samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/stream/HevcDecoder.kt`
+>
+> - Ran `adb -s 0072882177 shell uiautomator dump /sdcard/olivia-research.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-research.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text") and any(s in n.get("text").lower() for s in ["sessão","pausar","encerrar","retomar","terminar","aguardando"])]'; tail -3 /tmp/olivia-decoder-2.log`
+>
+> - Ran `python3 - <<'PY'
+> import urllib.request,json,pathlib,concurrent.futures
+> repos=['rodcone/flutter_meta_wearables_dat','iSee-Labs/meta-wearables-dat-flutter']
+> def read(repo):
+>  d=json.load(urllib.request.urlopen('https://api.github.com/repos/'+repo+'/git/trees/main?recursive=1'));pathlib.Path('/tmp/'+repo.replace('/','-')+'-tree.json').write_text(json.dumps(d));print(repo)
+>  for e in d.get('tree',[]):
+>   p=e['path']
+>   if p.endswith('.kt') and any(s in p.lower() for s in ['stream','decoder','yuv','camera']):print(p)
+> with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:list(ex.map(read,repos))
+> PY`
+>
+> - Ran `rg --files /Users/vitorsantana/.gradle/caches/8.14.5/transforms | rg 'mwdat-mockdevice-0.9.0/jars/classes.jar$'; python3 - <<'PY'
+> import json
+> for repo in ['rodcone-flutter_meta_wearables_dat','iSee-Labs-meta-wearables-dat-flutter']:
+>  d=json.load(open('/tmp/'+repo+'-tree.json')); print(repo)
+>  for e in d['tree']:
+>   if e['path'].endswith('.kt') and any(t in e['path'] for t in ['Manager','Plugin','Renderer','VideoFrame']):print(e['path'])
+> PY`
+>
+> - Ran `sed -n '297,350p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; rg -n 'FrameStamp|receivedAt|age' apps/android/core/src/main/kotlin/com/olivia/core/FrameSampler.kt; python3 - <<'PY'
+> import urllib.request,pathlib
+> for repo,p,name in [('iSee-Labs/meta-wearables-dat-flutter','android/src/main/kotlin/com/iseelabs/meta_wearables_dat_flutter/MetaSessionManager.kt','iseelabs'),('rodcone/flutter_meta_wearables_dat','android/src/main/kotlin/io/rodcone/flutter_meta_wearables_dat/MetaWearablesDatPlugin.kt','rodcone')]:
+>  s=urllib.request.urlopen('https://raw.githubusercontent.com/'+repo+'/main/'+p).read().decode();pathlib.Path('/tmp/olivia-'+name+'.kt').write_text(s)
+> PY
+> rg -n -C 3 'conflate|collectLatest|compressVideo|videoStream\.collect|frameRate =|BufferOverflow|DROP_OLDEST|isCompressed' /tmp/olivia-iseelabs.kt /tmp/olivia-rodcone.kt | head -125`
+>
+> - Ran `rg -n 'class .*Sampl|sealed.*Sampling|isInFlight|inFlight|analysisFrames|processFast' apps/android/core/src/main/kotlin apps/android/app/src/main/kotlin/com/olivia/companion/ai | head -45; sed -n '1320,1405p' /tmp/olivia-rodcone.kt; jar tf /Users/vitorsantana/.gradle/caches/8.14.5/transforms/61d19b9bd4e67abea046e83104822f6f/transformed/mwdat-mockdevice-0.9.0/jars/classes.jar | rg 'CameraFeed|CameraSource|VideoSource|CameraStream|PhoneCamera' | head -25`
+>
+> - Ran `javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/61d19b9bd4e67abea046e83104822f6f/transformed/mwdat-mockdevice-0.9.0/jars/classes.jar com.meta.wearable.dat.mockdevice.internal.camera.mediastream.CameraStreamProvider > /tmp/olivia-mock-camera.txt; rg -n -i -C 3 'framerate|fps|throttle|delay|range|rate|createFrameFlow' /tmp/olivia-mock-camera.txt | head -110; sed -n '1,115p' apps/android/core/src/main/kotlin/com/olivia/core/HybridVisualAnalyzer.kt; sed -n '33,117p' apps/android/core/src/main/kotlin/com/olivia/core/Sampling.kt`
+>
+> - Ran `javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/61d19b9bd4e67abea046e83104822f6f/transformed/mwdat-mockdevice-0.9.0/jars/classes.jar 'com.meta.wearable.dat.mockdevice.internal.camera.mediastream.MediaStreamingWarpService$launchCameraStreamingJob$1' > /tmp/olivia-mock-job.txt; rg -n -C 8 'startCapture|FrameRate|frameRate|bipush.*30|bipush.*24' /tmp/olivia-mock-job.txt; sed -n '148,157p' /tmp/olivia-mock-camera.txt; sed -n '603,636p' /tmp/olivia-mock-camera.txt; git diff --check`
+>
+> - Ran `sed -n '180,245p' /tmp/olivia-mock-camera.txt; rg -n -C 5 'iload.*5|startCamera|startCapture' /tmp/olivia-mock-job.txt | tail -50; javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/61d19b9bd4e67abea046e83104822f6f/transformed/mwdat-mockdevice-0.9.0/jars/classes.jar 'com.meta.wearable.dat.mockdevice.internal.camera.mediastream.CameraStreamProvider$startCapture$sessionConfig$1' | rg -n -C 5 'FPS|Range|set\(|CaptureRequest'`
+>
+> - Ran `javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/61d19b9bd4e67abea046e83104822f6f/transformed/mwdat-mockdevice-0.9.0/jars/classes.jar 'com.meta.wearable.dat.mockdevice.internal.camera.mediastream.MediaStreamingWarpService$launchCameraStreamingJob$1$1' | rg -n -C 4 'FrameTimer|delay|frame|timestamp|Time|wait' | head -90; javap -c -p -classpath /Users/vitorsantana/.gradle/caches/8.14.5/transforms/61d19b9bd4e67abea046e83104822f6f/transformed/mwdat-mockdevice-0.9.0/jars/classes.jar 'com.meta.wearable.dat.mockdevice.internal.camera.mediastream.MediaStreamingWarpService$FrameTimer' | head -150`
+>
+> - Ran `sed -n '137,192p' /tmp/olivia-mock-job.txt; sed -n '246,295p' /tmp/olivia-mock-camera.txt; python3 - <<'PY'
+> import json,re,statistics
+> lines=[l for l in open('/tmp/olivia-decoder-2.log') if '(26601)' in l]
+> for k in ['codec_wait_ms','convert_ms','decoded_to_publish_ms']:
+>  v=[int(m.group(1)) for l in lines for m in [re.search(r'\b'+k+r'=(\d+)',l)] if m]
+>  print(k,{'n':len(v),'p50':statistics.median(v),'p95':sorted(v)[int((len(v)-1)*.95)],'max':max(v)})
+> PY`
+>
+> </details>
+>
+> A revisão também revelou um problema na nossa medição para o ROI: a idade do frame começa a contar depois da decodificação. Um frame que já chega atrasado pelo DAT pode, portanto, parecer “novo” para o sampler.
+>
+> Vou registrar os achados e a comparação recomendada: primeiro o preview isolado seguindo o exemplo oficial; depois adicionar tracking, Gemini e áudio, um por vez. Isso permite descobrir qual etapa introduz o atraso, sem misturar várias mudanças.
+>
+> <details><summary>Created a file, edited 2 files, ran 3 commands</summary>
+>
+> - Ran `python3 - <<'PY'
+> import urllib.request,json
+> r=json.load(urllib.request.urlopen('https://api.github.com/repos/facebook/meta-wearables-dat-android/commits/main')); print(r['sha'],r['commit']['committer']['date'])
+> PY`
+> - Wrote `./docs/hackaton-day-prod/checkpoint-1/investigacao-latencia-dat.md` (+75 -0)
+> - Wrote `./docs/rules/meta_wearables_dat_android.json` (+6 -3)
+> - Ran `python3 - <<'PY'
+> import json
+> p='docs/rules/meta_wearables_dat_android.json'
+> d=json.load(open(p)); print('JSON válido; captura instalada:',d['latency_investigation']['capture_fps'],'fps; investigação:',d['latency_investigation']['documentation_review'])
+> PY
+> git diff --check; git diff --stat -- docs/rules/meta_wearables_dat_android.json; ps -axo pid,command | rg 'adb.*logcat.*OliviaDatGateway'`
+> - Wrote `./docs/hackaton-day-prod/checkpoint-1/investigacao-latencia-dat.md` (+2 -0)
+> - Ran `python3 - <<'PY'
+> import subprocess,os,signal
+> owned={'/tmp/olivia-decoder-baseline.log','/tmp/olivia-decoder-fixed.log','/tmp/olivia-decoder-sdk.log','/tmp/olivia-decoder-30.log','/tmp/olivia-decoder-2.log'}
+> for line in subprocess.check_output(['ps','-axo','pid,comm'],text=True).splitlines():
+>  parts=line.split(None,1)
+>  if len(parts)!=2 or parts[1].split('/')[-1]!='adb':continue
+>  pid=int(parts[0]); r=subprocess.run(['lsof','-a','-p',str(pid),'-d','1','-Fn'],capture_output=True,text=True)
+>  if any(l.startswith('n') and l[1:] in owned for l in r.stdout.splitlines()):
+>   os.kill(pid,signal.SIGTERM);print('Coleta de diagnóstico encerrada:',pid)
+> PY`
+>
+> </details>
+</details>
+
+Consultei a documentação, o código oficial e projetos públicos. **O SDK já tem decoder, e existe um exemplo oficial específico para preview HEVC.** O atraso de vários segundos ainda não está resolvido.
+
+A página enviada exigiu login; complementei com o servidor público de documentação da Meta e conferi o binário **0.9.0** instalado.
+
+| Configuração | O que acontece |
+|---|---|
+| `compressVideo=false` | O SDK decodifica no celular e entrega pixels ao app. |
+| `compressVideo=true` | O app recebe HEVC e precisa decodificá-lo. |
+
+Isso não muda o Bluetooth para transmissão de pixels sem compressão. A opção controla **quem decodifica no celular**. [Changelog oficial](https://github.com/facebook/meta-wearables-dat-android/blob/main/CHANGELOG.md)
+
+O exemplo oficial traz diferenças importantes:
+
+- Usa **MEDIUM, 24 fps**, com processamento fora da thread da interface. [CameraViewModel](https://github.com/facebook/meta-wearables-dat-android/blob/main/samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/camera/CameraViewModel.kt)
+- Seu decoder prefere **software**, usa callbacks assíncronos e desenha diretamente numa `Surface`. Nosso preview passa por NV21 → JPEG → Bitmap. O exemplo também exclui alguns codecs conhecidos por corromper imagens, mas isso não comprova incompatibilidade no Moto. [HevcDecoder](https://github.com/facebook/meta-wearables-dat-android/blob/main/samples/CameraAccess/app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/stream/HevcDecoder.kt)
+
+Encontrei implementações públicas no [MetaLens AI](https://github.com/przemek-nowicki/meta-lens-ai) e no [wrapper da iSee Labs](https://github.com/iSee-Labs/meta-wearables-dat-flutter). São referências úteis, mas não encontrei uma correção comprovada para **este** atraso no nosso aparelho.
+
+**O achado mais preocupante no Olivia é a idade do frame:** nós marcamos sua chegada depois do decode. Assim, uma imagem que já chegou três segundos atrasada pode parecer recente para o ROI. Isso explica por que métricas locais rápidas não garantem orientação atualizada.
+
+O próximo teste adequado é **preview isolado seguindo o exemplo oficial**, sem tracking, Gemini ou áudio; depois adicionar cada componente separadamente. Nosso teste anterior com o decoder interno manteve o restante do Olivia funcionando, portanto ainda não isolou essas interferências. Trocar apenas FPS ou decoder não basta para concluir a causa.
+
+Registrei as fontes, diferenças, medições e a comparação controlada neste [relatório](./docs/hackaton-day-prod/checkpoint-1/investigacao-latencia-dat.md). Nesta etapa fiz a revisão documental; o teste isolado ainda não foi executado.
+
+> baseado nessas descoberteas implementar o fix pra de fato a gnete ter uma implementacao redonda onde:
+>
+> 1. a preview é 100% fluida e acoapnah o maximo possivel da vida real frame realtime
+> 2. o ROI sistema e o avaliador de frames q ativa s mesnagens TTS dfe vire a diretia e faz os caalculos tb recebe os frames quase realtime
+> 3.
+
+<details><summary>9 previous messages</summary>
+
+> Vou implementar o fluxo para priorizar frames recentes no preview e no ROI, seguindo as referências oficiais, e validar no Moto. Não dá para garantir fluidez de 100% sobre o Bluetooth, mas o critério será reduzir o atraso real e impedir que imagens antigas gerem orientações de TTS.
+>
+> <details><summary>Explored 6 files, 2 searches, a list, ran 3 commands</summary>
+>
+> <details><summary>Explored 2 files, a search, a list</summary>
+>
+> - Read `./AGENTS.md`
+> - Read `./apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt`
+> - Listed files in `android`
+> - Searched for `Live|Preview|Recording|Sampling|FrameContract|SessionRuntime|build.gradle`
+>
+> </details>
+>
+> - Ran `cat apps/android/core/src/main/kotlin/com/olivia/core/FrameContract.kt; sed -n '1,205p' apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt; sed -n '490,710p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; rg -n 'opencv|OpenCV|livePreview|\.jpeg' apps/android/app/src/main/kotlin apps/android/app/src/test | head -65; python3 - <<'PY'
+> import json
+> for f in ['architecture-diagram','olivia-contracts','meta_wearables_dat_android']:
+>  d=json.load(open('docs/rules/'+f+'.json'));print(f, list(d))
+> b=json.load(open('docs/rules/olivia_backlog.json'))
+> def visit(o):
+>  if isinstance(o,dict):
+>   if o.get('code') in ['BE-00','BE-02','INT-04']:print(o.get('code'),o.get('title'),o.get('dependencies'))
+>   for v in o.values():visit(v)
+>  elif isinstance(o,list):
+>   for v in o:visit(v)
+> visit(b)
+> PY`
+>
+> <details><summary>Explored 4 files, a search</summary>
+>
+> - Searched for `opencv|OpenCV` in `android`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt`
+> - Read `./apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt`
+> - Read `./docs/rules/meta_wearables_dat_android.json`
+> - Read `./apps/android/core/build.gradle.kts`
+>
+> </details>
+>
+> - Ran `sed -n '488,554p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; sed -n '55,100p' apps/android/core/src/main/kotlin/com/olivia/core/HybridVisualAnalyzer.kt; rg -n 'max.*Age|receivedAt|latency' apps/android/core/src/main/kotlin/com/olivia/core/Guidance*; sed -n '215,265p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; sed -n '760,791p' apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; rg -n 'frames|FrameStamp|sampling|resolution' docs/rules/olivia-contracts.json | head -20; adb devices`
+>
+> - Ran `sed -n '1,110p' apps/android/core/src/main/kotlin/com/olivia/core/GuidanceEngine.kt; rg -n 'onAnalysis|fun announce|stop\(' apps/android/core/src/main/kotlin/com/olivia/core/*Guidance* apps/android/app/src/main/kotlin/com/olivia/companion/audio/AndroidAudioFeedback.kt; head -74 apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt; sed -n '238,261p' docs/rules/olivia-contracts.json; sed -n '242,260p' apps/android/app/build.gradle.kts`
+>
+> </details>
+>
+> Vou usar o decoder interno do DAT para alimentar preview e ROI com os mesmos pixels, começando em MEDIUM/24 fps, como no exemplo oficial. O preview terá renderização direta em GPU, e o tracking terá uma fila própria que mantém apenas o frame mais recente. Também vou bloquear orientações baseadas em resultados vencidos; isso está ligado às tasks BE-00, BE-02 e INT-04.
+>
+> <details><summary>Created 2 files, edited 2 files, ran 4 commands</summary>
+>
+> - Wrote `./apps/android/core/src/main/kotlin/com/olivia/core/FrameContract.kt` (+12 -2)
+> - Wrote `./apps/android/core/src/main/kotlin/com/olivia/core/Sampling.kt` (+1 -1)
+> - Wrote `./apps/android/core/src/main/kotlin/com/olivia/core/SourceBacklog.kt` (+24 -0)
+> - Ran `python3 - <<'PY'
+> p='apps/android/app/src/glasses/kotlin/com/olivia/companion/session/DatGlassesGateway.kt'
+> s=open(p).read().replace('import com.olivia.core.FrameStamp','import com.olivia.core.SourceBacklog\nimport kotlinx.coroutines.channels.BufferOverflow\nimport com.olivia.core.FrameStamp')
+> s=s.replace('MutableSharedFlow<Frame>(extraBufferCapacity = 1)','MutableSharedFlow<Frame>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)')
+> s=s.replace('    private var capture: CaptureId? = null','    @Volatile private var capture: CaptureId? = null\n    private val sourceBacklog = SourceBacklog()')
+> s=s.replace('        referenceArrivalMs = null','        referenceArrivalMs = null\n        sourceBacklog.reset()')
+> s=s.replace('            val useRawMockFrames = forceMockDeviceKit || BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT\n','')
+> s=s.replace('videoQuality = VideoQuality.HIGH','videoQuality = VideoQuality.MEDIUM')
+> s=s.replace('// Physical hardware uses our independently drained HEVC decoder. The SDK\n                    // raw path was A/B tested and did not remove upstream delay on Moto G60.\n                    compressVideo = !useRawMockFrames,','// DAT performs one software decode; preview and ROI share its raw output.\n                    compressVideo = false,')
+> s=s.replace('        streamJob?.cancel()\n        streamJob = null\n        // DAT closes','        capture = null\n        streamJob?.cancel()\n        streamJob = null\n        decoder?.close()\n        decoder = null\n        // DAT closes',1)
+> s=s.replace('                            emitDecodedFrame(it, width, height, nv21, presentationTimeUs)','                            if (it == activeCapture) emitDecodedFrame(it, width, height, nv21, presentationTimeUs)')
+> s=s.replace('        val now = clock.now()\n        logFirstFrame','        val now = clock.now()\n        val backlogMs = if (forceMockDeviceKit || BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) 0L\n            else presentationTimeUs?.let { sourceBacklog.observe(it, now.monotonicMs) } ?: 0L\n        logFirstFrame',1)
+> s=s.replace('"capture_lag_ms=$captureLagMs",','"capture_lag_ms=$captureLagMs backlog_ms=$backlogMs width=$width height=$height",')
+> s=s.replace('stamp = FrameStamp(capture, sequence++, now),','stamp = FrameStamp(capture, sequence++, now, sourceBacklogMs = backlogMs),')
+> a=s.index('        // DAT supports 2, 7, 15, 24 or 30 fps.')
+> b=s.index('        const val MOCK_DEVICE_READY_TIMEOUT_MS',a)
+> s=s[:a]+'        // MEDIUM/24 follows CameraAccess; the AI sampler is independent of camera cadence.\n        const val DAT_FRAME_RATE = 24\n'+s[b:]
+> s=s.replace(" * DAT's documented compressed HEVC path is decoded locally into NV21 before crossing the domain\n * boundary. Codec configuration packets and encoded buffers never leave this adapter."," * DAT decodes HEVC internally; raw I420 is converted to NV21 once for preview and analysis.\n * Compressed packets, if supplied unexpectedly, remain confined to the fallback decoder.")
+> open(p,'w').write(s)
+> PY`
+> - Ran `python3 - <<'PY'
+> p='apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt'
+> s=open(p).read()
+> a=s.index('public data class LivePreviewFrame(');b=s.index('\ninterface SessionRuntime',a)
+> s=s[:a]+'''public class LivePreviewFrame(val frame: Frame) {
+>     val width: Int get() = frame.width
+>     val height: Int get() = frame.height
+>     val sequence: Long get() = frame.stamp.sequence
+>     val capturedAtMonotonicMs: Long get() = frame.stamp.receivedAt.monotonicMs
+>     override fun toString(): String = "LivePreviewFrame(${width}x$height, sequence=$sequence)"
+> }
+> ''' +s[b:]
+> s=s.replace('    // Hybrid tracking carries the live loop locally; Gemini is a validation/reaquisition path\n    // every five seconds instead of being on the 0.5 fps critical path.','    // Camera/tracker cadence is independent; cloud validation remains capped at 0.5 fps.')
+> s=s.replace('analysisIntervalMs = if (fastProcessor != null) 5_000 else 2_000,','analysisIntervalMs = 2_000,')
+> a=s.index('    /** Conflated so camera delivery/analysis');b=s.index('    private val analysisWorker:',a)
+> s=s[:a]+'''    // Tracking may be slower than the camera. It must never stall preview or accumulate work.
+>     private val trackingFrames = Channel<Frame>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+>     private val trackingWorker: Job = runtimeScope.launch {
+>         for (frame in trackingFrames) {
+>             if (frame.stamp.ageMs(clock.now()) > LIVE_FRAME_MAX_AGE_MS ||
+>                 !runtimeMutex.withLock { coordinator.accepts(frame.stamp) }) continue
+>             val started = clock.now()
+>             val result = fastProcessor?.processFast(frame)
+>             if (com.olivia.companion.BuildConfig.DEBUG) Log.i(LOG_TAG,
+>                 "tracking_timing sequence=${frame.stamp.sequence} ms=${clock.now().monotonicMs - started.monotonicMs}")
+>             if (result != null) processFastAnalysis(frame.stamp, result, started)
+>         }
+>     }
+> ''' +s[b:]
+> a=s.index('            previewFrames.trySend(frame)');b=s.index('            dispatchDecisions(decisions)',a)
+> s=s[:a]+'''            if (!runtimeMutex.withLock { coordinator.accepts(frame.stamp) }) return@collect
+>             // Publish raw pixels immediately. GPU rendering has its own latest-frame slot.
+>             _livePreview.value = LivePreviewFrame(frame)
+>             if (com.olivia.companion.BuildConfig.DEBUG) Log.i(LOG_TAG,
+>                 "preview_timing sequence=${frame.stamp.sequence} decoded_to_publish_ms=${clock.now().monotonicMs - frame.stamp.receivedAt.monotonicMs}")
+>             if (frame.stamp.ageMs(clock.now()) > LIVE_FRAME_MAX_AGE_MS) {
+>                 _liveGuidanceDirection.value = null
+>                 _liveGuidanceStatus.value = LiveGuidanceStatus.ANALYSIS_UNAVAILABLE
+>                 return@collect
+>             }
+>             trackingFrames.trySend(frame)
+>             val decisions = runtimeMutex.withLock {
+>                 metrics.onFrameReceived()
+>                 publishMetrics()
+>                 sampler.offer(frame, coordinator::accepts)
+>             }
+> ''' +s[b:]
+> s=s.replace('                _liveGuidanceStatus.value = when ((result.exceptionOrNull()', '                if (fastProcessor != null && (analyzer as? HybridVisualAnalyzer)?.currentTrackedRoi() != null) return\n                _liveGuidanceStatus.value = when ((result.exceptionOrNull()',1)
+> s=s.replace('            val analysis = result.getOrThrow()\n            val hasTrackedTarget', '''            // Remote localization already reconciles into the live tracker. A late cloud
+>             // diagnosis must not speak about the original (possibly seconds-old) image.
+>             if (fastProcessor != null) return
+>             val analysis = result.getOrThrow()
+>             if (analysis.frameStamp.ageMs(clock.now()) > LIVE_FRAME_MAX_AGE_MS) return
+>             val hasTrackedTarget''',1)
+> s=s.replace('if (!coordinator.accepts(analysis.frameStamp)) false','if (!coordinator.accepts(analysis.frameStamp) || analysis.frameStamp.ageMs(clock.now()) > LIVE_FRAME_MAX_AGE_MS) false')
+> s=s.replace('        previewFrames.close()','        trackingFrames.close()').replace('        previewWorker.cancel()','        trackingWorker.cancel()')
+> a=s.index('private fun encodePreview(frame: Frame):');b=s.index('private const val LOG_TAG',a)
+> s=s[:a]+s[b:]
+> s=s.replace('private const val PREVIEW_JPEG_QUALITY = 68','private const val LIVE_FRAME_MAX_AGE_MS = 750L')
+> for imp in ['import android.graphics.Bitmap\n','import android.graphics.ImageFormat\n','import android.graphics.Rect\n','import android.graphics.YuvImage\n','import java.io.ByteArrayOutputStream\n','import java.nio.ByteBuffer\n']:
+>  s=s.replace(imp,'')
+> open(p,'w').write(s)
+> PY`
+> - Wrote `./apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/Nv21PreviewView.kt` (+168 -0)
+> - Ran `python3 - <<'PY'
+> p='apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt'
+> s=open(p).read().replace('import android.graphics.BitmapFactory','import android.graphics.Bitmap\nimport android.graphics.BitmapFactory\nimport java.nio.ByteBuffer\nimport androidx.compose.runtime.DisposableEffect\nimport androidx.compose.runtime.remember\nimport androidx.compose.ui.platform.LocalContext\nimport androidx.compose.ui.viewinterop.AndroidView\nimport androidx.lifecycle.Lifecycle\nimport androidx.lifecycle.LifecycleEventObserver\nimport androidx.lifecycle.compose.LocalLifecycleOwner\nimport com.olivia.core.FrameFormat')
+> a=s.index('    val image: ImageBitmap? by produceState',s.index('private fun LivePreviewImage'))
+> b=s.index('    image?.let {',a)
+> s=s[:a]+'''    if (preview.frame.format == FrameFormat.NV21) {
+>         val context = LocalContext.current
+>         val lifecycle = LocalLifecycleOwner.current.lifecycle
+>         val view = remember(context) { Nv21PreviewView(context) }
+>         DisposableEffect(view, lifecycle) {
+>             val observer = LifecycleEventObserver { _, event ->
+>                 when (event) {
+>                     Lifecycle.Event.ON_RESUME -> view.onResume()
+>                     Lifecycle.Event.ON_PAUSE -> { view.clear(); view.onPause() }
+>                     else -> Unit
+>                 }
+>             }
+>             lifecycle.addObserver(observer)
+>             if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) view.onResume()
+>             onDispose { lifecycle.removeObserver(observer); view.clear(); view.onPause() }
+>         }
+>         AndroidView(factory = { view }, update = { it.submit(preview.frame) }, modifier = Modifier.fillMaxSize())
+>         return
+>     }
+>     val image: ImageBitmap? by produceState<ImageBitmap?>(initialValue = null, preview.frame.stamp) {
+>         value = withContext(Dispatchers.Default) {
+>             val frame = preview.frame
+>             when (frame.format) {
+>                 FrameFormat.JPEG -> BitmapFactory.decodeByteArray(frame.bytes, 0, frame.bytes.size)
+>                 FrameFormat.RGBA_8888 -> Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
+>                     .apply { copyPixelsFromBuffer(ByteBuffer.wrap(frame.bytes)) }
+>                 FrameFormat.NV21 -> null
+>             }?.asImageBitmap()
+>         }
+>     }
+> ''' +s[b:]
+> open(p,'w').write(s)
+> PY
+> JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home ./with-jdk.sh ./gradlew installGlassesDebug --console=plain > /tmp/olivia-realtime-build.log 2>&1`
+> - Ran `python3 - <<'PY'
+> p='apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/RecordingScreen.kt'
+> s=open(p).read().replace('import android.graphics.BitmapFactory','import android.graphics.Bitmap\nimport android.graphics.BitmapFactory\nimport java.nio.ByteBuffer\nimport androidx.compose.runtime.DisposableEffect\nimport androidx.compose.runtime.remember\nimport androidx.compose.ui.platform.LocalContext\nimport androidx.compose.ui.viewinterop.AndroidView\nimport androidx.lifecycle.Lifecycle\nimport androidx.lifecycle.LifecycleEventObserver\nimport androidx.lifecycle.compose.LocalLifecycleOwner\nimport com.olivia.core.FrameFormat')
+> a=s.index('    val image: ImageBitmap? by produceState',s.index('private fun LivePreviewImage')); b=s.index('    image?.let {',a)
+> s=s[:a]+'''    if (preview.frame.format == FrameFormat.NV21) {
+>         val context = LocalContext.current
+>         val lifecycle = LocalLifecycleOwner.current.lifecycle
+>         val view = remember(context) { Nv21PreviewView(context) }
+>         DisposableEffect(view, lifecycle) {
+>             val observer = LifecycleEventObserver { _, event ->
+>                 when (event) {
+>                     Lifecycle.Event.ON_RESUME -> view.onResume()
+>                     Lifecycle.Event.ON_PAUSE -> { view.clear(); view.onPause() }
+>                     else -> Unit
+>                 }
+>             }
+>             lifecycle.addObserver(observer)
+>             if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) view.onResume()
+>             onDispose { lifecycle.removeObserver(observer); view.clear(); view.onPause() }
+>         }
+>         AndroidView(factory = { view }, update = { it.submit(preview.frame) }, modifier = Modifier.fillMaxSize())
+>         return
+>     }
+>     val image: ImageBitmap? by produceState<ImageBitmap?>(initialValue = null, preview.frame.stamp) {
+>         value = withContext(Dispatchers.Default) {
+>             val frame = preview.frame
+>             when (frame.format) {
+>                 FrameFormat.JPEG -> BitmapFactory.decodeByteArray(frame.bytes, 0, frame.bytes.size)
+>                 FrameFormat.RGBA_8888 -> Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
+>                     .apply { copyPixelsFromBuffer(ByteBuffer.wrap(frame.bytes)) }
+>                 FrameFormat.NV21 -> null
+>             }?.asImageBitmap()
+>         }
+>     }
+> ''' +s[b:]
+> open(p,'w').write(s)
+> PY
+> tail -12 /tmp/olivia-realtime-build.log`
+>
+> </details>
+>
+> O código agora entrega o preview sem passar por JPEG, e o tracking não bloqueia mais sua atualização. No modo híbrido, o Gemini atualiza a localização da região de interesse; a orientação direcional passa a depender da avaliação local de um frame recente. Estou compilando e verificando essas mudanças antes do teste físico.
+>
+> <details><summary>Created a file, ran 10 commands</summary>
+>
+> - Ran `rg '^e:' /tmp/olivia-realtime-build.log; rg -n 'onRemoteLocalization|onLocalization' apps/android/app/src/glasses/kotlin apps/android/app/src/main/kotlin/com/olivia/companion/ai; cat apps/android/core/src/main/kotlin/com/olivia/core/SystemOliviaClock.kt 2>/dev/null; rg -n 'nanoTime|elapsedRealtime|class SystemOlivia' apps/android/core/src/main/kotlin`
+> - Ran `JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home ./with-jdk.sh ./gradlew installGlassesDebug --console=plain > /tmp/olivia-realtime-build.log 2>&1`
+> - Ran `python3 - <<'PY'
+> p='apps/android/app/src/main/kotlin/com/olivia/companion/ui/screens/Nv21PreviewView.kt'
+> s=open(p).read().replace('renderer.pending.set(frame)','renderer.pending.set(PendingFrame(frame, SystemClock.elapsedRealtime()))')
+> s=s.replace('    private class Nv21Renderer : Renderer {\n        val pending = AtomicReference<Frame?>(null)','    private data class PendingFrame(val frame: Frame, val submittedAtMs: Long)\n\n    private class Nv21Renderer : Renderer {\n        val pending = AtomicReference<PendingFrame?>(null)')
+> s=s.replace('            val frame = pending.getAndSet(null)','            val queued = pending.getAndSet(null)\n            val frame = queued?.frame')
+> s=s.replace('"received_to_draw_ms=${SystemClock.elapsedRealtime() - frame.stamp.receivedAt.monotonicMs}"','"submit_to_draw_ms=${SystemClock.elapsedRealtime() - requireNotNull(queued).submittedAtMs}"')
+> open(p,'w').write(s)
+> PY
+> rg -n 'gap|Gap|history|History' apps/android/core/src/main/kotlin/com/olivia/core/RoiMotionTracker.kt; tail -5 /tmp/olivia-realtime-build.log`
+> - Wrote `./apps/android/core/src/test/kotlin/com/olivia/core/SourceBacklogTest.kt` (+31 -0)
+> - Ran `adb -s 0072882177 logcat -T 1 -v time -s OliviaDatGateway:I OliviaSessionRuntime:I OliviaPreview:I AndroidRuntime:E '*:S' > /tmp/olivia-realtime.log`
+> - Ran `adb -s 0072882177 shell am start -n com.olivia.companion/.MainActivity; rg -n 'gap|Gap|history|History' apps/android/core/src/main/kotlin/com/olivia/core/MotionTracking.kt; git diff --check`
+> - Ran `JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home ./with-jdk.sh ./gradlew :core:test --tests com.olivia.core.SourceBacklogTest --tests com.olivia.core.FrameSamplerTest --console=plain > /tmp/olivia-freshness-tests.log 2>&1`
+> - Ran `sed -n '85,122p' apps/android/core/src/main/kotlin/com/olivia/core/MotionTracking.kt; sed -n '184,310p' apps/android/core/src/main/kotlin/com/olivia/core/MotionTracking.kt; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-rt-w.xml > /dev/null; adb -s 0072882177 shell input tap 540 2210; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-rt-h.xml > /dev/null; adb -s 0072882177 shell input tap 500 1000; adb -s 0072882177 shell uiautomator dump /sdcard/olivia-rt-s.xml > /dev/null; adb -s 0072882177 shell cat /sdcard/olivia-rt-s.xml | python3 -c 'import sys,xml.etree.ElementTree as E; r=E.fromstring(sys.stdin.read()); [print(n.get("text"),n.get("bounds")) for n in r.iter("node") if n.get("text") and "sessão" in n.get("text")]'`
+> - Ran `adb -s 0072882177 shell input tap 540 2126; tail -8 /tmp/olivia-freshness-tests.log; sed -n '28, seventy p' apps/android/core/src/main/kotlin/com/olivia/core/HybridVisualAnalyzer.kt 2>/dev/null; rg --files apps/android/core/src/test | rg 'Motion|Hybrid|Sampl'`
+> - Ran `python3 - <<'PY'
+> p='apps/android/core/src/main/kotlin/com/olivia/core/HybridVisualAnalyzer.kt'
+> s=open(p).read();a=s.index('        if (tracker.currentState() == RoiTrackerState.UNINITIALIZED)');b=s.index('        val estimate =',a)
+> s=s[:a]+'''        if (tracker.currentState() == RoiTrackerState.UNINITIALIZED && !localProposalAttempted) {
+>             localProposalAttempted = true
+>             val proposal = localRoiProposer?.propose(luma)
+>             if (proposal != null && tracker.seed(proposal, frame.stamp.sequence, frame.stamp.receivedAt.monotonicMs)) {
+>                 return@synchronized localAnalysis(frame, luma, AnalyzerSource.LOCAL_ROI_LOCAL)
+>             }
+>         }
+>         // Keep motion history even while waiting for the cloud's first ROI or reacquisition.
+>         // Otherwise a delayed box gets placed on today's frame without its intervening motion.
+>         if (previous == null) {
+>             tracker.onFrame(frame.stamp, null)
+>             return@synchronized null
+>         }
+> ''' +s[b:]
+> open(p,'w').write(s)
+> p='apps/android/core/src/main/kotlin/com/olivia/core/MotionTracking.kt';s=open(p).read()
+> s=s.replace('public fun append(sequence: Long, atMonotonicMs: Long, transform: MotionTransform) {','public fun append(sequence: Long, atMonotonicMs: Long, transform: MotionTransform, fromSequence: Long = sequence - 1) {')
+> s=s.replace('entries += MotionHistoryEntry(sequence, atMonotonicMs, transform)','entries += MotionHistoryEntry(sequence, atMonotonicMs, transform, fromSequence)')
+> s=s.replace('if (sequence < first.sequence - 1) return null','if (sequence < first.fromSequence) return null\n        if (entries.any { sequence > it.fromSequence && sequence < it.sequence }) return null')
+> s=s.replace('        val transform: MotionTransform,\n','        val transform: MotionTransform,\n        val fromSequence: Long,\n',1)
+> s=s.replace('    historyCapacity: Int = 32,','    historyCapacity: Int = 256,')
+> s=s.replace('                transform = estimate?.transform ?: MotionTransform.IDENTITY,','                transform = estimate?.transform ?: MotionTransform.IDENTITY,\n                fromSequence = requireNotNull(lastSequence),')
+> s=s.replace('        val propagated = history.accumulatedSince(capturedSequence)?.apply(remote) ?: remote','''        if (capturedSequence < nowSequence && history.size == 0) return null
+>         // Missing history or an out-of-bounds transform cannot make an old ROI current.
+>         val propagated = history.accumulatedSince(capturedSequence)?.apply(remote) ?: return null''')
+> open(p,'w').write(s)
+> p='apps/android/app/src/main/kotlin/com/olivia/companion/session/SessionRuntime.kt';s=open(p).read()
+> s=s.replace('            if (result != null) processFastAnalysis(frame.stamp, result, started)','''            // Remote samples correspond to frames actually included in the motion history.
+>             val decisions = runtimeMutex.withLock { sampler.offer(frame, coordinator::accepts) }
+>             dispatchDecisions(decisions)
+>             if (result != null) processFastAnalysis(frame.stamp, result, started)''')
+> s=s.replace('            trackingFrames.trySend(frame)\n            val decisions', '''            if (fastProcessor != null) {
+>                 trackingFrames.trySend(frame)
+>                 runtimeMutex.withLock { metrics.onFrameReceived(); publishMetrics() }
+>                 return@collect
+>             }
+>             val decisions''')
+> open(p,'w').write(s)
+> PY
+> tail -15 /tmp/olivia-realtime.log`
+> - Ran `rg -n 'Porcupine|voice.*start|voiceController|voiceCommands|VoiceCommand' apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt apps/android/app/src/main/kotlin/com/olivia/companion/session/OliviaSessionViewModel.kt apps/android/app/src/main/kotlin/com/olivia/companion/voice | head -55; adb -s 0072882177 shell dumpsys audio | rg -i 'mScoAudioState|mBtScoOnByApp|mode=|Mode owner' | head -10; head -45 apps/android/core/src/test/kotlin/com/olivia/core/MotionTrackingTest.kt; head -25 apps/android/core/src/test/kotlin/com/olivia/core/HybridVisualAnalyzerTest.kt`
+>
+> </details>
+>
+> A primeira medição da nova versão mostrou publicação do preview em cerca de 1–4 ms, mas os frames ainda chegam atrasados pelo DAT. Vou isolar agora a câmera numa tela de diagnóstico, sem inicializar ROI, Gemini, wake word ou TTS. Esse teste vai mostrar se alguma integração do Olivia está afetando a entrega.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `rg --files apps/android/app/src | rg 'AndroidManifest.xml|MainActivity.kt'; cat apps/android/app/src/glasses/AndroidManifest.xml; sed -n '1,70p' apps/android/app/src/main/kotlin/com/olivia/companion/MainActivity.kt; tail -5 /tmp/olivia-realtime.log`
+> - Ran `JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home ./with-jdk.sh ./gradlew :core:test --tests com.olivia.core.SourceBacklogTest --tests com.olivia.core.FrameSamplerTest --tests com.olivia.core.MotionTrackingTest --tests com.olivia.core.HybridVisualAnalyzerTest --tests com.olivia.core.HybridReplayHarnessTest --console=plain > /tmp/olivia-realtime-tests.log 2>&1`
+>
+> </details>
+>
+> System error
+>
+> You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at 5:13 PM.
+</details>

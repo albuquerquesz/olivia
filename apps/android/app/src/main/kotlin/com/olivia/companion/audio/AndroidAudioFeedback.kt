@@ -237,6 +237,7 @@ private enum class SignalDirection {
     SESSION_RESUMED,
     ALERT,
     RECOVERED,
+    FRAMED,
 }
 
 private object SignalTone {
@@ -251,6 +252,7 @@ private object SignalTone {
         SessionSignal.VOICE_COMMAND_ERROR, SessionSignal.VOICE_INPUT_UNAVAILABLE,
         SessionSignal.CONNECTION_LOST, SessionSignal.ANALYSIS_UNAVAILABLE, SessionSignal.AUDIO_UNAVAILABLE -> SignalDirection.ALERT
         SessionSignal.CONNECTION_RESTORED, SessionSignal.ANALYSIS_RESTORED, SessionSignal.AUDIO_RESTORED -> SignalDirection.RECOVERED
+        SessionSignal.TARGET_FRAMED -> SignalDirection.FRAMED
     }
 
     fun directionFor(direction: Direction): SignalDirection =
@@ -272,6 +274,7 @@ private object SignalTone {
             SignalDirection.SESSION_RESUMED -> 600.0
             SignalDirection.ALERT -> 660.0
             SignalDirection.RECOVERED -> 880.0
+            SignalDirection.FRAMED -> 740.0
             SignalDirection.LEFT, SignalDirection.RIGHT, SignalDirection.CENTER -> 440.0
         }
         repeat(samplesPerChannel) { index ->

@@ -34,8 +34,18 @@ public data class CaptureId(val sessionId: SessionId, val generation: Long) {
 }
 
 /** receivedAt é a chegada ao app, não uma alegação de timestamp do sensor. */
-public data class FrameStamp(val capture: CaptureId, val sequence: Long, val receivedAt: ClockReading) {
-    init { require(sequence >= 0) }
+public data class FrameStamp(
+    val capture: CaptureId,
+    val sequence: Long,
+    val receivedAt: ClockReading,
+    /** Lower bound on extra source backlog, relative to the fastest observed delivery. */
+    val sourceBacklogMs: Long = 0,
+) {
+    init { require(sequence >= 0); require(sourceBacklogMs >= 0) }
+
+    /** Does not claim absolute sensor age when the source clock is not synchronized. */
+    public fun ageMs(now: ClockReading): Long =
+        (now.monotonicMs - receivedAt.monotonicMs).coerceAtLeast(0) + sourceBacklogMs
 }
 
 /** Atualizado no callback de captura, mesmo que o consumidor de frames esteja ocupado. */

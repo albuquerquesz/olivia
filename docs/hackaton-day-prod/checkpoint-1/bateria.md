@@ -1,10 +1,15 @@
 # Bateria — checkpoint técnico 1
 
-## Status: pronto na estratégia e na instrumentação; medição real ainda `PENDING`
+## Status: estratégia e instrumentação prontas; primeira medição real existe, mas é insuficiente
 
 Como o [00-event-contract.md](../00-event-contract.md#L20) e o
 [05-privacy-and-evidence.md](../05-privacy-and-evidence.md#L16-L20) exigem: **estratégia de
 eficiência não é medição de bateria**. Esta nota separa as duas coisas com honestidade.
+
+Atualização 18/09, sessão física: com o pipeline completo rodando (frame real → Gemini → ROI →
+áudio), a instrumentação corrigida hoje já capturou os dois primeiros round-trips completos de
+Gemini: **≈1,85 s e ≈3,68 s**. Isso é dado real, não estimativa — mas ainda é só **2 amostras**,
+não as ≥10 exigidas, e as duas ficam bem acima da meta de ~900 ms. Ver seção "O que falta".
 
 ## O que já está pronto
 
@@ -63,14 +68,29 @@ reescrever (`00-event-contract.md`, seção Freeze). Fica registrado para revis�
 
 ## O que falta
 
-- **Medição real**: ≥10 inferências reais com bateria antes/depois anotada, p50/p95 lidos do log,
-  amostra declarada. Isso só existe depois que o DAT físico entregar frame e o Gemini responder de
-  verdade — é trabalho de operador no aparelho, não de leitura de código.
+- **Amostra insuficiente**: só 2 respostas completas medidas (`≈1,85 s`, `≈3,68 s`), não as ≥10
+  exigidas pelo `05-privacy-and-evidence.md`. Falta repetir a sessão física algumas vezes e deixar
+  o log acumular mais amostras antes de calcular p50/p95 de verdade.
+- **Ressalva de validade da amostra**: essas duas medições foram feitas com o timeout de rede em
+  modo diagnóstico (`DIAGNOSTIC_TIMEOUT_MS = 8_000`, só em `DEBUG`/MockDeviceKit — ver
+  `FirebaseVisualAnalyzerFactory.kt:42-47`), criado hoje porque o guard de produção de 2 s estava
+  cancelando a chamada antes de qualquer resposta chegar. Isso não distorce o tempo de rede/inferência
+  em si (o cronômetro mede o round-trip real, não o timeout), mas significa que essas amostras vêm
+  de um build que tolera respostas lentas — não prova que o guard de 2 s de produção se comporta
+  igual. Não usar essas duas amostras como prova do build de release.
+- **Bateria em si**: ainda não há leitura de `dumpsys battery` antes/depois de uma sessão — só uma
+  leitura pontual do Meta AI (75% num instante, sem consumo calculado).
+- **Meta de ~900 ms**: as duas amostras reais (1,85 s e 3,68 s) estão bem acima dela. Isso não é um
+  problema de instrumentação — é sinal real de que o caminho físico (Bluetooth + decode + upload +
+  inferência) hoje é mais lento que a meta, e vale investigar antes de prometer o número na banca.
 
 ## Como demonstrar na banca
 
-1. Se houver corrida física: rodar uma sessão curta, capturar o log dos dois eventos de timing
-   acima, calcular/mostrar p50/p95 e a variação de bateria (`dumpsys battery` antes/depois).
-2. Se não houver tempo/hardware a tempo: mostrar a estratégia (0,5 fps, cooldown de 4 s, frame
-   efêmero) como design, e declarar explicitamente que a medição está pendente — nunca alegar um
-   número que não foi medido.
+1. Repetir sessões físicas curtas pra acumular ≥10 amostras, capturar o log dos eventos de timing
+   (`OliviaVisualTiming`/`OliviaSessionRuntime`), calcular p50/p95 de verdade e anotar
+   `dumpsys battery` antes/depois.
+2. Ser honesto sobre o número: mostrar as duas amostras reais de hoje (1,85 s / 3,68 s) como
+   evidência de que o caminho funciona ponta a ponta, e declarar explicitamente que a meta de
+   900 ms ainda não foi atingida — não arredondar isso pra "dentro da meta".
+3. Mostrar a estratégia (0,5 fps, cooldown de 4 s, frame efêmero, sem WakeLock) como o motivo de a
+   eficiência ser boa mesmo com a latência de rede ainda alta.

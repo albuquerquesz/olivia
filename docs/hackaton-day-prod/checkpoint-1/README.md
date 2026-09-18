@@ -15,11 +15,25 @@ aqui cobre **um** dos cinco assuntos do checkpoint.
 
 ## Arquivos
 
-- [privacidade.md](privacidade.md) — pronto.
-- [bateria.md](bateria.md) — pronto na parte de instrumentação; medição real ainda pendente.
-- [audio.md](audio.md) — pronto na saída (TTS/sinal); falta confirmar fisicamente nos Ray-Ban.
-- `ia.md` e `gravacao-video.md` — **ainda não criados**; o operador vai adicionar depois, quando o
-  DAT/App Check destravarem e o primeiro frame real + resposta do Gemini forem observados.
+- [privacidade.md](privacidade.md) — pronto; App Check confirmado funcionando no físico hoje.
+- [bateria.md](bateria.md) — estratégia e instrumentação prontas; existem 2 amostras reais de
+  latência (1,85 s / 3,68 s), mas isso ainda é amostra insuficiente e acima da meta de 900 ms.
+- [audio.md](audio.md) — `PASS_HARDWARE`: operador ouviu a correção saindo dos Ray-Ban hoje.
+- `ia.md` e `gravacao-video.md` — **ainda não criados**; o operador vai adicionar. Já existe
+  evidência bruta pra isso em [05-privacy-and-evidence.md](../05-privacy-and-evidence.md) (linha
+  "DAT físico / primeiro frame" já em `PASS_HARDWARE`) e em
+  [retomada-dat.md](retomada-dat.md), com horários e detalhes da sessão física de hoje.
+- [meta-docs-findings.md](meta-docs-findings.md) — achados na documentação oficial da Meta sobre
+  por que subir o `frameRate` não resolveu o travamento da preview (banda Bluetooth Classic +
+  escada automática de qualidade do próprio SDK). Relevante pro assunto "frame/gravação-vídeo".
+
+## Atualização — 18/09/2026, sessão física
+
+Rodou ponta a ponta pela primeira vez: sessão iniciada, óculos conectados, Gemini analisando,
+ROI rodando, correção de enquadramento ouvida nos Ray-Ban. Os três assuntos abaixo (privacidade,
+bateria, áudio) foram atualizados para refletir isso. Falta só afinar detalhes técnicos: amostra
+de latência maior, meta de 900 ms ainda não atingida, e sincronizar o status "voz/tons nos óculos"
+na matriz principal (`05-privacy-and-evidence.md`), que ainda está `PENDING` lá.
 
 ## Convenção de cada arquivo de assunto
 

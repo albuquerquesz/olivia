@@ -41,19 +41,19 @@ public class HybridVisualAnalyzer(
         val luma = decoded.downsampled(FAST_PATH_MAX_EDGE)
         val previous = previousLuma
         previousLuma = luma
-        if (tracker.currentState() == RoiTrackerState.UNINITIALIZED) {
-            if (localProposalAttempted) return@synchronized null
+        if (tracker.currentState() == RoiTrackerState.UNINITIALIZED && !localProposalAttempted) {
             localProposalAttempted = true
-            val proposal = localRoiProposer?.propose(luma) ?: return@synchronized null
-            if (!tracker.seed(proposal, frame.stamp.sequence, frame.stamp.receivedAt.monotonicMs)) {
-                return@synchronized null
+            val proposal = localRoiProposer?.propose(luma)
+            if (proposal != null && tracker.seed(proposal, frame.stamp.sequence, frame.stamp.receivedAt.monotonicMs)) {
+                return@synchronized localAnalysis(frame, luma, AnalyzerSource.LOCAL_ROI_LOCAL)
             }
-            // The first result is intentionally local and provisional. Guidance still requires
-            // its normal persistence gate, while Gemini continues in parallel to reconcile it.
-            return@synchronized localAnalysis(frame, luma, AnalyzerSource.LOCAL_ROI_LOCAL)
         }
-        if (tracker.currentState() != RoiTrackerState.TRACKING) return@synchronized null
-        if (previous == null) return@synchronized null
+        // Keep motion history even while waiting for the cloud's first ROI or reacquisition.
+        // Otherwise a delayed box gets placed on today's frame without its intervening motion.
+        if (previous == null) {
+            tracker.onFrame(frame.stamp, null)
+            return@synchronized null
+        }
         val estimate = runCatching { motionEstimator.estimate(previous, luma) }.getOrNull()
         val roiBeforeFrame = tracker.currentRoi()
         val hand = roiBeforeFrame?.let { runCatching { handInsideRoi(luma, it) }.getOrDefault(false) } ?: false

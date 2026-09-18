@@ -96,12 +96,12 @@ public class MotionHistoryBuffer(
 
     public val size: Int get() = entries.size
 
-    public fun append(sequence: Long, atMonotonicMs: Long, transform: MotionTransform) {
+    public fun append(sequence: Long, atMonotonicMs: Long, transform: MotionTransform, fromSequence: Long = sequence - 1) {
         require(sequence >= 0)
         require(atMonotonicMs >= 0)
         val last = entries.lastOrNull()
         require(last == null || sequence > last.sequence) { "Motion history must be monotonic" }
-        entries += MotionHistoryEntry(sequence, atMonotonicMs, transform)
+        entries += MotionHistoryEntry(sequence, atMonotonicMs, transform, fromSequence)
         while (entries.size > capacity) entries.removeFirst()
     }
 
@@ -109,7 +109,8 @@ public class MotionHistoryBuffer(
     public fun accumulatedSince(sequence: Long): MotionTransform? {
         require(sequence >= 0)
         val first = entries.firstOrNull() ?: return MotionTransform.IDENTITY
-        if (sequence < first.sequence - 1) return null
+        if (sequence < first.fromSequence) return null
+        if (entries.any { sequence > it.fromSequence && sequence < it.sequence }) return null
         return entries.filter { it.sequence > sequence }
             .fold(MotionTransform.IDENTITY) { accumulated, entry -> entry.transform.after(accumulated) }
     }
@@ -120,6 +121,7 @@ public class MotionHistoryBuffer(
         val sequence: Long,
         val atMonotonicMs: Long,
         val transform: MotionTransform,
+        val fromSequence: Long,
     )
 }
 
@@ -190,7 +192,7 @@ public data class RoiReconciliation(
  */
 public class RoiMotionTracker(
     private val policy: RoiTrackerPolicy = RoiTrackerPolicy(),
-    historyCapacity: Int = 32,
+    historyCapacity: Int = 256,
 ) {
     private val history = MotionHistoryBuffer(historyCapacity)
     private var state: RoiTrackerState = RoiTrackerState.UNINITIALIZED
@@ -233,6 +235,7 @@ public class RoiMotionTracker(
                 sequence = currentSequence,
                 atMonotonicMs = stamp.receivedAt.monotonicMs,
                 transform = estimate?.transform ?: MotionTransform.IDENTITY,
+                fromSequence = requireNotNull(lastSequence),
             )
         }
         lastSequence = currentSequence
@@ -268,7 +271,9 @@ public class RoiMotionTracker(
             return null
         }
         val remote = requireNotNull(localization.roi)
-        val propagated = history.accumulatedSince(capturedSequence)?.apply(remote) ?: remote
+        if (capturedSequence < nowSequence && history.size == 0) return null
+        // Missing history or an out-of-bounds transform cannot make an old ROI current.
+        val propagated = history.accumulatedSince(capturedSequence)?.apply(remote) ?: return null
         val current = roi
         val overlap = current?.let { iou(it, propagated) } ?: 0f
         val replace = current == null || overlap < policy.reconcileHighIou

@@ -23,6 +23,8 @@ import com.olivia.core.CaptureId
 import com.olivia.core.Frame
 import com.olivia.core.FrameFormat
 import com.olivia.core.FrameOrigin
+import com.olivia.core.SourceBacklog
+import kotlinx.coroutines.channels.BufferOverflow
 import com.olivia.core.FrameStamp
 import com.olivia.core.GlassesConnection
 import com.olivia.core.GlassesGateway
@@ -49,8 +51,8 @@ import kotlinx.coroutines.CompletableDeferred
 
 /**
  * DAT-only boundary. It never records native media and never keeps a frame after emitting it.
- * DAT's documented compressed HEVC path is decoded locally into NV21 before crossing the domain
- * boundary. Codec configuration packets and encoded buffers never leave this adapter.
+ * DAT decodes HEVC internally; raw I420 is converted to NV21 once for preview and analysis.
+ * Compressed packets, if supplied unexpectedly, remain confined to the fallback decoder.
  */
 internal class DatGlassesGateway(
     private val context: Context,
@@ -59,11 +61,14 @@ internal class DatGlassesGateway(
     private val keepAliveInForeground: Boolean = true,
     private val forceMockDeviceKit: Boolean = false,
     private val mockVideoUri: Uri? = null,
+    private val diagnosticCompressedVideo: Boolean = false,
+    private val diagnosticLowBandwidth: Boolean = false,
 ) : GlassesGateway, AutoCloseable {
     private val _connection = MutableStateFlow(GlassesConnection.UNAVAILABLE)
-    private val _frames = MutableSharedFlow<Frame>(extraBufferCapacity = 1)
+    private val _frames = MutableSharedFlow<Frame>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     private val _heartbeat = MutableStateFlow<CaptureHeartbeat?>(null)
-    private var capture: CaptureId? = null
+    @Volatile private var capture: CaptureId? = null
+    private val sourceBacklog = SourceBacklog()
     private var session: DeviceSession? = null
     private var camera: Camera? = null
     private var stream: Stream? = null
@@ -75,6 +80,12 @@ internal class DatGlassesGateway(
     private var streamErrorJob: Job? = null
     private var sequence = 0L
     private var firstFrameLogged = false
+    private var lastFrameArrivalMs: Long? = null
+    private var lastPresentationTimeUs: Long? = null
+    // Relative media/phone clock drift from the first decoded frame. This cannot measure a fixed
+    // upstream delay or prove where buffering occurred; packet/codec/preview timings isolate it.
+    private var referencePresentationTimeUs: Long? = null
+    private var referenceArrivalMs: Long? = null
     internal var lastStartError: Throwable? = null
         private set
 
@@ -88,6 +99,11 @@ internal class DatGlassesGateway(
         this.capture = capture
         sequence = 0
         firstFrameLogged = false
+        lastFrameArrivalMs = null
+        lastPresentationTimeUs = null
+        referencePresentationTimeUs = null
+        referenceArrivalMs = null
+        sourceBacklog.reset()
         _heartbeat.value = null
         try {
             // MockDeviceKit replaces device transport, not the SDK singleton. Initialize the same
@@ -134,14 +150,12 @@ internal class DatGlassesGateway(
             withTimeoutOrNull(SESSION_STARTED_TIMEOUT_MS) { ready.await() }
                 ?: throw IllegalStateException("DAT session start timed out")
             if (keepAliveInForeground) DatStreamingService.start(context)
-            val useRawMockFrames = forceMockDeviceKit || BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT
             val attachedCamera = deviceSession.addCamera(
                 StreamConfiguration(
-                    videoQuality = VideoQuality.HIGH,
-                    frameRate = DAT_FRAME_RATE,
-                    // MockDeviceKit's raw I420 path avoids the device-specific HEVC/ImageReader
-                    // crash seen on Moto G60. Physical DAT keeps the production HEVC path.
-                    compressVideo = !useRawMockFrames,
+                    videoQuality = if (BuildConfig.DEBUG && diagnosticLowBandwidth) VideoQuality.LOW else VideoQuality.MEDIUM,
+                    frameRate = if (BuildConfig.DEBUG && diagnosticLowBandwidth) 7 else DAT_FRAME_RATE,
+                    // DAT performs one software decode; preview and ROI share its raw output.
+                    compressVideo = BuildConfig.DEBUG && diagnosticCompressedVideo,
                 ),
             ).onFailure { error, _ -> Log.w(TAG, "DAT camera_error=${error.name}") }
                 .getOrElse { throw IllegalStateException("DAT camera failed", it) }
@@ -177,8 +191,11 @@ internal class DatGlassesGateway(
     }
 
     override suspend fun pauseCapture() {
+        capture = null
         streamJob?.cancel()
         streamJob = null
+        decoder?.close()
+        decoder = null
         // DAT closes a Stream after stop() and does not support starting that same instance
         // again. Keep the capability alive while the app is paused; cancelling this collector
         // prevents heartbeats/frames from crossing the boundary, and resume simply reattaches it.
@@ -190,6 +207,11 @@ internal class DatGlassesGateway(
         this.capture = capture
         sequence = 0
         firstFrameLogged = false
+        lastFrameArrivalMs = null
+        lastPresentationTimeUs = null
+        referencePresentationTimeUs = null
+        referenceArrivalMs = null
+        sourceBacklog.reset()
         _heartbeat.value = null
         _connection.value = GlassesConnection.CONNECTED
         observeFrames(activeStream, capture)
@@ -206,18 +228,33 @@ internal class DatGlassesGateway(
 
     private fun observeFrames(activeStream: Stream, activeCapture: CaptureId) {
         streamJob?.cancel()
+        val observeStartedMs = android.os.SystemClock.elapsedRealtime()
+        var packetCount = 0L
+        var previousPacketMs: Long? = null
+        var previousPacketPts: Long? = null
         streamJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             activeStream.videoStream.collect { videoFrame ->
                 if (capture != activeCapture) return@collect
+                val arrivedMs = android.os.SystemClock.elapsedRealtime()
+                if (BuildConfig.DEBUG) Log.i(TAG,
+                    "packet_arrival packet=${packetCount++} since_observe_ms=${arrivedMs - observeStartedMs} " +
+                        "gap_ms=${previousPacketMs?.let { arrivedMs - it }} " +
+                        "pts_gap_ms=${previousPacketPts?.let { (videoFrame.presentationTimeUs - it) / 1_000 }} " +
+                        "compressed=${videoFrame.isCompressed} config=${videoFrame.isCodecConfig} " +
+                        "width=${videoFrame.width} height=${videoFrame.height} bytes=${videoFrame.buffer.remaining()}")
+                previousPacketMs = arrivedMs
+                previousPacketPts = videoFrame.presentationTimeUs
                 if (!videoFrame.isCompressed) {
-                    emitRawFrame(activeCapture, videoFrame.width, videoFrame.height, videoFrame.buffer)
+                    emitRawFrame(activeCapture, videoFrame.width, videoFrame.height, videoFrame.buffer, videoFrame.presentationTimeUs)
                     return@collect
                 }
                 val activeDecoder = decoder ?: HevcFrameDecoder(
                     videoFrame.width,
                     videoFrame.height,
-                    onFrame = { width, height, nv21 ->
-                        this@DatGlassesGateway.capture?.let { emitDecodedFrame(it, width, height, nv21) }
+                    onFrame = { width, height, nv21, presentationTimeUs ->
+                        this@DatGlassesGateway.capture?.let {
+                            if (it == activeCapture) emitDecodedFrame(it, width, height, nv21, presentationTimeUs)
+                        }
                     },
                     onUnavailable = { _connection.value = GlassesConnection.UNAVAILABLE },
                 ).also { decoder = it }
@@ -248,14 +285,48 @@ internal class DatGlassesGateway(
         session = null
     }
 
-    private fun emitDecodedFrame(capture: CaptureId, width: Int, height: Int, nv21: ByteArray) {
+    private fun emitDecodedFrame(
+        capture: CaptureId,
+        width: Int,
+        height: Int,
+        nv21: ByteArray,
+        presentationTimeUs: Long? = null,
+    ) {
         if (this.capture != capture) return
         val now = clock.now()
+        val backlogMs = if (forceMockDeviceKit || BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) 0L
+            else presentationTimeUs?.let { sourceBacklog.observe(it, now.monotonicMs) } ?: 0L
         logFirstFrame(width, height, FrameFormat.NV21)
+        // Diagnostic-only: sequence, arrival gap and encoder timestamp gap, no pixels. Comparing
+        // wall_gap_ms (phone-side arrival) to pts_gap_ms (glasses-side capture spacing) tells apart
+        // an uneven capture/encode on the glasses from buffering in our own decode/transport path.
+        val wallGapMs = lastFrameArrivalMs?.let { now.monotonicMs - it }
+        lastFrameArrivalMs = now.monotonicMs
+        val ptsGapMs = presentationTimeUs?.let { pts -> lastPresentationTimeUs?.let { (pts - it) / 1_000 } }
+        if (presentationTimeUs != null) lastPresentationTimeUs = presentationTimeUs
+        // capture_lag_ms: wall-clock elapsed since the take's first frame minus encoder-clock
+        // elapsed since that same frame. Stays near a constant if the pipeline just has a fixed
+        // startup offset; keeps growing if something upstream is queueing a backlog over time.
+        val captureLagMs = presentationTimeUs?.let { pts ->
+            if (referencePresentationTimeUs == null) {
+                referencePresentationTimeUs = pts
+                referenceArrivalMs = now.monotonicMs
+                0L
+            } else {
+                val wallElapsedMs = now.monotonicMs - requireNotNull(referenceArrivalMs)
+                val ptsElapsedMs = (pts - requireNotNull(referencePresentationTimeUs)) / 1_000
+                wallElapsedMs - ptsElapsedMs
+            }
+        }
+        Log.i(
+            TAG,
+            "frame_arrival sequence=$sequence wall_gap_ms=$wallGapMs pts_gap_ms=$ptsGapMs " +
+                "capture_lag_ms=$captureLagMs backlog_ms=$backlogMs width=$width height=$height",
+        )
         _heartbeat.value = CaptureHeartbeat(capture, now.monotonicMs)
         _frames.tryEmit(
             Frame(
-                stamp = FrameStamp(capture, sequence++, now),
+                stamp = FrameStamp(capture, sequence++, now, sourceBacklogMs = backlogMs),
                 width = width,
                 height = height,
                 format = FrameFormat.NV21,
@@ -273,7 +344,7 @@ internal class DatGlassesGateway(
     }
 
     /** DAT raw Android frames are tightly packed I420 (Y, U, V); domain frames use NV21. */
-    private fun emitRawFrame(capture: CaptureId, width: Int, height: Int, buffer: ByteBuffer) {
+    private fun emitRawFrame(capture: CaptureId, width: Int, height: Int, buffer: ByteBuffer, presentationTimeUs: Long) {
         if (width <= 0 || height <= 0 || width % 2 != 0 || height % 2 != 0) return
         val ySize = width * height
         val chromaSize = ySize / 4
@@ -291,7 +362,7 @@ internal class DatGlassesGateway(
                 nv21[destination++] = i420[v++]
                 nv21[destination++] = i420[ySize + it]
             }
-            emitDecodedFrame(capture, width, height, nv21)
+            emitDecodedFrame(capture, width, height, nv21, presentationTimeUs)
         } finally {
             i420.fill(0)
         }
@@ -374,7 +445,8 @@ internal class DatGlassesGateway(
 
     private companion object {
         const val TAG = "OliviaDatGateway"
-        const val DAT_FRAME_RATE = 2
+        // MEDIUM/24 follows CameraAccess; the AI sampler is independent of camera cadence.
+        const val DAT_FRAME_RATE = 24
         const val MOCK_DEVICE_READY_TIMEOUT_MS = 3_000L
         // Returning from Meta AI can briefly hand the BLE data link back through CONNECTING or
         // DISCONNECTED while the permission manifest finishes syncing to the glasses. Fail fast

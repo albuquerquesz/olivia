@@ -2,11 +2,7 @@ package com.olivia.companion.session
 
 import android.app.Activity
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.ImageFormat
 import androidx.activity.ComponentActivity
-import android.graphics.Rect
-import android.graphics.YuvImage
 import android.util.Log
 import com.olivia.companion.GlassesBackend
 import com.olivia.companion.audio.AndroidAudioFeedback
@@ -49,8 +45,6 @@ import com.olivia.core.TimelineEvent
 import com.olivia.core.SessionSnapshot
 import com.olivia.core.SystemOliviaClock
 import java.util.UUID
-import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -102,13 +96,13 @@ enum class LiveGuidanceStatus {
  * This is deliberately a bounded, in-memory UI projection. It is cleared on pause/stop/close,
  * is never written to the timeline or logs, and must not be confused with the native 3K take.
  */
-public data class LivePreviewFrame(
-    val jpeg: ByteArray,
-    val width: Int,
-    val height: Int,
-    val sequence: Long,
-    val capturedAtMonotonicMs: Long,
-)
+public class LivePreviewFrame(val frame: Frame) {
+    val width: Int get() = frame.width
+    val height: Int get() = frame.height
+    val sequence: Long get() = frame.stamp.sequence
+    val capturedAtMonotonicMs: Long get() = frame.stamp.receivedAt.monotonicMs
+    override fun toString(): String = "LivePreviewFrame(${width}x$height, sequence=$sequence)"
+}
 
 interface SessionRuntime : AutoCloseable {
     val snapshot: StateFlow<SessionSnapshot?>
@@ -227,11 +221,10 @@ internal class LiveSessionRuntime(
     private val timeline = FileTimeline(context.filesDir.toPath().resolve("olivia-timeline"))
     private val coordinator = SessionCoordinator(clock, gateway, audio, timeline)
     private val fastProcessor = analyzer as? FastFrameProcessor
-    // Hybrid tracking carries the live loop locally; Gemini is a validation/reaquisition path
-    // every five seconds instead of being on the 0.5 fps critical path.
+    // Camera/tracker cadence is independent; cloud validation remains capped at 0.5 fps.
     private val sampler = FrameSampler(
         clock = clock,
-        analysisIntervalMs = if (fastProcessor != null) 5_000 else 2_000,
+        analysisIntervalMs = 2_000,
     )
     /**
      * The engine owns the local phrase catalogue. Recreate it only while idle so its mode always
@@ -258,18 +251,25 @@ internal class LiveSessionRuntime(
     /** Serializes short state transitions; provider, TTS and frame I/O never run under this lock. */
     private val runtimeMutex = Mutex()
     private var lastRecoveryAttemptMs = Long.MIN_VALUE
+    // Positive "framed" cue: only after a real deviation, never on every calmly-centered frame.
+    private var wasDeviatedSinceFramedCue = false
+    private var lastFramedSignalAtMs: Long? = null
     private val analysisFrames = Channel<Frame>(capacity = 1)
     private var activeAnalysisJob: Job? = null
-    /** Conflated so camera delivery/analysis are never blocked by a UI JPEG conversion. */
-    private val previewFrames = Channel<Frame>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    private val previewWorker: Job = runtimeScope.launch {
-        for (frame in previewFrames) {
-            val accepted = runtimeMutex.withLock { coordinator.accepts(frame.stamp) }
-            if (!accepted) continue
-            val encoded = encodePreview(frame)
-            if (encoded != null && runtimeMutex.withLock { coordinator.accepts(frame.stamp) }) {
-                _livePreview.value = encoded
-            }
+    // Tracking may be slower than the camera. It must never stall preview or accumulate work.
+    private val trackingFrames = Channel<Frame>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val trackingWorker: Job = runtimeScope.launch {
+        for (frame in trackingFrames) {
+            if (frame.stamp.ageMs(clock.now()) > LIVE_FRAME_MAX_AGE_MS ||
+                !runtimeMutex.withLock { coordinator.accepts(frame.stamp) }) continue
+            val started = clock.now()
+            val result = fastProcessor?.processFast(frame)
+            if (com.olivia.companion.BuildConfig.DEBUG) Log.i(LOG_TAG,
+                "tracking_timing sequence=${frame.stamp.sequence} ms=${clock.now().monotonicMs - started.monotonicMs}")
+            // Remote samples correspond to frames actually included in the motion history.
+            val decisions = runtimeMutex.withLock { sampler.offer(frame, coordinator::accepts) }
+            dispatchDecisions(decisions)
+            if (result != null) processFastAnalysis(frame.stamp, result, started)
         }
     }
     private val analysisWorker: Job = runtimeScope.launch {
@@ -299,18 +299,25 @@ internal class LiveSessionRuntime(
     }
     private val frameObserver: Job = runtimeScope.launch {
         gateway.frames.collect { frame ->
-            previewFrames.trySend(frame)
-            val fastStartedAt = clock.now()
-            val fastResult = fastProcessor?.processFast(frame)
+            if (!runtimeMutex.withLock { coordinator.accepts(frame.stamp) }) return@collect
+            // Publish raw pixels immediately. GPU rendering has its own latest-frame slot.
+            _livePreview.value = LivePreviewFrame(frame)
+            if (com.olivia.companion.BuildConfig.DEBUG) Log.i(LOG_TAG,
+                "preview_timing sequence=${frame.stamp.sequence} decoded_to_publish_ms=${clock.now().monotonicMs - frame.stamp.receivedAt.monotonicMs}")
+            if (frame.stamp.ageMs(clock.now()) > LIVE_FRAME_MAX_AGE_MS) {
+                _liveGuidanceDirection.value = null
+                _liveGuidanceStatus.value = LiveGuidanceStatus.ANALYSIS_UNAVAILABLE
+                return@collect
+            }
+            if (fastProcessor != null) {
+                trackingFrames.trySend(frame)
+                runtimeMutex.withLock { metrics.onFrameReceived(); publishMetrics() }
+                return@collect
+            }
             val decisions = runtimeMutex.withLock {
                 metrics.onFrameReceived()
                 publishMetrics()
                 sampler.offer(frame, coordinator::accepts)
-            }
-            if (fastResult != null) {
-                runtimeScope.launch {
-                    processFastAnalysis(frame.stamp, fastResult, fastStartedAt)
-                }
             }
             dispatchDecisions(decisions)
         }
@@ -354,6 +361,7 @@ internal class LiveSessionRuntime(
                     expirePendingCorrection()
                     guidance = createGuidance(audioMode)
                     lastRecoveryAttemptMs = Long.MIN_VALUE
+                    resetFramedSignalState()
                     (analyzer as? HybridVisualAnalyzer)?.reset()
                     _livePreview.value = null
                     _liveGuidanceDirection.value = null
@@ -364,18 +372,21 @@ internal class LiveSessionRuntime(
                     )
                 }
                 LocalSessionCommand.PAUSE -> {
+                    resetFramedSignalState()
                     (analyzer as? HybridVisualAnalyzer)?.reset()
                     _livePreview.value = null
                     _liveGuidanceDirection.value = null
                     coordinator.pause()
                 }
                 LocalSessionCommand.RESUME -> {
+                    resetFramedSignalState()
                     (analyzer as? HybridVisualAnalyzer)?.reset()
                     _livePreview.value = null
                     _liveGuidanceDirection.value = null
                     coordinator.resume()
                 }
                 LocalSessionCommand.STOP -> {
+                    resetFramedSignalState()
                     (analyzer as? HybridVisualAnalyzer)?.reset()
                     _livePreview.value = null
                     _liveGuidanceDirection.value = null
@@ -490,6 +501,7 @@ internal class LiveSessionRuntime(
                         ?: "UNKNOWN"
                     Log.w(LOG_TAG, "visual analysis unavailable: $code")
                 }
+                if (fastProcessor != null && (analyzer as? HybridVisualAnalyzer)?.currentTrackedRoi() != null) return
                 _liveGuidanceStatus.value = when ((result.exceptionOrNull() as? AnalysisFailure)?.code) {
                     com.olivia.core.AnalysisFailureCode.CONFIGURATION ->
                         LiveGuidanceStatus.FIREBASE_CONFIGURATION_UNAVAILABLE
@@ -498,7 +510,11 @@ internal class LiveSessionRuntime(
                 runtimeMutex.withLock { coordinator.onAnalysisUnavailable() }
                 return
             }
+            // Remote localization already reconciles into the live tracker. A late cloud
+            // diagnosis must not speak about the original (possibly seconds-old) image.
+            if (fastProcessor != null) return
             val analysis = result.getOrThrow()
+            if (analysis.frameStamp.ageMs(clock.now()) > LIVE_FRAME_MAX_AGE_MS) return
             val hasTrackedTarget = (analyzer as? HybridVisualAnalyzer)?.currentTrackedRoi() != null
             _liveGuidanceStatus.value = if (!hasTrackedTarget && analyzer is HybridVisualAnalyzer) {
                 LiveGuidanceStatus.TARGET_NOT_FOUND
@@ -508,6 +524,7 @@ internal class LiveSessionRuntime(
                 LiveGuidanceStatus.TARGET_CENTERED
             }
             var correction: Correction? = null
+            var justFramed = false
             val stillAccepted = runtimeMutex.withLock {
                 if (!coordinator.accepts(analysis.frameStamp)) {
                     false
@@ -519,6 +536,11 @@ internal class LiveSessionRuntime(
                         coordinator.recordCorrectionOutcome(outcome)
                     }
                     correction = guidance.onAnalysis(analysis, clock.now())
+                    if (analysis.hasDeviation) {
+                        wasDeviatedSinceFramedCue = true
+                    } else {
+                        justFramed = maybeArmFramedSignal()
+                    }
                     if (correction != null) {
                         _liveGuidanceDirection.value = correction?.direction
                     } else if (!analysis.hasDeviation) {
@@ -530,6 +552,14 @@ internal class LiveSessionRuntime(
             if (stillAccepted && correction != null) {
                 val issuedCorrection = requireNotNull(correction)
                 _liveGuidanceStatus.value = LiveGuidanceStatus.GUIDANCE_PENDING
+                // Diagnostic-only: no pixels/ROI/user data. Lets a device trial tell apart a fast
+                // local (tracker/OpenCV) correction from a slow Gemini round-trip one.
+                Log.i(
+                    LOG_TAG,
+                    "correction_dispatch source=${analysis.source} kind=${issuedCorrection.diagnosis.kind} " +
+                        "direction=${issuedCorrection.direction} frame_age_ms=" +
+                        "${clock.now().monotonicMs - frame.stamp.receivedAt.monotonicMs}",
+                )
                 audioRequestedAtMs = clock.now().monotonicMs
                 val audioResult = audio.announce(issuedCorrection)
                 if (audioResult.isSuccess) {
@@ -552,6 +582,8 @@ internal class LiveSessionRuntime(
                         guidance.onCorrectionOutcome(issuedCorrection.id, CorrectionStatus.EXPIRED)
                     }
                 }
+            } else if (stillAccepted && justFramed) {
+                runCatching { audio.signal(com.olivia.core.SessionSignal.TARGET_FRAMED) }
             }
         } finally {
             val next = runtimeMutex.withLock {
@@ -601,8 +633,9 @@ internal class LiveSessionRuntime(
                 )
             }
             var correction: Correction? = null
+            var justFramed = false
             val accepted = runtimeMutex.withLock {
-                if (!coordinator.accepts(analysis.frameStamp)) false
+                if (!coordinator.accepts(analysis.frameStamp) || analysis.frameStamp.ageMs(clock.now()) > LIVE_FRAME_MAX_AGE_MS) false
                 else {
                     coordinator.onAnalysisRestored()
                     coordinator.recordDiagnosis(analysis)
@@ -611,6 +644,11 @@ internal class LiveSessionRuntime(
                         coordinator.recordCorrectionOutcome(outcome)
                     }
                     correction = guidance.onAnalysis(analysis, clock.now())
+                    if (analysis.hasDeviation) {
+                        wasDeviatedSinceFramedCue = true
+                    } else {
+                        justFramed = maybeArmFramedSignal()
+                    }
                     if (correction != null) {
                         _liveGuidanceDirection.value = correction?.direction
                     } else if (!analysis.hasDeviation) {
@@ -633,6 +671,14 @@ internal class LiveSessionRuntime(
             if (accepted && correction != null) {
                 val issued = requireNotNull(correction)
                 _liveGuidanceStatus.value = LiveGuidanceStatus.GUIDANCE_PENDING
+                // Diagnostic-only: no pixels/ROI/user data. Lets a device trial tell apart a fast
+                // local (tracker/OpenCV) correction from a slow Gemini round-trip one.
+                Log.i(
+                    LOG_TAG,
+                    "correction_dispatch source=${analysis.source} kind=${issued.diagnosis.kind} " +
+                        "direction=${issued.direction} frame_age_ms=" +
+                        "${clock.now().monotonicMs - stamp.receivedAt.monotonicMs}",
+                )
                 audioRequestedAtMs = clock.now().monotonicMs
                 val audioResult = audio.announce(issued)
                 if (audioResult.isSuccess) {
@@ -651,6 +697,8 @@ internal class LiveSessionRuntime(
                     _liveGuidanceStatus.value = LiveGuidanceStatus.AUDIO_UNAVAILABLE
                     runtimeMutex.withLock { guidance.onCorrectionOutcome(issued.id, CorrectionStatus.EXPIRED) }
                 }
+            } else if (accepted && justFramed) {
+                runCatching { audio.signal(com.olivia.core.SessionSignal.TARGET_FRAMED) }
             }
         } catch (error: CancellationException) {
             throw error
@@ -698,6 +746,26 @@ internal class LiveSessionRuntime(
         _liveLoopMetrics.value = metrics.snapshot()
     }
 
+    private fun resetFramedSignalState() {
+        wasDeviatedSinceFramedCue = false
+        lastFramedSignalAtMs = null
+    }
+
+    /**
+     * Arms the positive "framed" tone only after a real deviation was observed, and only once
+     * per [FRAMED_SIGNAL_COOLDOWN_MS], so a calmly-centered take never gets a beep every sample.
+     * Must be called while holding [runtimeMutex]; the caller plays the tone outside the lock.
+     */
+    private fun maybeArmFramedSignal(): Boolean {
+        if (!wasDeviatedSinceFramedCue) return false
+        val now = clock.now().monotonicMs
+        val last = lastFramedSignalAtMs
+        if (last != null && now - last < FRAMED_SIGNAL_COOLDOWN_MS) return false
+        wasDeviatedSinceFramedCue = false
+        lastFramedSignalAtMs = now
+        return true
+    }
+
     private fun createGuidance(mode: AudioMode): DefaultGuidanceEngine =
         if (fastProcessor != null) {
             DefaultGuidanceEngine(
@@ -718,9 +786,9 @@ internal class LiveSessionRuntime(
         frameObserver.cancel()
         watchdog.cancel()
         analysisFrames.close()
-        previewFrames.close()
+        trackingFrames.close()
         analysisWorker.cancel()
-        previewWorker.cancel()
+        trackingWorker.cancel()
         _livePreview.value = null
         _liveGuidanceDirection.value = null
         (gateway as? AutoCloseable)?.close()
@@ -729,38 +797,9 @@ internal class LiveSessionRuntime(
     }
 }
 
-private fun encodePreview(frame: Frame): LivePreviewFrame? = runCatching {
-    val jpeg = when (frame.format) {
-        FrameFormat.NV21 -> ByteArrayOutputStream().use { output ->
-            check(YuvImage(frame.bytes, ImageFormat.NV21, frame.width, frame.height, null)
-                .compressToJpeg(Rect(0, 0, frame.width, frame.height), PREVIEW_JPEG_QUALITY, output))
-            output.toByteArray()
-        }
-        FrameFormat.JPEG -> frame.bytes.copyOf()
-        FrameFormat.RGBA_8888 -> {
-            val bitmap = Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
-            try {
-                bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(frame.bytes))
-                ByteArrayOutputStream().use { output ->
-                    check(bitmap.compress(Bitmap.CompressFormat.JPEG, PREVIEW_JPEG_QUALITY, output))
-                    output.toByteArray()
-                }
-            } finally {
-                bitmap.recycle()
-            }
-        }
-    }
-    LivePreviewFrame(
-        jpeg = jpeg,
-        width = frame.width,
-        height = frame.height,
-        sequence = frame.stamp.sequence,
-        capturedAtMonotonicMs = frame.stamp.receivedAt.monotonicMs,
-    )
-}.getOrNull()
-
 private const val LOG_TAG = "OliviaSessionRuntime"
-private const val PREVIEW_JPEG_QUALITY = 68
+private const val LIVE_FRAME_MAX_AGE_MS = 750L
+private const val FRAMED_SIGNAL_COOLDOWN_MS = 4_000L
 
 fun createMockSessionRuntime(context: Context): SessionRuntime {
     val clock = SystemOliviaClock()

@@ -1,6 +1,16 @@
 package com.olivia.companion.ui.screens
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import java.nio.ByteBuffer
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.olivia.core.FrameFormat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -392,9 +402,34 @@ private fun GlassesCameraPreview(
 
 @Composable
 private fun LivePreviewImage(preview: LivePreviewFrame) {
-    val image: ImageBitmap? by produceState<ImageBitmap?>(initialValue = null, preview.sequence) {
+    if (preview.frame.format == FrameFormat.NV21) {
+        val context = LocalContext.current
+        val lifecycle = LocalLifecycleOwner.current.lifecycle
+        val view = remember(context) { Nv21PreviewView(context) }
+        DisposableEffect(view, lifecycle) {
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> view.onResume()
+                    Lifecycle.Event.ON_PAUSE -> { view.clear(); view.onPause() }
+                    else -> Unit
+                }
+            }
+            lifecycle.addObserver(observer)
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) view.onResume()
+            onDispose { lifecycle.removeObserver(observer); view.clear(); view.onPause() }
+        }
+        AndroidView(factory = { view }, update = { it.submit(preview.frame) }, modifier = Modifier.fillMaxSize())
+        return
+    }
+    val image: ImageBitmap? by produceState<ImageBitmap?>(initialValue = null, preview.frame.stamp) {
         value = withContext(Dispatchers.Default) {
-            BitmapFactory.decodeByteArray(preview.jpeg, 0, preview.jpeg.size)?.asImageBitmap()
+            val frame = preview.frame
+            when (frame.format) {
+                FrameFormat.JPEG -> BitmapFactory.decodeByteArray(frame.bytes, 0, frame.bytes.size)
+                FrameFormat.RGBA_8888 -> Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
+                    .apply { copyPixelsFromBuffer(ByteBuffer.wrap(frame.bytes)) }
+                FrameFormat.NV21 -> null
+            }?.asImageBitmap()
         }
     }
     image?.let {
