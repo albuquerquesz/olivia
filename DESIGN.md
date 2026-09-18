@@ -44,10 +44,9 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 - Sem títulos de página (Gravar, Sessões, Ajustes). A orientação vem do
   painel e da barra inferior.
-- Welcome/onboarding: tela inicial, sem barra inferior. Etapas curtas explicam o ciclo
-  da Olivia, e cada permissão aparece em sua própria tela. O mock pede microfone; no
-  flavor de óculos, também Bluetooth. Sem conta. Pareamento e autorização dos óculos
-  ficam no Meta AI.
+- Welcome/onboarding: tela inicial, sem barra inferior e com três etapas fixas no mesmo
+  padrão visual. A etapa final solicita uma permissão por vez: microfone e, no flavor
+  de óculos, Bluetooth. Sem conta. Pareamento e autorização dos óculos ficam no Meta AI.
 - Início: painel com Dispositivo e Ray-Ban Meta; Últimos takes em cards (miniatura,
   título, badges de duração e data abaixo do título, seta) e atalho ver todos para Sessões.
   Sem inventar takes.
