@@ -555,6 +555,17 @@ internal class LiveSessionRuntime(
                 _liveGuidanceStatus.value = LiveGuidanceStatus.ANALYSIS_UNAVAILABLE
                 return
             }
+            if (analysis.source == com.olivia.core.AnalyzerSource.LOCAL_ROI_LOCAL &&
+                com.olivia.companion.BuildConfig.DEBUG
+            ) {
+                // Diagnostic-only: source, sequence and local processing time contain no pixels,
+                // ROI coordinates, model response or user data. This is emitted once per local
+                // first-acquisition attempt and lets the device trial distinguish it from Gemini.
+                Log.i(
+                    LOG_TAG,
+                    "local ROI proposal accepted sequence=${analysis.frameStamp.sequence} latency_ms=${analysis.latencyMs}",
+                )
+            }
             var correction: Correction? = null
             val accepted = runtimeMutex.withLock {
                 if (!coordinator.accepts(analysis.frameStamp)) false

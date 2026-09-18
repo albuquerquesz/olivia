@@ -334,7 +334,7 @@
             "Implementar unitários e integração Docker/Android com vídeo real de fixture e falhas; prova física permanece INT-06.",
             "Incompatibilidade entre streaming e gravação nativa é bloqueio da promessa, não autorização para reconstruir vídeo do stream."
           ],
-          "notes_and_risks": "Risco crítico antecipado: spike começa em M0; conector e prova física têm gates posteriores. Datas de milestones são referência histórica, não evidência de conclusão.",
+          "notes_and_risks": "Bloqueio confirmado em 18/09/2026: mwdat-camera:0.9.0 não expõe API pública para iniciar/parar gravação nativa, listar assets ou transferir take aos aplicativos. Logo o conector glasses não pode ser implementado sem nova capacidade da Meta; não substituir pelo stream DAT. Datas de milestones são referência histórica, não evidência de conclusão.",
           "priority": "High",
           "estimate": 3,
           "labels": [
@@ -345,7 +345,7 @@
             "risk"
           ],
           "description": "## Objetivo\n\nAntecipar a investigação da promessa nativa do submit: acionamento mãos-livres, gravação simultânea ao streaming DAT, preservação do take na queda BT e importação pós-STOPPED. Implementar RecordingSource de fixture/local e mapa temporal sem transformar capacidades não verificadas em garantias.\n\n**Responsável:** Backend/IA\n**Milestone:** M0 • Fundação (04–05/09)\n**Fase:** Pré-hackathon\n**Dá para fazer antes do hackathon:** Não\n**Dependências:** SH-04\n\n## Definição de pronto\n\n- Iniciar spike em M0 junto ao setup DAT; registrar versão, hardware, fonte e evidência separada das quatro capacidades nativas.\n- Não equiparar startCapture/startSession de streaming a iniciar gravação nativa 3K.\n- Implementar RecordingSource com fixture/local, validação de mídia, progresso/cancelamento e ausência de transferências antes de STOPPED.\n- Definir mapa tempo de sessão→mídia, pausas e incerteza; testar marcas conhecidas com tolerância inicial de 250 ms.\n- Documentar seleção manual de arquivo como fallback de importação quando necessário, sem alegar automação/simultaneidade comprovada.\n- Implementar unitários e integração Docker/Android com vídeo real de fixture e falhas; prova física permanece INT-06.\n- Incompatibilidade entre streaming e gravação nativa é bloqueio da promessa, não autorização para reconstruir vídeo do stream.\n\n## Notas / risco\n\nRisco crítico antecipado: spike começa em M0; conector e prova física têm gates posteriores. Datas de milestones são referência histórica, não evidência de conclusão.\n\n## Especificação e testes\n\ndocs/hackaton-day-prod/03-native-recording-and-storage.md\ndocs/hackaton-day-prod/03-native-recording-and-storage.md\n\nUnitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
-          "review_status": "reviewed_for_sdd_2026_09_12",
+          "review_status": "blocked_by_dat_0_9_0_2026_09_18",
           "objective": "Antecipar a investigação da promessa nativa do submit: acionamento mãos-livres, gravação simultânea ao streaming DAT, preservação do take na queda BT e importação pós-STOPPED. Implementar RecordingSource de fixture/local e mapa temporal sem transformar capacidades não verificadas em garantias.",
           "original_milestone": "M3 • Hardening (14–16/09)",
           "sdd": {
@@ -354,7 +354,7 @@
             "tasks": "docs/hackaton-day-prod/03-native-recording-and-storage.md",
             "runtime": "android_domain_or_adapter",
             "validation": "Unitários e integração implementados junto à feature. Execução somente quando solicitada; aceite pendente sem evidência.",
-            "status": "planning_reviewed_not_runtime_validated"
+            "status": "blocked_by_dat_0_9_0"
           }
         },
         {
