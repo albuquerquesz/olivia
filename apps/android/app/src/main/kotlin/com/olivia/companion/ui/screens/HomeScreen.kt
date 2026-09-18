@@ -142,7 +142,11 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
                 )
                 Text(
                     "Oi, Olivia, gravar",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 18.sp,
+                        lineHeight = 24.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
                 )
             }
             Box(
