@@ -74,7 +74,7 @@ import kotlin.math.sin
 
 internal enum class OliviaButtonVariant {
     Primary,
-    Warm,
+    PrimaryGradient,
 }
 
 @Composable
@@ -86,24 +86,24 @@ internal fun OliviaButton(
     content: @Composable RowScope.() -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(12.dp.takeIf { variant == OliviaButtonVariant.Warm } ?: 20.dp)
-    val isWarm = variant == OliviaButtonVariant.Warm
+    val shape = RoundedCornerShape(12.dp.takeIf { variant == OliviaButtonVariant.PrimaryGradient } ?: 20.dp)
+    val isGradient = variant == OliviaButtonVariant.PrimaryGradient
     val contentColor = when {
         !enabled -> colors.onSurfaceVariant
-        isWarm -> OliviaWarmActionOn
+        isGradient -> OliviaBlueActionOn
         else -> colors.onPrimary
     }
     val background = when {
         !enabled -> Brush.verticalGradient(listOf(colors.surfaceVariant, colors.surfaceVariant))
-        isWarm -> Brush.verticalGradient(listOf(OliviaWarmActionStart, OliviaWarmActionEnd))
+        isGradient -> Brush.verticalGradient(listOf(OliviaBlueActionStart, OliviaBlueActionEnd))
         else -> Brush.verticalGradient(listOf(colors.primary, colors.primary))
     }
-    val shadowModifier = if (isWarm && enabled) {
+    val shadowModifier = if (isGradient && enabled) {
         Modifier.shadow(
             elevation = 4.dp,
             shape = shape,
-            ambientColor = OliviaWarmActionShadow,
-            spotColor = OliviaWarmActionShadow,
+            ambientColor = OliviaBlueActionShadow,
+            spotColor = OliviaBlueActionShadow,
         )
     } else {
         Modifier

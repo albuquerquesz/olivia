@@ -154,7 +154,7 @@ fun OliviaWelcomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 56.dp),
-                variant = OliviaButtonVariant.Warm,
+                variant = OliviaButtonVariant.PrimaryGradient,
             ) {
                 Text(
                     text = onboardingButtonLabel(

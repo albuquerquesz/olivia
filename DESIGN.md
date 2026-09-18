@@ -18,9 +18,9 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 | Fundo | #F1F3F7 |
 | Superfície | #FAFBFD |
 | Painel principal e ação/seleção | #BFDFFD |
-| Ação quente (topo) | #FF7246 |
-| Ação quente (base) | #F15026 |
-| Texto sobre ação quente | #FEFEFE |
+| Ação principal (topo) | #D9EEFF |
+| Ação principal (base) | #A4D1F3 |
+| Texto sobre ação principal | #151A21 |
 | Texto principal e no azul | #151A21 |
 | Texto secundário no branco | #526174 |
 | Texto secundário no azul | #526174 |
@@ -29,9 +29,9 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 | Divisória decorativa | #DCE3EC |
 
 Neutros têm matiz frio. As cores sRGB aprovadas são os valores canônicos no app.
-Não usar cores dinâmicas do sistema que substituam essa paleta. A ação quente é
-uma exceção localizada para CTAs do onboarding, com gradiente vertical e sombra
-coral suave; não substitui o azul principal.
+Não usar cores dinâmicas do sistema que substituam essa paleta. A ação principal
+em gradiente usa os tons azuis aprovados em CTAs do onboarding, com sombra azul
+suave; o azul canônico #BFDFFD continua sendo a base do tema.
 
 ## Tipografia e espaço
 
