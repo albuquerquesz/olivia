@@ -355,7 +355,7 @@ internal fun DeviceOverview() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 190.dp)
+                .heightIn(min = 180.dp)
                 .padding(start = 20.dp, top = 20.dp, end = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
