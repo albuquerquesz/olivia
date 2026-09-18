@@ -376,7 +376,12 @@ internal fun DeviceOverview() {
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    "Vídeo nativo 3K · frames 720 × 1280",
+                    "Bateria: até 8 h",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "Resolução de vídeo: 3K",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
