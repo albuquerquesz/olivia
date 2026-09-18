@@ -110,7 +110,7 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
         onClick = onOpenRecord,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp),
+            .heightIn(min = 80.dp),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
