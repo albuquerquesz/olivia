@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -14,6 +15,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
@@ -41,6 +45,8 @@ import com.olivia.core.SessionId
 fun OliviaHomeScreen(
     state: OliviaUiState,
     onSeeAllTakes: () -> Unit,
+    onOpenRecord: () -> Unit,
+    onOpenSettings: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     val recent = state.takes.take(3)
@@ -49,14 +55,189 @@ fun OliviaHomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            HomeHeader()
             DeviceOverview()
+            VoiceCommandBar(onOpenRecord = onOpenRecord)
+            HomeQuickActions(
+                onOpenRecord = onOpenRecord,
+                onSeeAllTakes = onSeeAllTakes,
+                onOpenSettings = onOpenSettings,
+            )
             if (recent.isEmpty()) {
                 EmptyTakesCard(onSeeAllTakes = onSeeAllTakes)
             } else {
                 RecentTakesCard(recent, onSeeAllTakes, onOpenTake)
+                HomeGuidanceBanner()
             }
+        }
+    }
+}
+
+@Composable
+private fun HomeHeader() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                "Olivia",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "Seu companion de gravação",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            "Ray-Ban Meta",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
+    Surface(
+        onClick = onOpenRecord,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Outlined.Mic,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(24.dp),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Controle por voz",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "Oi, Olivia, gravar",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = "Abrir gravação",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeQuickActions(
+    onOpenRecord: () -> Unit,
+    onSeeAllTakes: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        HomeQuickAction(
+            label = "Gravar",
+            icon = Icons.Outlined.Mic,
+            highlighted = true,
+            onClick = onOpenRecord,
+        )
+        HomeQuickAction(
+            label = "Takes",
+            icon = Icons.Outlined.History,
+            onClick = onSeeAllTakes,
+        )
+        HomeQuickAction(
+            label = "Ajustes",
+            icon = Icons.Outlined.Settings,
+            onClick = onOpenSettings,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.HomeQuickAction(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    highlighted: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val containerColor = if (highlighted) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val contentColor = if (highlighted) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 82.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = containerColor,
+        contentColor = contentColor,
+        border = if (highlighted) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+@Composable
+private fun HomeGuidanceBanner() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Outlined.Mic,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(28.dp),
+            )
+            Text(
+                "Durante o take, a Olivia fala só quando uma correção importa.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }

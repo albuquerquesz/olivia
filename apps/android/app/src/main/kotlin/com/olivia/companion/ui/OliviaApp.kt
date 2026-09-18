@@ -270,6 +270,18 @@ fun OliviaApp(
                             restoreState = true
                         }
                     },
+                    onOpenRecord = {
+                        navController.navigate(OliviaDestination.RECORD.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenSettings = {
+                        navController.navigate(OliviaDestination.SETTINGS.route) {
+                            popUpTo(OliviaDestination.HOME.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     onOpenTake = { sessionId ->
                         navController.navigate("take/${sessionId.value}")
                     },
