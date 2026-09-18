@@ -413,7 +413,7 @@ private fun OliviaBottomBar(
             showNavigation && isLive -> Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             showNavigation -> Arrangement.spacedBy(12.dp)
             isLive -> Arrangement.spacedBy(8.dp, Alignment.End)
-            else -> Arrangement.End
+            else -> Arrangement.Center
         },
     ) {
         AnimatedVisibility(
