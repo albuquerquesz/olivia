@@ -64,7 +64,7 @@ fun OliviaRecordingScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 400.dp, max = 480.dp),
+                    .heightIn(min = 320.dp, max = 360.dp),
             ) {
                 GlassesCameraPreview(
                     elapsedMs = state.elapsedMs,
