@@ -158,6 +158,7 @@ private fun WhisperTranscriptCard(text: String) {
                     text = "OLIVIA NO ALTO-FALANTE",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 1.2.sp,
                     ),
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
