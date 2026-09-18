@@ -71,6 +71,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -132,7 +133,7 @@ private fun pressScale(pressed: Boolean): Float {
 
 @Composable
 private fun navigationColor(selected: Boolean) =
-    MaterialTheme.colorScheme.primary.takeIf { selected }
+    MaterialTheme.colorScheme.onSurface.takeIf { selected }
         ?: MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
@@ -508,17 +509,27 @@ private fun OliviaNavigationItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(
-            destination.icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale; scaleY = scale },
-        )
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(
+                    color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                destination.icon,
+                contentDescription = null,
+                tint = if (selected) MaterialTheme.colorScheme.onPrimary else color,
+                modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+            )
+        }
         Text(
             destination.label,
             color = color,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             ),
             textAlign = TextAlign.Center,
         )
