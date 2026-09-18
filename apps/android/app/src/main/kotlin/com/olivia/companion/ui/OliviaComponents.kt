@@ -383,13 +383,12 @@ internal fun DeviceOverview() {
             }
             Box(
                 modifier = Modifier
-                    .size(148.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    .size(width = 164.dp, height = 148.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 WayfarerProductImage(
-                    width = 148.dp,
-                    height = 76.dp,
+                    width = 164.dp,
+                    height = 84.dp,
                 )
             }
         }
