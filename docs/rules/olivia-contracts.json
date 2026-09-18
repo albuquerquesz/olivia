@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "contract_version": "1.0.0",
+  "contract_version": "1.3.0",
   "title": "Contratos entre app, IA, mock e hardware real",
   "task": "SH-04",
   "source_of_truth": {
@@ -9,11 +9,12 @@
   },
   "versioning": {
     "scheme": "semver",
-    "current": "1.0.0",
+    "current": "1.3.0",
     "rule": "MAJOR quebra consumidores, MINOR adiciona de forma compatível, PATCH é correção de detalhe.",
     "carried_in": [
       "TimelineEvent.contractVersion",
-      "SessionReview.contractVersion"
+      "SessionReview.contractVersion",
+      "olivia-markers.json.contractVersion"
     ]
   },
   "interfaces": [
@@ -30,7 +31,7 @@
         "resumeCapture()",
         "stopCapture()"
       ],
-      "note": "Não conhece SessionState. Reporta conexão e frames crus; DEGRADED é decidido pela máquina de estados."
+      "note": "Não conhece SessionState. Reporta conexão e frames crus; DEGRADED é decidido pela máquina de estados. Depois de DEGRADED, o orquestrador chama resumeCapture como ponto de tentativa de reconexão do adapter."
     },
     {
       "name": "FrameAnalyzer",
@@ -81,6 +82,16 @@
       "members": ["process(sessionId, recording, timeline): Result<SessionReview>"],
       "note": "Usa o áudio da gravação, nunca o microfone ao vivo."
     }
+  ],
+  "session_signals": [
+    "SESSION_STARTED",
+    "SESSION_PAUSED",
+    "SESSION_RESUMED",
+    "SESSION_STOPPED",
+    "CONNECTION_LOST",
+    "CONNECTION_RESTORED",
+    "VOICE_COMMAND_ERROR",
+    "VOICE_INPUT_UNAVAILABLE"
   ],
   "session_states": {
     "values": [
@@ -137,6 +148,20 @@
     ],
     "correction_status": ["PENDING", "OBEYED", "IGNORED", "EXPIRED", "SUPERSEDED"],
     "privacy": "Por construção não há frame, áudio bruto nem credencial no evento. A timeline sobrevive à sessão e é o que a pessoa revisa e exporta."
+  },
+  "export_artifact_schema": {
+    "file": "olivia-markers.json",
+    "version": 1,
+    "fields": {
+      "version": "integer, versão do formato do artefato",
+      "contractVersion": "string, versão dos contratos Olivia",
+      "sessionId": "string",
+      "durationMs": "long",
+      "markers": "array de {offsetMs, type, label, direction, status}",
+      "suggestedCuts": "array de {startMs, endMs, reason, confidence}"
+    },
+    "privacy": "Não contém frames, áudio bruto, vídeo, credenciais ou dados de terceiros. O vídeo é compartilhado separadamente pelo chooser do Android.",
+    "handoff": "O app compartilha o vídeo nativo e este JSON via content:// depois de STOPPED; não implementa editor nem promete importação direta no CapCut."
   },
   "analysis_vocabulary": {
     "diagnosis_kinds": ["FRAMING", "LIGHT", "HORIZON"],

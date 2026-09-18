@@ -18,35 +18,41 @@ internal object OliviaMotion {
     val travel = 8.dp
 
     fun <T> navigation() = tween<T>(durationMillis = 220, easing = EaseOut)
+    fun <T> footer() = tween<T>(durationMillis = 200, easing = EaseOut)
     fun <T> selection() = tween<T>(durationMillis = 180, easing = EaseOut)
     fun <T> press() = tween<T>(durationMillis = 150, easing = EaseOut)
 }
 
 private val Paper = Color(0xFFFAFBFD)
-private val Navy = Color(0xFF142C4C)
+private val Canvas = Color(0xFFF1F3F7)
+private val OliviaBlue = Color(0xFFBFDFFD)
 private val Ink = Color(0xFF151A21)
 private val Mist = Color(0xFFE8EEF5)
+internal val OliviaBlueActionStart = Color(0xFFB8DCF4)
+internal val OliviaBlueActionEnd = Color(0xFF86BCE1)
+internal val OliviaBlueActionOn = Paper
+internal val OliviaBlueActionShadow = Color(0x3388BFE8)
 
 private val OliviaLightColors = lightColorScheme(
-    primary = Navy,
-    onPrimary = Paper,
+    primary = OliviaBlue,
+    onPrimary = Ink,
     primaryContainer = Mist,
-    onPrimaryContainer = Navy,
-    secondary = Navy,
-    onSecondary = Paper,
+    onPrimaryContainer = Ink,
+    secondary = OliviaBlue,
+    onSecondary = Ink,
     secondaryContainer = Mist,
-    onSecondaryContainer = Navy,
-    tertiary = Navy,
-    onTertiary = Paper,
+    onSecondaryContainer = Ink,
+    tertiary = OliviaBlue,
+    onTertiary = Ink,
     tertiaryContainer = Mist,
-    onTertiaryContainer = Navy,
-    background = Paper,
+    onTertiaryContainer = Ink,
+    background = Canvas,
     onBackground = Ink,
     surface = Paper,
     onSurface = Ink,
     surfaceVariant = Mist,
     onSurfaceVariant = Color(0xFF526174),
-    surfaceTint = Navy,
+    surfaceTint = OliviaBlue,
     surfaceBright = Paper,
     surfaceDim = Mist,
     surfaceContainerLowest = Paper,
@@ -54,9 +60,9 @@ private val OliviaLightColors = lightColorScheme(
     surfaceContainer = Mist,
     surfaceContainerHigh = Mist,
     surfaceContainerHighest = Mist,
-    inverseSurface = Navy,
-    inverseOnSurface = Color(0xFFDCE5F0),
-    inversePrimary = Paper,
+    inverseSurface = OliviaBlue,
+    inverseOnSurface = Color(0xFF526174),
+    inversePrimary = Ink,
     outline = Color(0xFF718198),
     outlineVariant = Color(0xFFDCE3EC),
 )

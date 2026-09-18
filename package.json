@@ -21,6 +21,7 @@
     "lint": "turbo run lint -F server -F @olivia/db -F @olivia/auth -F @olivia/env",
     "check-types": "turbo run check-types",
     "dev:server": "turbo run dev -F server",
+    "dev:android": "turbo run dev -F android",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",

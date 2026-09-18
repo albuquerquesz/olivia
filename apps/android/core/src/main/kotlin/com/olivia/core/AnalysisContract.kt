@@ -17,7 +17,7 @@ public value class Confidence(public val value: Float) {
     }
 }
 
-/** De onde veio o diagnóstico, para a demo conseguir provar o que é IA e o que é mock. */
+/** De onde veio o diagnóstico, para a demonstração distinguir execução offline de IA. */
 public enum class AnalyzerSource { MOCK, GEMINI }
 
 public data class VisualDiagnosis(

@@ -37,3 +37,9 @@ Antes de planejar ou mudar algo que afete produto, hardware, IA, dados ou demo, 
 - Quando alterar contrato, dados, hardware ou privacidade, atualize o JSON relevante em `docs/rules/`.
 - Não alegue validação de hardware, latência ou bateria sem medição real.
 - Use os padrões TypeScript/Bun/Turborepo já existentes. Não execute build, lint, typecheck ou testes sem solicitação explícita.
+
+## Finalização obrigatória
+
+- Ao finalizar uma mudança no app Android, reconstruir e reinstalar a variante em uso no dispositivo ou emulador conectado.
+- Ao finalizar qualquer mudança solicitada neste repositório, criar um commit com as alterações relacionadas antes de responder ao usuário.
+- Não deixar alterações da tarefa concluída sem commit; informar no resumo o commit criado e o resultado da reinstalação.

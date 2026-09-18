@@ -70,6 +70,8 @@ public enum class AudioMode {
 /** Avisos que não são correção de enquadramento. */
 public enum class SessionSignal {
     SESSION_STARTED,
+    SESSION_PAUSED,
+    SESSION_RESUMED,
     SESSION_STOPPED,
 
     /** Queda de conexão com os óculos. */
@@ -77,6 +79,12 @@ public enum class SessionSignal {
 
     /** Retomada da conexão. */
     CONNECTION_RESTORED,
+
+    /** O reconhecedor local não encontrou um dos quatro comandos suportados. */
+    VOICE_COMMAND_ERROR,
+
+    /** O reconhecimento local não está disponível neste aparelho/configuração. */
+    VOICE_INPUT_UNAVAILABLE,
 }
 
 /**

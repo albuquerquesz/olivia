@@ -12,18 +12,19 @@ This project was created with [kubojs](https://github.com/albuquerquesz/kubo), a
 - **Authentication** - Better-Auth
 - **Turborepo** - Optimized monorepo build system
 
-## Companion app Android — demo em modo mock
+## Companion app Android — validação local
 
-O modo mock é o caminho de demo garantido: ele roda sem óculos, sem o SDK do Device
-Access Toolkit e sem nenhum segredo. Em uma máquina limpa com JDK 17+ e o Android SDK
-(plataforma API 36), um comando basta:
+O flavor `mock` é um ambiente interno de validação: roda sem óculos, sem o SDK do
+Device Access Toolkit e sem nenhum segredo. Ele não é um modo exposto na experiência
+do produto. Em uma máquina limpa com JDK 17+ e o Android SDK (plataforma API 36), um
+comando basta:
 
 ```bash
 cd apps/android && ./gradlew assembleMockDebug
 ```
 
 O APK sai em `apps/android/app/build/outputs/apk/mock/debug/`. A CI roda esse mesmo
-comando e publica o APK como artefato do workflow `APK mock (debug)`, que dispara
+comando e publica o APK como artefato interno do workflow `APK mock (debug)`, que dispara
 manualmente (aba Actions → Run workflow) ou em push na branch `prod`.
 
 Detalhes de flavors, versões e configuração local estão em

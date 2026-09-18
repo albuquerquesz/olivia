@@ -1,0 +1,7 @@
+{
+  "name": "android",
+  "private": true,
+  "scripts": {
+    "dev": "./dev.sh"
+  }
+}

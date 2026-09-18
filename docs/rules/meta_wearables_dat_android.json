@@ -17,7 +17,8 @@
     "O wake word e os comandos de voz continuam locais no celular. O preview inicial não inclui as voice commands da Meta como superfície de desenvolvimento.",
     "Usar apenas mwdat-core, mwdat-camera e mwdat-mockdevice no MVP. Não adicionar mwdat-display: o produto não depende de display nos óculos.",
     "Usar MockDeviceKit antes do dia 18 para validar lifecycle, frames, ausência de dispositivo e recuperação.",
-    "Fixar a versão do DAT em um version catalog, mas conferir a versão disponível no GitHub Packages no momento da implementação."
+    "Fixar a versão do DAT em um version catalog, mas conferir a versão disponível no GitHub Packages no momento da implementação.",
+    "O onboarding pede RECORD_AUDIO para o wake word e comandos locais; no flavor de óculos pede também as permissões Bluetooth do Android. Pareamento e autorização dos óculos continuam no Meta AI."
   ],
   "android_setup": {
     "build_system": "Gradle Kotlin DSL com version catalog",
@@ -43,7 +44,20 @@
     "manifest": {
       "application_id": "Obrigatório; obtido no Wearables Developer Center",
       "analytics_opt_out": "Definir com.meta.wearable.mwdat.ANALYTICS_OPT_OUT=true",
-      "crash_reporting_opt_out": "Definir com.meta.wearable.mwdat.CRASH_REPORTING_OPT_OUT=true para o MVP orientado à privacidade"
+      "crash_reporting_opt_out": "Definir com.meta.wearable.mwdat.CRASH_REPORTING_OPT_OUT=true para o MVP orientado à privacidade",
+      "runtime_permissions": {
+        "RECORD_AUDIO": "Obrigatória para o wake word e os comandos locais no celular.",
+        "BLUETOOTH_CONNECT": "Solicitada no flavor glasses para a conexão com o DAT no Android 12+.",
+        "BLUETOOTH_SCAN": "Solicitada no flavor glasses para descoberta/reconexão do DAT no Android 12+, com neverForLocation.",
+        "not_requested": [
+          "CAMERA",
+          "ACCESS_FINE_LOCATION",
+          "POST_NOTIFICATIONS",
+          "BLUETOOTH_ADVERTISE",
+          "READ_MEDIA_VIDEO",
+          "READ_MEDIA_AUDIO"
+        ]
+      }
     }
   },
   "capabilities_for_olivia": [
