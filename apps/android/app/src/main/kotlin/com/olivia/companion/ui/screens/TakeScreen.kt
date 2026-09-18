@@ -303,7 +303,7 @@ private fun SuggestedCutRow(cut: SuggestedCut, durationMs: Long) {
             formatOffset(cut.startMs),
             modifier = Modifier.width(40.dp),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-            color = colors.primary,
+            color = colors.onSurface,
         )
         Box(
             modifier = Modifier
@@ -408,14 +408,20 @@ private fun TimelineRow(event: TimelineEvent, isLast: Boolean) {
                         letterSpacing = 0.8.sp,
                     ),
                 )
-                Text(
-                    timelineEventTag(event),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        letterSpacing = 1.5.sp,
-                        fontWeight = FontWeight.Normal,
-                    ),
-                    color = colors.onSurfaceVariant,
-                )
+                Surface(
+                    shape = RoundedCornerShape(percent = 50),
+                    color = colors.surfaceVariant,
+                    contentColor = colors.onSurfaceVariant,
+                ) {
+                    Text(
+                        timelineEventTag(event),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            letterSpacing = 0.4.sp,
+                            fontWeight = FontWeight.Normal,
+                        ),
+                    )
+                }
             }
             Text(
                 eventTitle(event),
@@ -432,16 +438,16 @@ private fun timelineEventTag(event: TimelineEvent): String = when (event.type) {
     TimelineEventType.SESSION_STARTED,
     TimelineEventType.SESSION_PAUSED,
     TimelineEventType.SESSION_RESUMED,
-    TimelineEventType.SESSION_STOPPED -> "SESSÃO"
+    TimelineEventType.SESSION_STOPPED -> "Sessão"
 
     TimelineEventType.SESSION_DEGRADED,
-    TimelineEventType.SESSION_RECOVERED -> "CONEXÃO"
+    TimelineEventType.SESSION_RECOVERED -> "Conexão"
 
-    TimelineEventType.DIAGNOSIS -> "ANÁLISE"
-    TimelineEventType.CORRECTION_ISSUED -> "ORIENTAÇÃO"
-    TimelineEventType.CORRECTION_RESOLVED -> "CORREÇÃO RESOLVIDA"
-    TimelineEventType.CUT_SUGGESTED -> "CORTE"
-    TimelineEventType.ERROR -> "ERRO"
+    TimelineEventType.DIAGNOSIS -> "Análise"
+    TimelineEventType.CORRECTION_ISSUED -> "Orientação"
+    TimelineEventType.CORRECTION_RESOLVED -> "Correção resolvida"
+    TimelineEventType.CUT_SUGGESTED -> "Corte"
+    TimelineEventType.ERROR -> "Erro"
 }
 
 @Composable
