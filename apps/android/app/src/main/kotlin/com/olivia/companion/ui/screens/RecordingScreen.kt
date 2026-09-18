@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -133,7 +132,7 @@ private fun WhisperTranscriptCard(text: String) {
         modifier = Modifier
             .fillMaxWidth()
             .semantics {
-                contentDescription = "Whisper: $text"
+                contentDescription = "Transcrição: $text"
             },
         color = OliviaWhisperBlue,
         contentColor = OliviaBlueActionOn,
@@ -144,18 +143,10 @@ private fun WhisperTranscriptCard(text: String) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "WHISPER · OLIVIA",
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 1.2.sp,
-                ),
-                color = OliviaBlueActionOn.copy(alpha = 0.8f),
-            )
-            Text(
                 text = text,
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    fontSize = 22.sp,
-                    lineHeight = 28.sp,
+                    fontSize = 18.sp,
+                    lineHeight = 24.sp,
                     fontWeight = FontWeight.Medium,
                 ),
             )
