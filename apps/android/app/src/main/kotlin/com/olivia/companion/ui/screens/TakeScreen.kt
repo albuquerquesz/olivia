@@ -103,24 +103,6 @@ fun OliviaTakeScreen(
             recordingPath = recordingPath,
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "${take.correctionCount} ${correctionCountLabel(take.correctionCount)}",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text("·", color = MaterialTheme.colorScheme.outline)
-            Text(
-                "${take.cutCount} ${cutCountLabel(take.cutCount)}",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
         if (recording != null) {
             OutlinedButton(
                 onClick = onExport,
@@ -138,12 +120,6 @@ fun OliviaTakeScreen(
                     },
                 )
             }
-        } else {
-            Text(
-                "O vídeo nativo ainda não está disponível neste ambiente.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
         exportState.message?.let { message ->
             Text(
@@ -169,12 +145,6 @@ private fun reviewSubtitle(take: TakeSummary): String = when {
     else ->
         "Cortes e marcações disponíveis · vídeo nativo ainda não disponível"
 }
-
-private fun correctionCountLabel(count: Int): String =
-    if (count == 1) "correção" else "correções"
-
-private fun cutCountLabel(count: Int): String =
-    if (count == 1) "corte sugerido" else "cortes sugeridos"
 
 @Composable
 private fun TakePreview(
@@ -298,7 +268,12 @@ private fun SuggestedCutsSection(take: TakeSummary) {
     val cuts = take.review.suggestedCuts
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        ReviewSectionHeader("Cortes sugeridos")
+        Text(
+            "Cortes sugeridos",
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
         ReviewCard {
             when {
                 cuts.isNotEmpty() -> {
