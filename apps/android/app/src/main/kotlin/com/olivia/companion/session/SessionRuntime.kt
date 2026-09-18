@@ -173,6 +173,17 @@ class SessionRuntime(
         return snap.copy()
     }
 
+    fun cancel(): SessionId? {
+        val current = snapshot ?: return null
+        if (current.state !in LIVE_OR_PAUSED) return null
+        snapshot = null
+        startedAt = 0
+        pausedAt = null
+        pausedTotal = 0
+        frozenElapsed = 0
+        return current.id
+    }
+
     fun view(now: Long = clock()): SessionSnapshot? =
         snapshot?.copy(elapsedMs = elapsed(now))
 

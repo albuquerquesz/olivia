@@ -19,4 +19,8 @@ class InMemoryTimeline : Timeline {
     fun replace(sessionId: SessionId, events: List<TimelineEvent>) {
         bySession[sessionId.value] = events.toMutableList()
     }
+
+    fun remove(sessionId: SessionId) {
+        bySession.remove(sessionId.value)
+    }
 }

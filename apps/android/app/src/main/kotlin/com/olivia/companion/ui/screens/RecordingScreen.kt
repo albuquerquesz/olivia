@@ -1,5 +1,6 @@
 package com.olivia.companion.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -52,6 +53,7 @@ fun OliviaRecordingScreen(
 ) {
     val degraded = state.session?.state == SessionState.DEGRADED
     val live = state.isLive
+    BackHandler(enabled = live, onBack = onNavigateBack)
     OliviaPage(
         onNavigateBack = onNavigateBack,
         backButtonVisible = true,

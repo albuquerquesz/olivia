@@ -267,6 +267,23 @@ class OliviaSessionViewModel(
         publish()
     }
 
+    fun cancel() {
+        val sessionId = runtime.cancel() ?: return
+        timeline.remove(sessionId)
+        reviews.remove(sessionId.value)
+        pendingCorrection = null
+        guidance.reset()
+        ticker?.cancel()
+        ticker = null
+        watchdog?.cancel()
+        watchdog = null
+        gatewayCommand?.cancel()
+        gatewayCommand = glassesGateway?.let { gateway ->
+            viewModelScope.launch { gateway.stopCapture() }
+        }
+        publish()
+    }
+
     fun take(sessionId: SessionId): TakeSummary? =
         _uiState.value.takes.firstOrNull { it.sessionId == sessionId }
 

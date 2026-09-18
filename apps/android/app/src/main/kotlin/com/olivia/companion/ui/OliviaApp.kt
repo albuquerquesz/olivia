@@ -84,6 +84,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.BackHandler
 import androidx.navigation.compose.NavHost
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -295,7 +296,10 @@ fun OliviaApp(
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     state = uiState,
-                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateBack = {
+                        if (uiState.isLive) viewModel.cancel()
+                        navController.popBackStack()
+                    },
                 )
             }
             composable(OliviaDestination.SESSIONS.route) {
