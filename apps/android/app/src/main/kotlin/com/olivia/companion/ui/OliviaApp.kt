@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -403,7 +402,11 @@ private fun OliviaBottomBar(
     Row(
         modifier = modifier.height(IntrinsicSize.Min).selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = if (isLive) {
+            Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        } else {
+            Arrangement.spacedBy(12.dp)
+        },
     ) {
         AnimatedVisibility(
             visible = !isLive,
@@ -459,9 +462,6 @@ private fun OliviaBottomBar(
                 isPaused = isPaused,
                 onClick = if (isPaused) onResume else onPause,
             )
-        }
-        if (isLive) {
-            Spacer(modifier = Modifier.weight(1f))
         }
         OliviaRecordButton(
             live = isLive,
@@ -549,7 +549,6 @@ private fun OliviaPauseButton(
         OliviaMotion.press(),
         label = "pause press",
     )
-    val label = if (isPaused) "Retomar" else "Pausar"
     val description = if (isPaused) "Retomar gravação" else "Pausar gravação"
     val icon = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause
 
@@ -557,7 +556,7 @@ private fun OliviaPauseButton(
         modifier = modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .heightIn(min = 48.dp)
-            .widthIn(min = 132.dp)
+            .widthIn(min = 56.dp)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -568,8 +567,8 @@ private fun OliviaPauseButton(
                 contentDescription = description
             },
         shape = RoundedCornerShape(percent = 50),
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
+        contentColor = Color.White,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -577,11 +576,6 @@ private fun OliviaPauseButton(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-            Text(
-                text = label,
-                modifier = Modifier.padding(start = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
-            )
         }
     }
 }
