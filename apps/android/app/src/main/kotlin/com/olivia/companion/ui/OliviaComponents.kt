@@ -250,6 +250,18 @@ internal fun SettingsOverline(text: String) {
 }
 
 @Composable
+internal fun OliviaCardOverline(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium.copy(
+            fontWeight = FontWeight.Normal,
+            letterSpacing = 0.5.sp,
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
 internal fun SettingsAudioModeTabs(
     audioMode: AudioMode,
     enabled: Boolean,
@@ -376,11 +388,7 @@ internal fun DeviceOverview(connection: GlassesConnection) {
                     .padding(bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text(
-                    "ORIENTAÇÃO POR ÁUDIO",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                OliviaCardOverline("ORIENTAÇÃO POR ÁUDIO")
                 Text(
                     "Ray-Ban Meta",
                     style = MaterialTheme.typography.headlineSmall,

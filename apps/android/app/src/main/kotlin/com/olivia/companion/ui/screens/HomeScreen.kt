@@ -45,6 +45,7 @@ import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
 import com.olivia.companion.R
 import com.olivia.companion.ui.DeviceOverview
+import com.olivia.companion.ui.OliviaCardOverline
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.core.SessionId
 
@@ -132,14 +133,7 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text(
-                    "CONTROLE POR VOZ",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Normal,
-                        letterSpacing = 0.5.sp,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                OliviaCardOverline("CONTROLE POR VOZ")
                 Text(
                     "Oi, Olivia, gravar",
                     style = MaterialTheme.typography.bodyLarge.copy(
