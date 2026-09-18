@@ -348,8 +348,8 @@ internal fun SettingsMetricRow(
 internal fun DeviceOverview() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.onBackground,
-        contentColor = MaterialTheme.colorScheme.background,
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(24.dp),
     ) {
         Row(
@@ -369,7 +369,7 @@ internal fun DeviceOverview() {
                 Text(
                     "OLIVIA · RAY-BAN META",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     "Oi, Mariana!",
@@ -378,7 +378,7 @@ internal fun DeviceOverview() {
                 Text(
                     "Enquadramento, luz e horizonte no lugar.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.78f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Box(
