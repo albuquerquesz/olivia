@@ -2,13 +2,20 @@ package com.olivia.companion.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,11 +38,13 @@ import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.companion.ui.OliviaPanel
+import com.olivia.companion.ui.OliviaRecordingRed
 import com.olivia.companion.ui.SettingsAudioModeSelector
 import com.olivia.companion.ui.SettingsCard
 import com.olivia.companion.ui.SettingsOverline
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionState
+import com.olivia.core.TimelineEventType
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -103,6 +112,13 @@ fun OliviaRecordingScreen(
                 }
             }
         }
+        WhisperTranscriptCard(
+            text = whisperFeedbackText(
+                state = state,
+                degraded = degraded,
+                live = live,
+            ),
+        )
         AudioAvailabilityNotice(
             mode = state.audioMode,
             status = state.audioStatus,
@@ -119,8 +135,67 @@ fun OliviaRecordingScreen(
     }
 }
 
-private val RecordingTimerBackground = Color(0xFFD32F2F)
+private val RecordingTimerBackground = OliviaRecordingRed
 private val RecordingTimerContent = Color.White
+
+@Composable
+private fun WhisperTranscriptCard(text: String) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "Whisper. Feedback transcrito: $text"
+            },
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shape = RoundedCornerShape(20.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Mic,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Whisper",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                )
+                Text(
+                    text = "Feedback transcrito",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+                )
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+        }
+    }
+}
+
+private fun whisperFeedbackText(
+    state: OliviaUiState,
+    degraded: Boolean,
+    live: Boolean,
+): String {
+    val latestCorrection = state.takes
+        .firstOrNull { it.title == "Take ao vivo" }
+        ?.events
+        ?.asSequence()
+        ?.filter { it.type == TimelineEventType.CORRECTION_ISSUED }
+        ?.lastOrNull()
+        ?.label
+    if (latestCorrection != null) return latestCorrection
+    if (degraded) return recordingPanelMessage(degraded = true)
+    if (live) return "Aguardando o próximo feedback da Olivia."
+    return "O feedback transcrito aparecerá depois que o take terminar."
+}
 
 @Composable
 private fun AudioAvailabilityNotice(
