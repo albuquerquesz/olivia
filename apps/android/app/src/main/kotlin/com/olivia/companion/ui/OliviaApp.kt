@@ -45,6 +45,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -67,6 +68,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -418,7 +421,9 @@ private fun OliviaBottomBar(
             ),
         ) {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp),
                 shape = RoundedCornerShape(percent = 50),
                 color = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface,
@@ -465,7 +470,7 @@ private fun OliviaBottomBar(
             live = isLive,
             selected = !isLive && currentRoute == OliviaDestination.RECORD.route,
             onClick = if (isLive) onStop else onRecordClick,
-            modifier = Modifier.size(if (isLive) 56.dp else 48.dp),
+            modifier = Modifier.size(if (isLive) 56.dp else 72.dp),
         )
     }
 }
@@ -593,8 +598,6 @@ private fun OliviaRecordButton(
         label = "record press",
     )
     val description = if (live) "Parar gravação" else OliviaDestination.RECORD.label
-    val actionColor = if (live) OliviaRecordingRed else MaterialTheme.colorScheme.primary
-    val iconColor = if (live) Color.White else MaterialTheme.colorScheme.onPrimary
     Box(
         modifier = modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
@@ -610,24 +613,49 @@ private fun OliviaRecordButton(
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .border(3.dp, actionColor, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
+        if (live) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(8.dp)
-                    .background(actionColor, CircleShape),
-            )
-            if (live) {
+                    .border(3.dp, OliviaRecordingRed, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                        .background(OliviaRecordingRed, CircleShape),
+                )
                 Icon(
                     imageVector = Icons.Filled.Stop,
                     contentDescription = null,
-                    tint = iconColor,
+                    tint = Color.White,
                     modifier = Modifier.size(20.dp),
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = CircleShape,
+                        ambientColor = OliviaBlueActionShadow,
+                        spotColor = OliviaBlueActionShadow,
+                    )
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(OliviaBlueActionStart, OliviaBlueActionEnd),
+                        ),
+                        shape = CircleShape,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Mic,
+                    contentDescription = null,
+                    tint = OliviaBlueActionOn,
+                    modifier = Modifier.size(28.dp),
                 )
             }
         }
