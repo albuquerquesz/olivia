@@ -159,7 +159,7 @@ fun OliviaWelcomeScreen(
 @Composable
 private fun OnboardingIntro() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(modifier = Modifier.height(288.dp))
+        Spacer(modifier = Modifier.height(320.dp))
         OnboardingVisualCard()
         Spacer(modifier = Modifier.height(16.dp))
         OnboardingHeading(
