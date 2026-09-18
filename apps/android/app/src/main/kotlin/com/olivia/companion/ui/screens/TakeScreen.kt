@@ -2,9 +2,7 @@ package com.olivia.companion.ui.screens
 
 import android.net.Uri
 import android.widget.VideoView
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -528,12 +526,7 @@ private fun ReviewSectionHeader(title: String, detail: String? = null) {
 @Composable
 private fun ReviewCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                PreviewShape,
-            ),
+        modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shape = PreviewShape,
