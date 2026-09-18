@@ -126,6 +126,7 @@ internal fun OliviaButton(
 @Composable
 internal fun OliviaPage(
     onNavigateBack: (() -> Unit)? = null,
+    backButtonVisible: Boolean = true,
     verticalSpacing: Dp = 32.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -139,14 +140,21 @@ internal fun OliviaPage(
             verticalArrangement = Arrangement.spacedBy(verticalSpacing),
         ) {
             if (onNavigateBack != null) {
-                IconButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = CircleShape,
-                    ),
+                Box(
+                    modifier = Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
+                    if (backButtonVisible) {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = CircleShape,
+                            ),
+                        ) {
+                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
+                        }
+                    }
                 }
             }
             content()

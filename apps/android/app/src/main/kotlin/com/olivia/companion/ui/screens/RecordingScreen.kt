@@ -53,7 +53,8 @@ fun OliviaRecordingScreen(
     val degraded = state.session?.state == SessionState.DEGRADED
     val live = state.isLive
     OliviaPage(
-        onNavigateBack = onNavigateBack.takeIf { !live },
+        onNavigateBack = onNavigateBack,
+        backButtonVisible = !live,
         verticalSpacing = 16.dp,
     ) {
         Column(
@@ -172,6 +173,7 @@ private fun WhisperTranscriptCard(text: String) {
             }
             Text(
                 text = text,
+                minLines = 2,
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontSize = 18.sp,
                     lineHeight = 24.sp,

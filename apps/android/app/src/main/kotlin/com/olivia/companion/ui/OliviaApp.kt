@@ -413,6 +413,7 @@ private fun OliviaBottomBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = when {
             showNavigation && !isLive -> Arrangement.spacedBy(12.dp)
+            isLive -> Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
             else -> Arrangement.Center
         },
     ) {
