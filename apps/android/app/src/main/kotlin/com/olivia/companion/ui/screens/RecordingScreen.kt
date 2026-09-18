@@ -56,69 +56,74 @@ fun OliviaRecordingScreen(
     val degraded = state.session?.state == SessionState.DEGRADED
     val live = state.isLive
     OliviaPage {
-        OliviaPanel(
-            degraded = degraded,
-            compact = true,
-            contentPadding = PaddingValues(0.dp),
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 320.dp, max = 360.dp),
+            OliviaPanel(
+                degraded = degraded,
+                compact = true,
+                contentPadding = PaddingValues(0.dp),
             ) {
-                GlassesCameraPreview(
-                    elapsedMs = state.elapsedMs,
-                    degraded = degraded,
-                    simulated = !state.backend.requiresPhysicalGlasses,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                if (live) {
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 20.dp),
-                        color = RecordingTimerBackground,
-                        contentColor = RecordingTimerContent,
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text(
-                            text = formatOffset(state.elapsedMs),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = 16.sp,
-                                lineHeight = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 320.dp, max = 360.dp),
+                ) {
+                    GlassesCameraPreview(
+                        elapsedMs = state.elapsedMs,
+                        degraded = degraded,
+                        simulated = !state.backend.requiresPhysicalGlasses,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    if (live) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 20.dp),
+                            color = RecordingTimerBackground,
+                            contentColor = RecordingTimerContent,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = formatOffset(state.elapsedMs),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontSize = 16.sp,
+                                    lineHeight = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            )
+                        }
                     }
-                }
-                if (degraded || state.backend.requiresPhysicalGlasses) {
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(20.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
-                        contentColor = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text(
-                            text = recordingPanelMessage(
-                                degraded = degraded,
-                            ),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
+                    if (degraded || state.backend.requiresPhysicalGlasses) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(20.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
+                            contentColor = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = recordingPanelMessage(
+                                    degraded = degraded,
+                                ),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
                     }
                 }
             }
+            WhisperTranscriptCard(
+                text = whisperFeedbackText(
+                    state = state,
+                    degraded = degraded,
+                    live = live,
+                ),
+            )
         }
-        WhisperTranscriptCard(
-            text = whisperFeedbackText(
-                state = state,
-                degraded = degraded,
-                live = live,
-            ),
-        )
         AudioAvailabilityNotice(
             mode = state.audioMode,
             status = state.audioStatus,
@@ -144,7 +149,7 @@ private fun WhisperTranscriptCard(text: String) {
         modifier = Modifier
             .fillMaxWidth()
             .semantics {
-                contentDescription = "Whisper. Feedback transcrito: $text"
+                contentDescription = "Whisper: $text"
             },
         color = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -160,15 +165,10 @@ private fun WhisperTranscriptCard(text: String) {
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
             )
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Whisper",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                )
-                Text(
-                    text = "Feedback transcrito",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
                 )
                 Text(
                     text = text,
