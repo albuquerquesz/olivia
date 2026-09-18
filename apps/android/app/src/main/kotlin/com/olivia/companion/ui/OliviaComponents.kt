@@ -376,12 +376,12 @@ internal fun DeviceOverview() {
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    "Bateria: até 8 h",
+                    "Bateria: --%",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "Resolução de vídeo: 3K",
+                    "Resolução: 1920 × 1080",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
