@@ -412,9 +412,7 @@ private fun OliviaBottomBar(
         modifier = modifier.height(IntrinsicSize.Min).selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = when {
-            showNavigation && isLive -> Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
-            showNavigation -> Arrangement.spacedBy(12.dp)
-            isLive -> Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally)
+            showNavigation && !isLive -> Arrangement.spacedBy(12.dp)
             else -> Arrangement.Center
         },
     ) {
