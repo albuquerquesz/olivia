@@ -36,13 +36,11 @@ fun OliviaWelcomeScreen(
 fun OliviaHomeScreen(
     state: OliviaUiState,
     onSeeAllTakes: () -> Unit,
-    onOpenRecord: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     HomeScreen(
         state = state,
         onSeeAllTakes = onSeeAllTakes,
-        onOpenRecord = onOpenRecord,
         onOpenTake = onOpenTake,
     )
 }

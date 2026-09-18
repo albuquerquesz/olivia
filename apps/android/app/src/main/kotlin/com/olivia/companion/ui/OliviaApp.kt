@@ -270,9 +270,6 @@ fun OliviaApp(
                             restoreState = true
                         }
                     },
-                    onOpenRecord = {
-                        navController.navigate(OliviaDestination.RECORD.route)
-                    },
                     onOpenTake = { sessionId ->
                         navController.navigate("take/${sessionId.value}")
                     },

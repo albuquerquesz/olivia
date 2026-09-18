@@ -9,15 +9,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,34 +35,25 @@ import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
 import com.olivia.companion.ui.DeviceOverview
 import com.olivia.companion.ui.OliviaPage
-import com.olivia.companion.ui.RecordVideoCta
 import com.olivia.core.SessionId
 
 @Composable
 fun OliviaHomeScreen(
     state: OliviaUiState,
     onSeeAllTakes: () -> Unit,
-    onOpenRecord: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     val recent = state.takes.take(3)
     OliviaPage {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                DeviceOverview()
-                RecordVideoCta(onClick = onOpenRecord)
-            }
+            DeviceOverview()
             if (recent.isEmpty()) {
-                EmptyTakesCard(
-                    onOpenRecord = onOpenRecord,
-                    onSeeAllTakes = onSeeAllTakes,
-                )
+                EmptyTakesCard(onSeeAllTakes = onSeeAllTakes)
             } else {
                 RecentTakesCard(recent, onSeeAllTakes, onOpenTake)
             }
@@ -77,8 +66,12 @@ private fun RecentTakes(
     takes: List<TakeSummary>,
     onOpenTake: (SessionId) -> Unit,
 ) {
-    takes.forEach { take ->
-        TakePreviewCard(take = take, onClick = { onOpenTake(take.sessionId) })
+    takes.forEachIndexed { index, take ->
+        TakePreviewCard(
+            take = take,
+            featured = index == 0,
+            onClick = { onOpenTake(take.sessionId) },
+        )
     }
 }
 
@@ -130,27 +123,17 @@ private fun RecentTakesCard(
     onSeeAllTakes: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
-    Surface(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            RecentTakesHeader(onSeeAllTakes)
-            RecentTakes(takes, onOpenTake)
-        }
+        RecentTakesHeader(onSeeAllTakes)
+        RecentTakes(takes, onOpenTake)
     }
 }
 
 @Composable
 private fun EmptyTakesCard(
-    onOpenRecord: () -> Unit,
     onSeeAllTakes: () -> Unit,
 ) {
     Surface(
@@ -162,8 +145,8 @@ private fun EmptyTakesCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 320.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .heightIn(min = 248.dp)
+                .padding(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             RecentTakesHeader(onSeeAllTakes)
@@ -192,47 +175,64 @@ private fun EmptyTakesCard(
                     textAlign = TextAlign.Center,
                 )
             }
-            Button(
-                onClick = onOpenRecord,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .fillMaxWidth(0.7f)
-                    .heightIn(min = 48.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
-                Text("Começar a gravar", style = MaterialTheme.typography.labelLarge)
-            }
         }
     }
 }
 
 @Composable
-private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
+private fun TakePreviewCard(
+    take: TakeSummary,
+    featured: Boolean,
+    onClick: () -> Unit,
+) {
+    val cardColor = if (featured) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val cardBorder = if (featured) {
+        null
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    }
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = if (featured) 132.dp else 88.dp),
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
+        color = cardColor,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = cardBorder,
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(if (featured) 16.dp else 12.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TakeThumbnail()
+            TakeThumbnail(
+                modifier = Modifier
+                    .size(if (featured) 88.dp else 64.dp)
+                    .clip(RoundedCornerShape(if (featured) 18.dp else 14.dp)),
+            )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(if (featured) 8.dp else 6.dp),
             ) {
+                if (featured) {
+                    Text(
+                        "Último take",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     take.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = if (featured) {
+                        MaterialTheme.typography.titleLarge
+                    } else {
+                        MaterialTheme.typography.titleMedium
+                    },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -244,6 +244,13 @@ private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
                 ) {
                     TakeMetaBadge(Icons.Outlined.Schedule, formatOffset(take.durationMs))
                     TakeMetaBadge(Icons.Outlined.CalendarToday, recorded)
+                }
+                if (featured) {
+                    Text(
+                        "${take.correctionCount} correções · ${take.cutCount} cortes",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             Icon(
