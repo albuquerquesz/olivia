@@ -25,7 +25,7 @@ internal object OliviaMotion {
 
 private val Paper = Color(0xFFFAFBFD)
 private val Canvas = Color(0xFFF1F3F7)
-private val OliviaBlue = Color(0xFFBFDFFD)
+private val OliviaBlue = Color(0xFFA9D3F2)
 private val Ink = Color(0xFF151A21)
 private val Mist = Color(0xFFE8EEF5)
 internal val OliviaBlueActionStart = Color(0xFFB8DCF4)

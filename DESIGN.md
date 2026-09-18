@@ -17,7 +17,7 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 | --- | --- |
 | Fundo | #F1F3F7 |
 | Superfície | #FAFBFD |
-| Painel principal e ação/seleção | #BFDFFD |
+| Painel principal e ação/seleção | #A9D3F2 |
 | Ação principal (topo) | #B8DCF4 |
 | Ação principal (base) | #86BCE1 |
 | Texto sobre ação principal | #FAFBFD |
@@ -31,7 +31,7 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 Neutros têm matiz frio. As cores sRGB aprovadas são os valores canônicos no app.
 Não usar cores dinâmicas do sistema que substituam essa paleta. A ação principal
 em gradiente usa os tons azuis aprovados em CTAs do onboarding, com sombra azul
-suave; o azul canônico #BFDFFD continua sendo a base do tema.
+suave; o azul canônico #A9D3F2 continua sendo a base do tema.
 
 ## Tipografia e espaço
 
