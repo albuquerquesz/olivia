@@ -28,8 +28,8 @@ private val Canvas = Color(0xFFF1F3F7)
 private val OliviaBlue = Color(0xFFBFDFFD)
 private val Ink = Color(0xFF151A21)
 private val Mist = Color(0xFFE8EEF5)
-internal val OliviaBlueActionStart = Color(0xFFC9E5FA)
-internal val OliviaBlueActionEnd = Color(0xFF96C8ED)
+internal val OliviaBlueActionStart = Color(0xFFB8DCF4)
+internal val OliviaBlueActionEnd = Color(0xFF86BCE1)
 internal val OliviaBlueActionOn = Paper
 internal val OliviaBlueActionShadow = Color(0x3388BFE8)
 
