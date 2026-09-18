@@ -271,6 +271,7 @@ dependencies {
     "glassesImplementation"(libs.firebase.ai)
     "glassesImplementation"(libs.firebase.appcheck.playintegrity)
     debugImplementation(libs.firebase.appcheck.debug)
+    "debugV2Implementation"(libs.firebase.appcheck.debug)
     // Test APK only: no debug provider is shipped in the release APK.
     androidTestImplementation(platform(libs.firebase.bom))
     androidTestImplementation(libs.firebase.ai)
