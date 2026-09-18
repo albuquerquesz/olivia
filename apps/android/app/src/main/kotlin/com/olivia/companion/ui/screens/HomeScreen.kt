@@ -65,7 +65,7 @@ fun OliviaHomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             HomeHeader()
-            DeviceOverview()
+            DeviceOverview(connection = state.connection)
             VoiceCommandBar(onOpenRecord = onOpenRecord)
             HomeQuickActions(
                 onOpenRecord = onOpenRecord,

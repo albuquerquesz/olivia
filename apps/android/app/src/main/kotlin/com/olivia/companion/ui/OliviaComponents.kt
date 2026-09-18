@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
 import com.olivia.core.AudioMode
+import com.olivia.core.GlassesConnection
 
 internal enum class OliviaButtonVariant {
     Primary,
@@ -347,7 +348,7 @@ internal fun SettingsMetricRow(
 }
 
 @Composable
-internal fun DeviceOverview() {
+internal fun DeviceOverview(connection: GlassesConnection) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -384,6 +385,10 @@ internal fun DeviceOverview() {
                     DeviceMetaBadge(Icons.Outlined.BatteryStd, "--%")
                     DeviceMetaBadge(Icons.Outlined.Videocam, "1920 × 1080")
                 }
+                ConnectionStatusBadge(
+                    connection = connection,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             }
             Box(
                 modifier = Modifier
@@ -395,6 +400,61 @@ internal fun DeviceOverview() {
                     height = 84.dp,
                 )
             }
+        }
+    }
+}
+
+private data class ConnectionStatusStyle(
+    val label: String,
+    val containerColor: Color,
+    val contentColor: Color,
+)
+
+@Composable
+private fun ConnectionStatusBadge(
+    connection: GlassesConnection,
+    modifier: Modifier = Modifier,
+) {
+    val style = when (connection) {
+        GlassesConnection.CONNECTED -> ConnectionStatusStyle(
+            label = "Conectado",
+            containerColor = OliviaStatusConnected,
+            contentColor = OliviaStatusConnectedOn,
+        )
+        GlassesConnection.DISCONNECTED -> ConnectionStatusStyle(
+            label = "Sem frame",
+            containerColor = OliviaStatusWarning,
+            contentColor = OliviaStatusWarningOn,
+        )
+        GlassesConnection.UNAVAILABLE -> ConnectionStatusStyle(
+            label = "Indisponível",
+            containerColor = OliviaStatusUnavailable,
+            contentColor = OliviaStatusUnavailableOn,
+        )
+    }
+    Surface(
+        modifier = modifier.semantics {
+            contentDescription = "Status da conexão dos óculos: ${style.label}"
+        },
+        shape = RoundedCornerShape(percent = 50),
+        color = style.containerColor,
+        contentColor = style.contentColor,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .background(style.contentColor, CircleShape),
+            )
+            Text(
+                style.label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+            )
         }
     }
 }
