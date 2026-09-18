@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
 import com.olivia.companion.ui.OliviaButton
 import com.olivia.companion.ui.OliviaButtonVariant
@@ -162,6 +163,7 @@ private fun OnboardingIntro() {
         OnboardingHeading(
             title = "Grave com as mãos livres",
             description = "A Olivia observa o enquadramento, a luz e o horizonte, e orienta você por áudio.",
+            titleFontSize = 28,
             verticalSpacing = 16.dp,
         )
     }
@@ -245,12 +247,15 @@ private fun OnboardingVisualCard(imageRes: Int? = null) {
 private fun OnboardingHeading(
     title: String,
     description: String? = null,
+    titleFontSize: Int = 24,
     verticalSpacing: Dp = 8.dp,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(verticalSpacing)) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = titleFontSize.sp,
+                lineHeight = (titleFontSize + 8).sp,
                 fontWeight = FontWeight.Bold,
             ),
         )
