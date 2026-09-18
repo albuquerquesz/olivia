@@ -72,7 +72,6 @@ fun OliviaHomeScreen(
                 EmptyTakesCard(onSeeAllTakes = onSeeAllTakes)
             } else {
                 RecentTakesCard(recent, onSeeAllTakes, onOpenTake)
-                HomeGuidanceBanner()
             }
         }
     }
@@ -206,34 +205,6 @@ private fun RowScope.HomeQuickAction(
         ) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
             Text(label, style = MaterialTheme.typography.labelMedium)
-        }
-    }
-}
-
-@Composable
-private fun HomeGuidanceBanner() {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Icon(
-                Icons.Outlined.Mic,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(28.dp),
-            )
-            Text(
-                "Durante o take, a Olivia fala só quando uma correção importa.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
         }
     }
 }
