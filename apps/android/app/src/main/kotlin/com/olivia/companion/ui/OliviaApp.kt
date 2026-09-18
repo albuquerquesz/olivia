@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -458,40 +459,42 @@ private fun OliviaBottomBar(
                 }
             }
         }
-        AnimatedContent(
-            targetState = isLive,
-            transitionSpec = {
-                (fadeIn(OliviaMotion.footer()) + expandHorizontally(
-                    animationSpec = OliviaMotion.footer(),
-                    expandFrom = Alignment.CenterHorizontally,
-                )) togetherWith (fadeOut(OliviaMotion.footer()) + shrinkHorizontally(
-                    animationSpec = OliviaMotion.footer(),
-                    shrinkTowards = Alignment.CenterHorizontally,
-                ))
-            },
-            label = "recording controls",
-        ) { live ->
-            if (live) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OliviaPauseButton(
-                        isPaused = isPaused,
-                        onClick = if (isPaused) onResume else onPause,
-                        modifier = Modifier.size(72.dp),
-                    )
-                    OliviaStopButton(
-                        onClick = onStop,
+        Box(
+            modifier = Modifier
+                .height(72.dp)
+                .then(if (!showNavigation) Modifier.width(148.dp) else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            AnimatedContent(
+                targetState = isLive,
+                transitionSpec = {
+                    fadeIn(OliviaMotion.footer()) togetherWith fadeOut(OliviaMotion.footer())
+                },
+                contentAlignment = Alignment.Center,
+                label = "recording controls",
+            ) { live ->
+                if (live) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OliviaPauseButton(
+                            isPaused = isPaused,
+                            onClick = if (isPaused) onResume else onPause,
+                            modifier = Modifier.size(72.dp),
+                        )
+                        OliviaStopButton(
+                            onClick = onStop,
+                            modifier = Modifier.size(72.dp),
+                        )
+                    }
+                } else {
+                    OliviaRecordButton(
+                        selected = currentRoute == OliviaDestination.RECORD.route,
+                        onClick = onRecordClick,
                         modifier = Modifier.size(72.dp),
                     )
                 }
-            } else {
-                OliviaRecordButton(
-                    selected = currentRoute == OliviaDestination.RECORD.route,
-                    onClick = onRecordClick,
-                    modifier = Modifier.size(72.dp),
-                )
             }
         }
     }
@@ -600,7 +603,7 @@ private fun OliviaPauseButton(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp))
         }
     }
 }
@@ -703,7 +706,7 @@ private fun OliviaStopButton(
                 imageVector = Icons.Filled.Stop,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(28.dp),
             )
         }
     }
