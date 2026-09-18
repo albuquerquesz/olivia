@@ -176,7 +176,7 @@ private fun OnboardingHowItWorks() {
         OnboardingVisualCard(icon = Icons.Outlined.Videocam)
         OnboardingHeading(
             title = "Como funciona",
-            description = "O celular recebe os frames dos óculos, analisa um a cada dois segundos e orienta você por áudio. Os frames são descartados depois da análise.",
+            description = "A Olivia analisa os frames dos óculos e orienta você por áudio.",
         )
     }
 }
