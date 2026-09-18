@@ -1,6 +1,7 @@
 package com.olivia.companion.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -28,6 +29,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,6 +39,7 @@ import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.TakeSummary
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
+import com.olivia.companion.R
 import com.olivia.companion.ui.DeviceOverview
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.core.SessionId
@@ -80,26 +83,19 @@ private fun HomeHeader() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                "Olivia",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                "Seu companion de gravação",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Image(
+            painter = painterResource(R.drawable.olivia_logo),
+            contentDescription = "Logo da Olivia",
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(14.dp)),
+        )
         Text(
-            "Ray-Ban Meta",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            "Olivia",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
         )
     }
 }
