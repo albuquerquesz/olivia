@@ -2,14 +2,18 @@ package com.olivia.companion.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -25,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,9 +38,7 @@ import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.companion.ui.OliviaPanel
-import com.olivia.companion.ui.OliviaBlueActionOn
 import com.olivia.companion.ui.OliviaRecordingRed
-import com.olivia.companion.ui.OliviaWhisperBlue
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionState
 import com.olivia.core.TimelineEventType
@@ -132,16 +135,34 @@ private fun WhisperTranscriptCard(text: String) {
         modifier = Modifier
             .fillMaxWidth()
             .semantics {
-                contentDescription = "Transcrição: $text"
+                contentDescription = "Olivia no alto-falante. Transcrição: $text"
             },
-        color = OliviaWhisperBlue,
-        contentColor = OliviaBlueActionOn,
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
         shape = RoundedCornerShape(24.dp),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(MaterialTheme.colorScheme.onPrimary, CircleShape),
+                )
+                Text(
+                    text = "OLIVIA NO ALTO-FALANTE",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = 1.2.sp,
+                    ),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+                )
+            }
             Text(
                 text = text,
                 style = MaterialTheme.typography.headlineSmall.copy(
@@ -153,7 +174,7 @@ private fun WhisperTranscriptCard(text: String) {
             Text(
                 text = "Transcrição · PENDENTE",
                 style = MaterialTheme.typography.labelMedium,
-                color = OliviaBlueActionOn.copy(alpha = 0.84f),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.84f),
             )
         }
     }
