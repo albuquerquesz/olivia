@@ -130,7 +130,7 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "Controle por voz",
+                    "CONTROLE POR VOZ",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
