@@ -65,8 +65,10 @@ class OliviaSessionViewModel(
         0, initialTakes, activeVoiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
     ))
     private val _voiceNavigation = MutableSharedFlow<LocalSessionCommand>(extraBufferCapacity = 8)
+    private val _stoppedTakeNavigation = MutableSharedFlow<SessionId>(extraBufferCapacity = 8)
     val uiState: StateFlow<OliviaUiState> = _uiState.asStateFlow()
     val voiceNavigation: Flow<LocalSessionCommand> = _voiceNavigation.asSharedFlow()
+    val stoppedTakeNavigation: Flow<SessionId> = _stoppedTakeNavigation.asSharedFlow()
 
     init {
         viewModelScope.launch {
@@ -146,6 +148,7 @@ class OliviaSessionViewModel(
                     reviews[stopped.id] = review
                 }
                 refreshTakes()
+                _stoppedTakeNavigation.tryEmit(stopped.id)
             }
         }
     }

@@ -56,6 +56,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -178,6 +179,18 @@ fun OliviaApp(
         }
     }
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
+
+    LaunchedEffect(viewModel, currentRoute) {
+        viewModel.stoppedTakeNavigation.collect { sessionId ->
+            if (currentRoute == OliviaDestination.RECORD.route) {
+                navController.navigate("take/${sessionId.value}") {
+                    popUpTo(OliviaDestination.RECORD.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
     val window = (context as? Activity)?.window
     val systemBarColor = MaterialTheme.colorScheme.background
@@ -371,7 +384,7 @@ fun OliviaApp(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding()
-                        .offset(y = 24.dp)
+                        .offset(y = (-8).dp)
                         .padding(start = 16.dp, end = 16.dp)
                         .widthIn(max = 600.dp)
                         .fillMaxWidth(),

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -124,8 +123,7 @@ fun OliviaWelcomeScreen(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding()
-                .offset(y = 20.dp)
-                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 0.dp),
+                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 32.dp),
         ) {
             OliviaButton(
                 onClick = {
@@ -159,7 +157,7 @@ fun OliviaWelcomeScreen(
 @Composable
 private fun OnboardingIntro() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(modifier = Modifier.height(320.dp))
+        Spacer(modifier = Modifier.height(544.dp))
         OnboardingVisualCard()
         Spacer(modifier = Modifier.height(16.dp))
         OnboardingHeading(
