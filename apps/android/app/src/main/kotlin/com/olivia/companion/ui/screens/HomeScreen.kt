@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.TakeSummary
-import com.olivia.companion.session.connectionLabel
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
 import com.olivia.companion.R
@@ -66,7 +65,7 @@ fun OliviaHomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             HomeHeader()
-            DeviceOverview(deviceStatus = connectionLabel(state.connection))
+            DeviceOverview()
             VoiceCommandBar(onOpenRecord = onOpenRecord)
             HomeQuickActions(
                 onOpenRecord = onOpenRecord,

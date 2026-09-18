@@ -347,7 +347,7 @@ internal fun SettingsMetricRow(
 }
 
 @Composable
-internal fun DeviceOverview(deviceStatus: String) {
+internal fun DeviceOverview() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -369,7 +369,7 @@ internal fun DeviceOverview(deviceStatus: String) {
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    deviceStatus.uppercase(),
+                    "ORIENTAÇÃO POR ÁUDIO",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
