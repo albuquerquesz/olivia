@@ -6,16 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,7 +34,9 @@ import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.companion.ui.OliviaPanel
+import com.olivia.companion.ui.OliviaBlueActionOn
 import com.olivia.companion.ui.OliviaRecordingRed
+import com.olivia.companion.ui.OliviaWhisperBlue
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionState
 import com.olivia.core.TimelineEventType
@@ -137,30 +135,35 @@ private fun WhisperTranscriptCard(text: String) {
             .semantics {
                 contentDescription = "Whisper: $text"
             },
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = RoundedCornerShape(20.dp),
+        color = OliviaWhisperBlue,
+        contentColor = OliviaBlueActionOn,
+        shape = RoundedCornerShape(24.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Mic,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
+            Text(
+                text = "WHISPER · OLIVIA",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 1.2.sp,
+                ),
+                color = OliviaBlueActionOn.copy(alpha = 0.8f),
             )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Whisper",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                )
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = 22.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
+            )
+            Text(
+                text = "Transcrição · PENDENTE",
+                style = MaterialTheme.typography.labelMedium,
+                color = OliviaBlueActionOn.copy(alpha = 0.84f),
+            )
         }
     }
 }

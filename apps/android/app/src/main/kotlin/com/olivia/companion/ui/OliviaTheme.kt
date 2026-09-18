@@ -33,6 +33,7 @@ internal val OliviaBlueActionEnd = Color(0xFF86BCE1)
 internal val OliviaBlueActionOn = Paper
 internal val OliviaBlueActionShadow = Color(0x3388BFE8)
 internal val OliviaRecordingRed = Color(0xFFD32F2F)
+internal val OliviaWhisperBlue = Color(0xFF1F4595)
 
 private val OliviaLightColors = lightColorScheme(
     primary = OliviaBlue,
