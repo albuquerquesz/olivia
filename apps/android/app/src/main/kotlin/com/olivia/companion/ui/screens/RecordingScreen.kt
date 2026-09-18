@@ -39,9 +39,6 @@ import com.olivia.companion.session.formatOffset
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.companion.ui.OliviaPanel
 import com.olivia.companion.ui.OliviaRecordingRed
-import com.olivia.companion.ui.SettingsAudioModeSelector
-import com.olivia.companion.ui.SettingsCard
-import com.olivia.companion.ui.SettingsOverline
 import com.olivia.core.AudioMode
 import com.olivia.core.SessionState
 import com.olivia.core.TimelineEventType
@@ -49,10 +46,7 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 @Composable
-fun OliviaRecordingScreen(
-    state: OliviaUiState,
-    onAudioMode: (AudioMode) -> Unit,
-) {
+fun OliviaRecordingScreen(state: OliviaUiState) {
     val degraded = state.session?.state == SessionState.DEGRADED
     val live = state.isLive
     OliviaPage {
@@ -129,14 +123,6 @@ fun OliviaRecordingScreen(
             status = state.audioStatus,
             message = state.audioStatusMessage,
         )
-        SettingsCard {
-            SettingsOverline("Modo de feedback")
-            SettingsAudioModeSelector(
-                audioMode = state.audioMode,
-                enabled = !live,
-                onAudioMode = onAudioMode,
-            )
-        }
     }
 }
 

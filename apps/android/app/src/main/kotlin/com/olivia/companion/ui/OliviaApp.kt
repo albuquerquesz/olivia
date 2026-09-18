@@ -289,7 +289,6 @@ fun OliviaApp(
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     state = uiState,
-                    onAudioMode = viewModel::setAudioMode,
                 )
             }
             composable(OliviaDestination.SESSIONS.route) {
