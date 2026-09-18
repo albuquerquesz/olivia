@@ -262,6 +262,7 @@ private fun OnboardingHeading(
     ) {
         Text(
             text = title,
+            modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontSize = titleFontSize.sp,
                 lineHeight = (titleFontSize + 8).sp,
