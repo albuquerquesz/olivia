@@ -347,7 +347,7 @@ internal fun SettingsMetricRow(
 }
 
 @Composable
-internal fun DeviceOverview() {
+internal fun DeviceOverview(deviceStatus: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -357,8 +357,8 @@ internal fun DeviceOverview() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 180.dp)
-                .padding(start = 20.dp, top = 20.dp, end = 12.dp, bottom = 12.dp),
+                .heightIn(min = 160.dp)
+                .padding(start = 20.dp, top = 16.dp, end = 12.dp, bottom = 8.dp),
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -369,7 +369,7 @@ internal fun DeviceOverview() {
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    "OLIVIA · RAY-BAN META",
+                    deviceStatus.uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -387,7 +387,7 @@ internal fun DeviceOverview() {
             }
             Box(
                 modifier = Modifier
-                    .size(width = 164.dp, height = 148.dp),
+                    .size(width = 164.dp, height = 128.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 WayfarerProductImage(
