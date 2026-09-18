@@ -172,7 +172,6 @@ internal fun OliviaPanel(
     val colors = MaterialTheme.colorScheme
     val panelColor = colors.surface.takeIf { degraded } ?: colors.primary
     val panelContentColor = colors.onSurface.takeIf { degraded } ?: colors.onPrimary
-    val panelBorder = degraded.takeIf { it }?.let { BorderStroke(2.dp, colors.primary) }
     val panelMinHeight = 0.dp.takeIf { compact } ?: 248.dp
     val panelSpacing = 16.dp.takeIf { compact } ?: 24.dp
     Surface(
@@ -180,7 +179,6 @@ internal fun OliviaPanel(
         color = panelColor,
         contentColor = panelContentColor,
         shape = RoundedCornerShape(20.dp),
-        border = panelBorder,
     ) {
         Column(
             modifier = Modifier
