@@ -164,7 +164,7 @@ private fun OnboardingIntro() {
 @Composable
 private fun OnboardingHowItWorks() {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        OnboardingVisualCard(imageRes = R.drawable.olivia_cast)
+        OnboardingVisualCard(imageRes = R.drawable.olivia_room_3)
         OnboardingHeading(
             title = "Como funciona",
             description = "A Olivia analisa os frames dos óculos e orienta você por áudio.",
@@ -178,7 +178,7 @@ private fun OnboardingPermissionPage(
     description: String,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        OnboardingVisualCard(imageRes = R.drawable.olivia_room_3)
+        OnboardingVisualCard(imageRes = R.drawable.olivia_cast)
         OnboardingHeading(
             title = title,
             description = description,
@@ -189,7 +189,7 @@ private fun OnboardingPermissionPage(
 @Composable
 private fun OnboardingReady() {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        OnboardingVisualCard(imageRes = R.drawable.olivia_room_3)
+        OnboardingVisualCard(imageRes = R.drawable.olivia_cast)
         OnboardingHeading(
             title = "Tudo pronto para gravar",
             description = "A Olivia está preparada para acompanhar seu próximo take sem interromper o trabalho.",
