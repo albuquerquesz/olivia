@@ -90,7 +90,7 @@ fun OliviaWelcomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 24.dp)
+                .padding(start = 24.dp, top = 40.dp, end = 24.dp, bottom = 24.dp)
                 .padding(bottom = 124.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
@@ -122,7 +122,7 @@ fun OliviaWelcomeScreen(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding()
-                .offset(y = 12.dp)
+                .offset(y = 20.dp)
                 .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 0.dp),
         ) {
             OliviaButton(
