@@ -51,6 +51,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
@@ -347,46 +348,65 @@ internal fun SettingsMetricRow(
 internal fun DeviceOverview() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+        color = MaterialTheme.colorScheme.onBackground,
+        contentColor = MaterialTheme.colorScheme.background,
         shape = RoundedCornerShape(24.dp),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+                .heightIn(min = 190.dp)
+                .padding(start = 20.dp, top = 20.dp, end = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    "Ray-Ban Meta",
-                    style = MaterialTheme.typography.labelLarge,
+                    "OLIVIA · RAY-BAN META",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
                 )
                 Text(
-                    "Grave com as mãos livres",
+                    "Oi, Mariana!",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    "A Olivia orienta você por áudio durante o take.",
+                    "Enquadramento, luz e horizonte no lugar.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f),
+                    color = MaterialTheme.colorScheme.background.copy(alpha = 0.78f),
                 )
             }
-            WayfarerProductImage(Modifier.align(Alignment.CenterHorizontally))
+            Box(
+                modifier = Modifier
+                    .size(148.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                WayfarerProductImage(
+                    width = 148.dp,
+                    height = 76.dp,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun WayfarerProductImage(modifier: Modifier = Modifier) {
+private fun WayfarerProductImage(
+    modifier: Modifier = Modifier,
+    width: Dp = 260.dp,
+    height: Dp = 120.dp,
+) {
     Image(
         painter = painterResource(R.drawable.rayban_meta_wayfarer_gen2),
         contentDescription = "Ray-Ban Meta Wayfarer Gen 2",
         modifier = modifier
-            .size(width = 260.dp, height = 120.dp)
+            .size(width = width, height = height)
             .graphicsLayer {
                 translationY = 8.dp.toPx()
                 clip = false
