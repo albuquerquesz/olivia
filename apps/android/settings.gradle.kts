@@ -18,3 +18,4 @@ rootProject.name = "olivia-android"
 
 include(":app")
 include(":core")
+include(":dat-diagnostic")
