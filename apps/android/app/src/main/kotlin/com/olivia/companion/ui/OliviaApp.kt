@@ -93,6 +93,7 @@ import androidx.navigation.navArgument
 import com.olivia.companion.ActiveBackend
 import com.olivia.companion.session.OliviaSessionViewModel
 import com.olivia.companion.session.TakeSummary
+import com.olivia.core.RecordingAsset
 import com.olivia.core.SessionId
 import com.olivia.core.SessionState
 
@@ -312,6 +313,7 @@ fun OliviaApp(
                     onExport = { viewModel.exportTake(sessionId) },
                     onOpenTake = { id -> navController.navigate("take/${id.value}") },
                     onNavigateBack = { navController.popBackStack() },
+                    recordingPathResolver = viewModel::localRecordingPath,
                 )
             }
             composable(OliviaDestination.SETTINGS.route) {
@@ -376,6 +378,7 @@ private fun TakeRouteContent(
     onExport: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
     onNavigateBack: () -> Unit,
+    recordingPathResolver: suspend (RecordingAsset) -> String?,
 ) {
     if (take != null) {
         OliviaTakeScreen(
@@ -383,6 +386,7 @@ private fun TakeRouteContent(
             onNavigateBack = onNavigateBack,
             exportState = exportState,
             onExport = onExport,
+            recordingPathResolver = recordingPathResolver,
         )
         return
     }

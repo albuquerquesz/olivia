@@ -15,6 +15,7 @@ import com.olivia.core.FrameAnalyzer
 import com.olivia.core.GlassesConnection
 import com.olivia.core.GlassesGateway
 import com.olivia.core.PostProcessor
+import com.olivia.core.RecordingAsset
 import com.olivia.core.RecordingSource
 import com.olivia.core.SessionConfig
 import com.olivia.core.SessionId
@@ -268,6 +269,14 @@ class OliviaSessionViewModel(
 
     fun take(sessionId: SessionId): TakeSummary? =
         _uiState.value.takes.firstOrNull { it.sessionId == sessionId }
+
+    suspend fun localRecordingPath(asset: RecordingAsset): String? = try {
+        recordingSource?.localPathOf(asset.id)
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (_: Exception) {
+        null
+    }
 
     private fun startTicker() {
         if (ticker?.isActive == true) return

@@ -11,6 +11,7 @@ import com.olivia.companion.ui.screens.OliviaSettingsScreen as SettingsScreen
 import com.olivia.companion.ui.screens.OliviaTakeScreen as TakeScreen
 import com.olivia.companion.ui.screens.OliviaWelcomeScreen as WelcomeScreen
 import com.olivia.core.AudioMode
+import com.olivia.core.RecordingAsset
 import com.olivia.core.SessionId
 
 @Composable
@@ -71,12 +72,14 @@ fun OliviaTakeScreen(
     onNavigateBack: () -> Unit,
     exportState: ExportState = ExportState(),
     onExport: () -> Unit = {},
+    recordingPathResolver: suspend (RecordingAsset) -> String? = { null },
 ) {
     TakeScreen(
         take = take,
         onNavigateBack = onNavigateBack,
         exportState = exportState,
         onExport = onExport,
+        recordingPathResolver = recordingPathResolver,
     )
 }
 
