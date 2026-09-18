@@ -157,7 +157,7 @@ fun OliviaWelcomeScreen(
 private fun OnboardingIntro() {
     Column {
         OnboardingVisualCard()
-        Spacer(modifier = Modifier.height(160.dp))
+        Spacer(modifier = Modifier.height(192.dp))
         OnboardingHeading(
             title = "Grave com as mãos livres",
             description = "A Olivia observa o enquadramento, a luz e o horizonte, e orienta você por áudio.",
@@ -212,7 +212,7 @@ private fun OnboardingVisualCard(imageRes: Int? = null) {
                 painter = painterResource(R.drawable.olivia_logo),
                 contentDescription = "Olivia",
                 modifier = Modifier
-                    .size(96.dp)
+                    .size(80.dp)
                     .clip(RoundedCornerShape(24.dp)),
                 contentScale = ContentScale.Crop,
             )
