@@ -141,7 +141,7 @@ fun OliviaWelcomeScreen(
                     ),
                     style = MaterialTheme.typography.labelLarge.copy(
                         color = OliviaBlueActionOn,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                     ),
                 )
             }
