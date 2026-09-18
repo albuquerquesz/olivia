@@ -128,10 +128,16 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(30.dp),
             )
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 Text(
                     "CONTROLE POR VOZ",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Normal,
+                        letterSpacing = 0.5.sp,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
