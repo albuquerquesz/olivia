@@ -19,13 +19,15 @@ aqui cobre **um** dos cinco assuntos do checkpoint.
 - [bateria.md](bateria.md) — estratégia e instrumentação prontas; existem 2 amostras reais de
   latência (1,85 s / 3,68 s), mas isso ainda é amostra insuficiente e acima da meta de 900 ms.
 - [audio.md](audio.md) — `PASS_HARDWARE`: operador ouviu a correção saindo dos Ray-Ban hoje.
-- `ia.md` e `gravacao-video.md` — **ainda não criados**; o operador vai adicionar. Já existe
-  evidência bruta pra isso em [05-privacy-and-evidence.md](../05-privacy-and-evidence.md) (linha
-  "DAT físico / primeiro frame" já em `PASS_HARDWARE`) e em
-  [retomada-dat.md](retomada-dat.md), com horários e detalhes da sessão física de hoje.
+- [ia.md](ia.md) — bom: pipeline completo (Gemini + rastreamento local + áudio) funcionando ponta
+  a ponta; falta só atingir a meta de ~900ms e acumular amostra suficiente.
+- [gravacao-video.md](gravacao-video.md) — o Wearables Toolkit em si (pareamento/conexão/sessão)
+  funciona bem; a entrega de vídeo em cadência estável ainda tem fila/engasgo, com causa raiz
+  identificada (banda Bluetooth Classic + escada automática da Meta) e melhora recente (`backlog_ms`
+  perto de 0 em `LOW`), mas ainda não confirmada estável em sessão longa.
 - [meta-docs-findings.md](meta-docs-findings.md) — achados na documentação oficial da Meta sobre
   por que subir o `frameRate` não resolveu o travamento da preview (banda Bluetooth Classic +
-  escada automática de qualidade do próprio SDK). Relevante pro assunto "frame/gravação-vídeo".
+  escada automática de qualidade do próprio SDK).
 
 ## Atualização — 18/09/2026, sessão física
 
