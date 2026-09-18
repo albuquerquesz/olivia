@@ -1,13 +1,7 @@
 package com.olivia.companion.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -32,30 +26,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.BatteryFull
-import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
@@ -69,8 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
 import com.olivia.core.AudioMode
-import kotlin.math.PI
-import kotlin.math.sin
 
 internal enum class OliviaButtonVariant {
     Primary,
@@ -359,176 +343,39 @@ internal fun SettingsMetricRow(
     }
 }
 
-private data class DeviceMetric(
-    val icon: ImageVector,
-    val value: String,
-    val label: String,
-)
-
-private val OfflineDeviceMetrics = listOf(
-    DeviceMetric(Icons.Outlined.BatteryFull, "78%", "bateria dos óculos"),
-    DeviceMetric(Icons.Outlined.Videocam, "3K", "30 fps nativo"),
-    DeviceMetric(Icons.Outlined.Storage, "12,4 GB", "livres de 32"),
-)
-
 @Composable
 internal fun DeviceOverview() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onPrimary) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 260.dp)
-                        .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 12.dp),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    DeviceIdentity()
-                    DeviceMetrics(OfflineDeviceMetrics)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DeviceMetrics(metrics: List<DeviceMetric>) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        metrics.forEach { metric ->
-            DeviceMetricInline(metric, Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun DeviceMetricInline(metric: DeviceMetric, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.semantics(mergeDescendants = true) {
-            contentDescription = "${metric.label}: ${metric.value}"
-        },
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(metric.icon, contentDescription = null, modifier = Modifier.size(14.dp))
-        Text(metric.value, style = MaterialTheme.typography.labelMedium)
-    }
-}
-
-@Composable
-private fun DeviceIdentity() {
-    DeviceIdentityLayout()
-}
-
-@Composable
-private fun DeviceIdentityLayout() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            DeviceIdentityCopy()
-        }
-        WayfarerProductImage(Modifier.align(Alignment.CenterHorizontally))
-    }
-}
-
-@Composable
-private fun DeviceIdentityCopy(modifier: Modifier = Modifier) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        Text("Ray-Ban Meta", style = MaterialTheme.typography.titleMedium)
-        Text(
-            "Companion app no celular",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.inverseOnSurface,
-        )
-    }
-}
-
-@Composable
-internal fun RecordVideoCta(
-    onClick: () -> Unit,
-) {
     Surface(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 120.dp),
+        modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    "Olá, Olivia, gravar",
-                    modifier = Modifier.widthIn(max = 220.dp),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    "Ray-Ban Meta",
+                    style = MaterialTheme.typography.labelLarge,
                 )
                 Text(
-                    "Grave com os óculos.",
-                    modifier = Modifier.widthIn(max = 220.dp),
+                    "Grave com as mãos livres",
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+                Text(
+                    "A Olivia orienta você por áudio durante o take.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.86f),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.82f),
                 )
             }
-            VoiceWaveform()
-        }
-    }
-}
-
-@Composable
-private fun VoiceWaveform() {
-    val color = LocalContentColor.current
-    val transition = rememberInfiniteTransition(label = "voice waveform")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 900),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "voice waveform progress",
-    )
-    Canvas(modifier = Modifier.size(width = 42.dp, height = 44.dp)) {
-        val heights = List(5) { index ->
-            val wave = ((sin((progress + index * 0.2f) * 2f * PI) + 1f) / 2f).toFloat()
-            0.36f + wave * 0.64f
-        }
-        val spacing = size.width / heights.size
-        heights.forEachIndexed { index, fraction ->
-            val x = spacing * index + spacing / 2f
-            val halfHeight = size.height * fraction / 2f
-            drawLine(
-                color = color,
-                start = Offset(x, size.height / 2f - halfHeight),
-                end = Offset(x, size.height / 2f + halfHeight),
-                strokeWidth = 4.dp.toPx(),
-                cap = StrokeCap.Round,
-            )
+            WayfarerProductImage(Modifier.align(Alignment.CenterHorizontally))
         }
     }
 }
