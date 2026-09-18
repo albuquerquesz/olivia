@@ -164,9 +164,9 @@ private fun OnboardingIntro() {
         Spacer(modifier = Modifier.height(16.dp))
         OnboardingHeading(
             modifier = Modifier.fillMaxWidth(),
-            title = "A Olivia orienta sua gravação",
+            title = "A Olivia guia seu próximo take",
             description = "A Olivia observa o enquadramento, a luz e o horizonte, e orienta você por áudio.",
-            titleFontSize = 28,
+            titleFontSize = 24,
             verticalSpacing = 8.dp,
             textAlign = TextAlign.Center,
         )
