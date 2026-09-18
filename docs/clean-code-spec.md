@@ -52,7 +52,7 @@ Estas ocorrências foram revisadas e não entram na remoção automática:
 | `session/AndroidAudioFeedback.kt:209-213` | `panFor` precisa de retorno neutro para direções sem pan lateral. |
 | `session/AndroidAudioFeedback.kt:253-263` | O parser WAV diferencia chunks `fmt ` e `data`; o `else if` é parte do protocolo. |
 | `session/OliviaSessionViewModel.kt:467` | O título precisa distinguir o take ao vivo dos demais takes. |
-| `ui/OliviaApp.kt:173-177`, `231-240` | A cor de sistema e as cores do `Scaffold` mudam entre onboarding e app. |
+| `ui/OliviaApp.kt:173-177`, `231-235` | A cor de sistema e as cores do `Scaffold` usam o background claro compartilhado pelo app. |
 | `ui/OliviaApp.kt:208-227` | O `DisposableEffect` tem dois ciclos de vida distintos: tela sem permissão/onboarding e tela ativa com observer. Não remover sem preservar o `onDispose` correto. |
 | `ui/OliviaApp.kt:213-217` | O `else -> Unit` torna o `when` de eventos de ciclo de vida exaustivo; remover exige tratar explicitamente todos os eventos. |
 | `ui/OliviaApp.kt:333-339` | O primeiro clique navega; o clique seguinte inicia a sessão, conforme o comportamento aprovado. |
@@ -63,7 +63,7 @@ Estas ocorrências foram revisadas e não entram na remoção automática:
 | `ui/screens/TakeScreen.kt:46-67` | A tela precisa mostrar exportação quando há vídeo e mensagem honesta quando não há. O texto de carregamento também é um estado necessário. |
 | `ui/screens/HomeScreen.kt:68` | A tela possui estados distintos para lista recente vazia e preenchida. |
 | `ui/screens/SessionsScreen.kt:220` | Singular e plural são textos diferentes. |
-| `ui/screens/WelcomeScreen.kt:58`, `134`, `224`, `269-275`, `286-291` | São fallback de permissão, ação, imagem, indicador e rótulo final do onboarding; remover algum deles mudaria a experiência ou deixaria o `when` incompleto. |
+| `ui/screens/WelcomeScreen.kt:58`, `134`, `224`, `261-267` | São fallback de permissão, ação, imagem e rótulo final do onboarding; remover algum deles mudaria a experiência ou deixaria o `when` incompleto. |
 
 ## Plano de execução
 
@@ -92,4 +92,3 @@ Estas ocorrências foram revisadas e não entram na remoção automática:
   limpar a fila antiga.
 - A spec e os commits identificam claramente o que foi removido e o que foi
   deliberadamente preservado.
-

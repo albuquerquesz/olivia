@@ -80,7 +80,7 @@ fun OliviaWelcomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primary),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Column(
             modifier = Modifier
@@ -116,7 +116,7 @@ fun OliviaWelcomeScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
+                .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {

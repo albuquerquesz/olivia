@@ -168,13 +168,8 @@ fun OliviaApp(
     }
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
-    val isOnboarding = currentRoute == WELCOME_ROUTE
     val window = (context as? Activity)?.window
-    val systemBarColor = if (isOnboarding) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.background
-    }
+    val systemBarColor = MaterialTheme.colorScheme.background
 
     SideEffect {
         window?.let {
@@ -228,16 +223,8 @@ fun OliviaApp(
     }
 
     Scaffold(
-        containerColor = if (isOnboarding) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.background
-        },
-        contentColor = if (isOnboarding) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onBackground
-        },
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             NavHost(
