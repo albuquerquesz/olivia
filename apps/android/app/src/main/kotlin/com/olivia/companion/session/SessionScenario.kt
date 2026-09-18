@@ -32,10 +32,10 @@ internal object SessionScenario {
         .toList()
 
     private fun frameAt(offsetMs: Long): ScenarioFrame {
-        if (offsetMs == 12_000L) {
+        if (offsetMs in 8_000L..12_000L) {
             return ScenarioFrame(offsetMs, FRAMING_MARKER, DiagnosisKind.FRAMING)
         }
-        if (offsetMs == 30_000L) {
+        if (offsetMs in 28_000L..32_000L) {
             return ScenarioFrame(offsetMs, LIGHT_MARKER, DiagnosisKind.LIGHT)
         }
         if (offsetMs == 40_000L) {

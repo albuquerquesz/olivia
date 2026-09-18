@@ -1,246 +1,117 @@
 package com.olivia.companion.session
 
+import androidx.lifecycle.ViewModelStore
 import com.olivia.companion.GlassesBackend
-import com.olivia.core.AudioMode
-import com.olivia.core.GlassesConnection
-import com.olivia.core.SessionState
-import com.olivia.core.SessionSignal
-import com.olivia.core.TimelineEventType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import com.olivia.core.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.test.*
+import org.junit.Assert.*
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class OliviaSessionViewModelTest {
-    @Test
-    fun mockOrchestratesPauseResumeAndStopWithoutWatchdogFalsePositive() = runTest {
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        Dispatchers.setMain(dispatcher)
-        val clock = { START_TIME_MS + testScheduler.currentTime }
-        val gateway = ScenarioGlassesGateway(
-            clock = clock,
-            dispatcher = dispatcher,
-            fixtures = listOf(
-                scenarioFrame(0L, SessionScenario.NORMAL_MARKER),
-                scenarioFrame(2_000L, SessionScenario.NORMAL_MARKER),
-                scenarioFrame(4_000L, SessionScenario.NORMAL_MARKER),
-            ),
-        )
-        val audio = RecordingAudioFeedback()
-        val viewModel = newViewModel(gateway, audio, clock)
-
+    @Test fun viewModelUsesBackendLifecycleAndWaitsForStoppedBeforeDemoProcessing() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val runtime = UiTestRuntime()
+        val post = TestPostTake(runtime, demo = true)
+        val model = OliviaSessionViewModel(runtime, GlassesBackend("mock", "Mock", false, false),
+            flowOf(AudioMode.SIGNAL), {}, post)
+        val store = ViewModelStore().apply { put("session", model) }
         try {
-            viewModel.start()
             runCurrent()
-            assertEquals(SessionState.STARTED, viewModel.uiState.value.session?.state)
-
-            advanceTimeBy(1_000L)
-            runCurrent()
-            viewModel.pause()
-            runCurrent()
-            assertEquals(SessionState.PAUSED, viewModel.uiState.value.session?.state)
-
-            advanceTimeBy(3_000L)
-            runCurrent()
-            assertEquals(SessionState.PAUSED, viewModel.uiState.value.session?.state)
-
-            viewModel.resume()
-            runCurrent()
-            assertEquals(SessionState.STARTED, viewModel.uiState.value.session?.state)
-
-            // O frame originalmente previsto para 00:02 chega um segundo depois da retomada.
-            advanceTimeBy(1_000L)
-            runCurrent()
-            assertEquals(SessionState.STARTED, viewModel.uiState.value.session?.state)
-
-            viewModel.stop()
-            runCurrent()
-            advanceUntilIdle()
-
-            assertEquals(SessionState.STOPPED, viewModel.uiState.value.session?.state)
-            assertEquals(
-                listOf(
-                    TimelineEventType.SESSION_STARTED,
-                    TimelineEventType.SESSION_PAUSED,
-                    TimelineEventType.SESSION_RESUMED,
-                    TimelineEventType.SESSION_STOPPED,
-                ),
-                viewModel.uiState.value.takes.single().events
-                    .filter { it.type.name.startsWith("SESSION_") }
-                    .map { it.type },
-            )
-            assertEquals(
-                listOf(
-                    SessionSignal.SESSION_STARTED,
-                    SessionSignal.SESSION_PAUSED,
-                    SessionSignal.SESSION_RESUMED,
-                    SessionSignal.SESSION_STOPPED,
-                ),
-                audio.signals,
-            )
-            assertFalse(audio.signals.contains(SessionSignal.CONNECTION_LOST))
-        } finally {
-            gateway.close()
-            audio.close()
-            Dispatchers.resetMain()
-        }
+            assertEquals(AudioMode.SIGNAL, runtime.selectedMode)
+            model.start(); runCurrent()
+            assertEquals(SessionState.STARTED, model.uiState.value.session?.state)
+            model.pause(); runCurrent()
+            advanceTimeBy(5_000); runCurrent()
+            assertEquals(SessionState.PAUSED, model.uiState.value.session?.state)
+            model.resume(); runCurrent()
+            model.stop(); runCurrent()
+            assertEquals(SessionState.READY, model.uiState.value.session?.state)
+            assertEquals(listOf(LocalSessionCommand.START, LocalSessionCommand.PAUSE,
+                LocalSessionCommand.RESUME, LocalSessionCommand.STOP), runtime.commands)
+            assertEquals(1, post.prepared)
+            assertTrue(model.uiState.value.takes.single().events.any { it.type == TimelineEventType.SESSION_STOPPED })
+            model.start(); runCurrent()
+            assertEquals(SessionState.STARTED, model.uiState.value.session?.state)
+        } finally { store.clear(); Dispatchers.resetMain() }
+        assertTrue(runtime.closed)
     }
 
-    @Test
-    fun mockDegradesAfterFourSecondsRecoversAndPreservesEarlierMarks() = runTest {
-        val dispatcher = StandardTestDispatcher(testScheduler)
-        Dispatchers.setMain(dispatcher)
-        val clock = { START_TIME_MS + testScheduler.currentTime }
-        val gateway = ScenarioGlassesGateway(
-            clock = clock,
-            dispatcher = dispatcher,
-            fixtures = listOf(
-                scenarioFrame(0L, SessionScenario.NORMAL_MARKER),
-                scenarioFrame(2_000L, SessionScenario.FRAMING_MARKER),
-                scenarioFrame(4_000L, SessionScenario.NORMAL_MARKER),
-                scenarioFrame(10_000L, SessionScenario.NORMAL_MARKER),
-            ),
-        )
-        val audio = RecordingAudioFeedback()
-        val viewModel = newViewModel(gateway, audio, clock)
-        val frameOffsets = mutableListOf<Long>()
-        val frameJob = backgroundScope.launch(dispatcher) {
-            gateway.frames.collect { frame ->
-                frameOffsets += frame.capturedAtEpochMs - START_TIME_MS
-            }
-        }
-
+    @Test fun datWaitsForExplicitImportAndUiShowsBackendDegradationCauses() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val runtime = UiTestRuntime()
+        val post = TestPostTake(runtime, demo = false)
+        val model = OliviaSessionViewModel(runtime, GlassesBackend("glasses", "DAT", false, true),
+            flowOf(AudioMode.VOICE), {}, post)
+        val store = ViewModelStore().apply { put("session", model) }
         try {
-            viewModel.start()
-            runCurrent()
-            advanceTimeBy(4_000L)
-            runCurrent()
-            assertEquals(SessionState.STARTED, viewModel.uiState.value.session?.state)
+            model.start(); runCurrent()
+            runtime.rig.coordinator.onAnalysisUnavailable(); runCurrent()
+            assertEquals(GlassesConnection.CONNECTED, model.uiState.value.connection)
+            assertEquals(setOf(DegradationCause.ANALYSIS_UNAVAILABLE), model.uiState.value.session?.degradationCauses)
+            model.importTake(runtime.rig.id, "content://test/video"); runCurrent()
+            assertEquals(0, post.imported)
+            model.stop(); runCurrent()
+            assertEquals(SessionState.STOPPED, model.uiState.value.session?.state)
+            assertEquals(0, post.prepared)
+            model.importTake(runtime.rig.id, "content://test/video"); runCurrent()
+            assertEquals(1, post.imported)
+            assertEquals(SessionState.READY, model.uiState.value.session?.state)
+        } finally { store.clear(); Dispatchers.resetMain() }
+    }
+}
 
-            // A janela de polling é menor que o timeout, mas não pode antecipá-lo.
-            advanceTimeBy(3_999L)
-            runCurrent()
-            assertEquals(SessionState.STARTED, viewModel.uiState.value.session?.state)
-
-            advanceTimeBy(1L)
-            runCurrent()
-            assertEquals(SessionState.DEGRADED, viewModel.uiState.value.session?.state)
-            assertEquals(GlassesConnection.DISCONNECTED, viewModel.uiState.value.connection)
-
-            advanceTimeBy(2_000L)
-            runCurrent()
-            assertEquals(SessionState.STARTED, viewModel.uiState.value.session?.state)
-            assertEquals(GlassesConnection.CONNECTED, viewModel.uiState.value.connection)
-            assertEquals(listOf(0L, 2_000L, 4_000L, 10_000L), frameOffsets)
-
-            viewModel.stop()
-            runCurrent()
-            advanceUntilIdle()
-
-            val events = viewModel.uiState.value.takes.single().events
-            val types = events.map { it.type }
-            assertTrue(
-                events.any {
-                    it.type == TimelineEventType.DIAGNOSIS && it.offsetMs == 2_000L
-                },
-            )
-            assertTrue(
-                events.any {
-                    it.type == TimelineEventType.CORRECTION_ISSUED && it.offsetMs == 2_000L
-                },
-            )
-            assertTrue(types.contains(TimelineEventType.CORRECTION_ISSUED))
-            assertTrue(types.contains(TimelineEventType.CORRECTION_RESOLVED))
-            assertTrue(types.contains(TimelineEventType.SESSION_DEGRADED))
-            assertTrue(types.contains(TimelineEventType.SESSION_RECOVERED))
-            assertTrue(types.contains(TimelineEventType.SESSION_STOPPED))
-            assertEquals(
-                listOf(
-                    SessionSignal.SESSION_STARTED,
-                    SessionSignal.CONNECTION_LOST,
-                    SessionSignal.CONNECTION_RESTORED,
-                    SessionSignal.SESSION_STOPPED,
-                ),
-                audio.signals,
-            )
-            assertFalse(audio.signals.contains(SessionSignal.SESSION_PAUSED))
-        } finally {
-            frameJob.cancel()
-            gateway.close()
-            audio.close()
-            Dispatchers.resetMain()
+private class UiTestRuntime : SessionRuntime {
+    val rig = SessionRig()
+    var selectedMode = AudioMode.VOICE
+    var closed = false
+    val commands = mutableListOf<LocalSessionCommand>()
+    override val snapshot = rig.coordinator.snapshot
+    override val connection = MutableStateFlow(GlassesConnection.CONNECTED)
+    override val audioStatus = MutableStateFlow(AudioFeedbackStatus.READY)
+    override val audioStatusMessage = MutableStateFlow<String?>(null)
+    override val liveLoopMetrics = MutableStateFlow(LiveLoopMetrics().snapshot())
+    override val liveGuidanceStatus = MutableStateFlow(LiveGuidanceStatus.IDLE)
+    override val livePreview = MutableStateFlow<LivePreviewFrame?>(null)
+    override val liveGuidanceDirection = MutableStateFlow<Direction?>(null)
+    override val sessionHistory = MutableStateFlow(emptyList<SessionHistoryEntry>())
+    override suspend fun setAudioMode(mode: AudioMode): Result<Unit> { selectedMode = mode; return Result.success(Unit) }
+    override suspend fun signal(signal: SessionSignal) = rig.audio.signal(signal)
+    override suspend fun timelineFor(sessionId: SessionId) = Result.success(rig.timeline.events(sessionId))
+    override suspend fun handle(command: LocalSessionCommand): Result<SessionSnapshot> {
+        commands += command
+        when (command) {
+            LocalSessionCommand.START -> rig.start()
+            LocalSessionCommand.PAUSE -> rig.coordinator.pause().getOrThrow()
+            LocalSessionCommand.RESUME -> { rig.coordinator.resume().getOrThrow(); rig.heartbeat() }
+            LocalSessionCommand.STOP -> rig.coordinator.stop().getOrThrow()
         }
+        return Result.success(requireNotNull(snapshot.value))
     }
-
-    private fun newViewModel(
-        gateway: ScenarioGlassesGateway,
-        audio: RecordingAudioFeedback,
-        clock: () -> Long,
-    ): OliviaSessionViewModel = OliviaSessionViewModel(
-        audioModeStore = InMemoryAudioModeRepository(),
-        backend = GlassesBackend(
-            id = "mock",
-            label = "Óculos simulados",
-            requiresPhysicalGlasses = false,
-            usesDatSdk = false,
-        ),
-        glassesGateway = gateway,
-        frameAnalyzer = ScenarioFrameAnalyzer(clock),
-        postProcessor = TimelinePostProcessor(),
-        audioFeedback = audio,
-        clock = clock,
-    )
-
-    private fun scenarioFrame(offsetMs: Long, marker: Int): ScenarioFrame = ScenarioFrame(
-        offsetMs = offsetMs,
-        marker = marker,
-        expectedKind = null,
-    )
-
-    private class InMemoryAudioModeRepository : AudioModeRepository {
-        private var mode = AudioMode.VOICE
-
-        override fun current(): AudioMode = mode
-
-        override fun set(mode: AudioMode) {
-            this.mode = mode
-        }
+    override suspend fun processPostTake(work: suspend (SessionId) -> Result<SessionReview>): Result<SessionReview> {
+        val id = rig.coordinator.beginPostProcessing().getOrThrow().id
+        return work(id).also { rig.coordinator.completePostProcessing(id) }
     }
+    override fun close() { closed = true }
+}
 
-    private class RecordingAudioFeedback : AudioFeedbackController {
-        private val _status = MutableStateFlow(AudioFeedbackStatus.READY)
-        override val status: StateFlow<AudioFeedbackStatus> = _status.asStateFlow()
-        override val statusMessage: StateFlow<String?> = MutableStateFlow(null).asStateFlow()
-        override val mode: AudioMode = AudioMode.VOICE
-        val signals = mutableListOf<SessionSignal>()
-
-        override suspend fun announce(correction: com.olivia.core.Correction) = Unit
-
-        override suspend fun signal(signal: SessionSignal) {
-            signals += signal
-        }
-
-        override suspend fun stop() = Unit
-
-        override fun close() = Unit
+private class TestPostTake(private val runtime: UiTestRuntime, demo: Boolean) : PostTakeController {
+    override val hasDemoRecording = demo
+    var prepared = 0
+    var imported = 0
+    override suspend fun prepareDemo(session: SessionSnapshot, events: List<TimelineEvent>): Result<SessionReview> {
+        assertEquals(SessionState.PROCESSING, runtime.snapshot.value?.state)
+        assertTrue(events.any { it.type == TimelineEventType.SESSION_STOPPED })
+        prepared++
+        return Result.success(SessionReview(session.id, null, emptyList(), emptyList(), events))
     }
-
-    private companion object {
-        const val START_TIME_MS = 1_000_000L
+    override suspend fun importRecording(session: SessionSnapshot, uri: String, events: List<TimelineEvent>): Result<SessionReview> {
+        assertEquals(SessionState.PROCESSING, runtime.snapshot.value?.state)
+        imported++
+        return Result.success(SessionReview(session.id, null, emptyList(), emptyList(), events))
     }
+    override suspend fun share(review: SessionReview, marksOnly: Boolean) = ExportState(ExportStatus.SHARED)
+    override suspend fun discard(review: SessionReview) = Unit
 }

@@ -10,7 +10,7 @@ class OliviaMarkersJsonTest {
         val json = OliviaMarkersJson.encode(ScenarioTake.review())
 
         assertTrue(json.contains("\"version\": 1"))
-        assertTrue(json.contains("\"contractVersion\": \"1.3.0\""))
+        assertTrue(json.contains("\"contractVersion\": \"${com.olivia.core.ContractVersion.CURRENT}\""))
         assertTrue(json.contains("\"sessionId\": \"scenario-ensaio\""))
         assertTrue(json.contains("\"durationMs\": 60000"))
         assertTrue(json.contains("\"offsetMs\": 12000"))

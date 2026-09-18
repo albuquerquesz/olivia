@@ -17,6 +17,16 @@ enum class VoiceCommand {
  * O texto recebido é transitório: a função devolve o enum e não guarda a fala.
  */
 internal fun parseVoiceCommand(transcript: String): VoiceCommand? {
+    val normalizedIntent = transcript.trim().lowercase(Locale.ROOT)
+        .replace("-", "_")
+        .replace(" ", "_")
+    mapOf(
+        "start_recording" to VoiceCommand.START,
+        "pause_recording" to VoiceCommand.PAUSE,
+        "resume_recording" to VoiceCommand.RESUME,
+        "stop_recording" to VoiceCommand.STOP,
+    )[normalizedIntent]?.let { return it }
+
     val words = Normalizer.normalize(transcript.lowercase(Locale.ROOT), Normalizer.Form.NFD)
         .replace("\\p{Mn}+".toRegex(), "")
         .split("[^a-z0-9]+".toRegex())

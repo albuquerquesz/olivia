@@ -1,0 +1,10 @@
+flowchart LR
+  Secret[Credencial de pacote] --> Gradle[Gradle e version catalog]
+  Gradle --> Core[mwdat-core]
+  Gradle --> Camera[mwdat-camera]
+  Gradle --> MDK[mwdat-mockdevice]
+  MDK --> Adapter[Adapter DAT]
+  Camera --> Adapter
+  Adapter --> Domain[Contrato Kotlin]
+  Setup[Registro e permissoes] --> Core
+

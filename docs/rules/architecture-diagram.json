@@ -19,6 +19,7 @@
         "wake_word",
         "session",
         "frame_sampler",
+        "local_vision",
         "guidance_engine",
         "audio_feedback",
         "timeline",
@@ -57,14 +58,14 @@
       "id": "session",
       "name": "Sessão",
       "zone": "mobile_app",
-      "implementation": "Device Access Toolkit",
+      "implementation": "SessionCoordinator no companion app; Device Access Toolkit atrás de adapter de captura",
       "states": [
         "STARTED",
         "PAUSED",
         "STOPPED",
         "DEGRADED"
       ],
-      "purpose": "Controla o ciclo de vida da gravação."
+      "purpose": "Controla o ciclo da sessão Olivia e a captura DAT; controle da gravação nativa 3K é capacidade independente a comprovar em BE-12."
     },
     {
       "id": "frame_sampler",
@@ -78,13 +79,25 @@
       "purpose": "Recebe frames e limita a análise para economizar bateria."
     },
     {
+      "id": "local_vision",
+      "name": "Visão local determinística",
+      "zone": "mobile_app",
+      "configuration": {
+        "framing_center_tolerance_normalized": 0.1,
+        "framing_large_offset_normalized": 0.25,
+        "requires_two_consecutive_analyses": true
+      },
+      "purpose": "Recebe somente a ROI normalizada da peça retornada pela IA e mede no celular o deslocamento de enquadramento, luminância na ROI e inclinação do horizonte. Produz diagnósticos fechados; não promete graus físicos. Valores são iniciais e exigem validação com fixtures antes do uso no loop real."
+    },
+    {
       "id": "guidance_engine",
       "name": "Motor de direção",
       "zone": "mobile_app",
       "configuration": {
-        "cooldown_between_corrections_seconds": 4
+        "cooldown_between_corrections_seconds": 4,
+        "required_consecutive_matching_analyses": 2
       },
-      "purpose": "Decide se deve emitir uma correção e evita feedback repetitivo."
+      "purpose": "Decide se deve emitir uma correção, exige duas análises consecutivas concordantes e evita feedback repetitivo ou obsoleto."
     },
     {
       "id": "audio_feedback",
@@ -126,10 +139,10 @@
       "zone": "cloud",
       "implementation": "Gemini 3.5 Flash-Lite via Firebase AI Logic SDK",
       "outputs": [
-        "enquadramento",
-        "luz",
-        "horizonte"
-      ]
+        "ROI normalizada da peça",
+        "confiança de localização"
+      ],
+      "purpose": "Localiza a área de trabalho no frame efêmero. Não devolve direção, severidade, luminância, horizonte, fala ou graus."
     },
     {
       "id": "camera",
@@ -178,13 +191,23 @@
     {
       "from": "frame_sampler",
       "to": "ai_checkpoint",
-      "data": "Frame classificado",
+      "data": "Frame efêmero reduzido para localizar a ROI da peça",
       "transport": "HTTPS"
     },
     {
       "from": "ai_checkpoint",
+      "to": "local_vision",
+      "data": "ROI normalizada e confiança de localização"
+    },
+    {
+      "from": "frame_sampler",
+      "to": "local_vision",
+      "data": "Frame efêmero mantido apenas até concluir a análise local"
+    },
+    {
+      "from": "local_vision",
       "to": "guidance_engine",
-      "data": "Desvio classificado"
+      "data": "Diagnóstico fechado e determinístico de enquadramento, luz ou horizonte"
     },
     {
       "from": "frame_sampler",
@@ -227,7 +250,7 @@
     {
       "from": "audio_feedback",
       "to": "mariana",
-      "data": "Exemplo: 'Vire 20 graus à direita'"
+      "data": "Exemplo: 'Um pouco para a direita'"
     },
     {
       "from": "mariana",
@@ -239,7 +262,7 @@
     {
       "id": "ai",
       "requirement": "Uso de IA",
-      "evidence": "Gemini classifica enquadramento, luz e horizonte."
+      "evidence": "Gemini localiza a área de trabalho; o app converte a ROI em diagnóstico determinístico de enquadramento, luz e horizonte."
     },
     {
       "id": "camera",
@@ -265,6 +288,8 @@
   "constraints": [
     "O celular é a ponte obrigatória para o Device Access Toolkit.",
     "A análise de frame envia somente um frame por vez para a nuvem.",
+    "Gemini nunca estima graus, direção, severidade, luminância ou inclinação; a nuvem só localiza a ROI normalizada da peça.",
+    "Frases de direção vêm de thresholds locais e qualitativos; não há promessa de ângulo físico calibrado.",
     "Não há streaming de microfone ao vivo pelo DAT.",
     "O vídeo 3K é transferido somente após encerrar a sessão.",
     "A mesma pessoa ajusta o corpo após receber a instrução; isso fecha o loop de correção."
@@ -286,7 +311,21 @@
       "MockDeviceKit smoke flow",
       "analytics and crash reporting opt-out"
     ],
-    "runtime_boundary": "O DAT fica atrás de adapters de sessão e FrameSource; o domínio da Olivia não importa tipos do SDK.",
+    "runtime_boundary": "DAT atrás de GlassesGateway 2.0.0 com frames anteriores ao sampler, heartbeat independente e geração de captura; sem tipos do SDK no domínio.",
     "contracts_file": "olivia-contracts.json"
+  },
+  "implementation_planning_review": {
+    "date": "2026-09-12",
+    "spec_root": "docs/spec-driven-development",
+    "decisions": "docs/spec-driven-development/DECISIONS.md",
+    "runtime_status": "core_contracts_implemented_pending_validation",
+    "backend_boundary": "Elysia/Better Auth/Postgres existentes são scaffold fora do runtime do MVP; BE-13 delimita configuração e BE-14 prepara Docker de integração, sem nova API de frames ou áudio.",
+    "transcription_boundary": "Whisper local no Android após STOPPED. Runner Docker CPU serve à integração; transcrição remota não é baseline autorizada pelo planejamento submetido.",
+    "native_recording_gate": "BE-12 verifica separadamente acionamento mãos-livres, gravação nativa simultânea ao DAT, continuidade na queda e importação pós-sessão. Fluxos nativos neste diagrama representam intenção submetida, não capacidade medida.",
+    "frame_health": "Contrato 2.0.0 inclui heartbeat anterior ao sampler e CaptureId por geração. FE-02/FE-09 implementam watchdog em 4 s; API implementada não comprova comportamento de hardware.",
+    "privacy_gate": "Descarte local não comprova retenção zero no provedor; BE-10/13 exigem configuração e evidências externas antes de mídia real.",
+    "metrics": "900 ms no loop e aproximadamente 8 s no pós-processamento permanecem metas; callback Android de áudio não comprova instante acústico nos óculos."
+    ,
+    "local_vision_refactor": "Implementado a partir das orientações da organização em 16/09/2026: Gemini retorna somente ROI normalizada/confiança; Android calcula offset de enquadramento, luminância na ROI e horizonte. O caminho híbrido adiciona fluxo óptico esparso OpenCV em escala limitada, histórico de transformadas para compensar respostas tardias, reconciliação por IoU, histerese/persistência/supressão de movimento e métricas fast-path. Há testes JVM de tracking/replay e compilação Android; evidência de frame DAT/hardware, acústica Bluetooth e campanha Android de qualidade continuam pendências explícitas."
   }
 }

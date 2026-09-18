@@ -1,5 +1,7 @@
 package com.olivia.core
 
+import kotlinx.serialization.Serializable
+
 public enum class TimelineEventType {
     SESSION_STARTED,
     SESSION_PAUSED,
@@ -25,9 +27,10 @@ public enum class TimelineEventType {
  *
  * Por construção não há frame, áudio bruto nem credencial aqui: a timeline sobrevive
  * à sessão e é o que a pessoa revisa e exporta, então só guarda o que é seguro guardar.
- * [offsetMs] é o que amarra o evento ao vídeo nativo na hora de sugerir cortes;
- * [atEpochMs] serve para ordenar e depurar.
+ * [offsetMs] vem do relógio monotônico da sessão. BE-12 deve mapeá-lo ao vídeo
+ * nativo antes de sugerir cortes. [atEpochMs] é apenas uma âncora externa.
  */
+@Serializable
 public data class TimelineEvent(
     val id: String,
     val sessionId: SessionId,

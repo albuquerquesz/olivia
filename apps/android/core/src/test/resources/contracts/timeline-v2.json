@@ -1,0 +1,14 @@
+{
+  "id": "resolved-1",
+  "sessionId": "fixture-session",
+  "atEpochMs": 1700000014000,
+  "offsetMs": 14000,
+  "type": "CORRECTION_RESOLVED",
+  "diagnosis": {"kind":"FRAMING","severity":"OK","confidence":0.9,"direction":null,"magnitude":null},
+  "direction": null,
+  "confidence": 0.9,
+  "correctionStatus": "OBEYED",
+  "correctionId": "correction-1",
+  "label": "recentrou",
+  "contractVersion": "2.0.0"
+}

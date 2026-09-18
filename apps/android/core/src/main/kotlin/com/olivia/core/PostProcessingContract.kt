@@ -1,8 +1,10 @@
 package com.olivia.core
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.Serializable
 
 /** Referência ao vídeo 3K gravado nos óculos. Nunca carrega os bytes da mídia. */
+@Serializable
 public data class RecordingAsset(
     val id: String,
     val sessionId: SessionId,
@@ -33,12 +35,15 @@ public interface RecordingSource {
     public suspend fun localPathOf(assetId: String): String?
 }
 
+@Serializable
 public data class TranscriptSegment(
     val startMs: Long,
     val endMs: Long,
     val text: String,
 )
 
+/** Intervalo em tempo de mídia sugerido para EXCLUSÃO, não um trecho a exportar. */
+@Serializable
 public data class SuggestedCut(
     val startMs: Long,
     val endMs: Long,
@@ -59,6 +64,7 @@ public enum class CutReason {
     SILENCE,
 }
 
+@Serializable
 public data class SessionReview(
     val sessionId: SessionId,
     val recording: RecordingAsset?,

@@ -1,8 +1,10 @@
 package com.olivia.core
 
 import kotlin.jvm.JvmInline
+import kotlinx.serialization.Serializable
 
 @JvmInline
+@Serializable
 public value class SessionId(public val value: String)
 
 /**
@@ -44,19 +46,18 @@ public enum class SessionState {
  * configuráveis porque bateria e ensaio exigem ajuste fino.
  */
 public data class SessionConfig(
-    val samplingFps: Double = 0.5,
     val analysisIntervalMs: Long = 2_000,
     val degradedAfterMs: Long = 4_000,
     val correctionCooldownMs: Long = 4_000,
     val audioMode: AudioMode = AudioMode.VOICE,
 ) {
+    /** Valor derivado: não existem dois knobs independentes para a mesma cadência. */
+    public val samplingFps: Double get() = 1_000.0 / analysisIntervalMs
+
     init {
-        require(samplingFps > 0) { "samplingFps deve ser maior que zero" }
         require(analysisIntervalMs > 0) { "analysisIntervalMs deve ser maior que zero" }
-        require(degradedAfterMs > analysisIntervalMs) {
-            "degradedAfterMs precisa ser maior que analysisIntervalMs, senão a sessão " +
-                "entra em DEGRADED entre duas análises normais"
-        }
+        // O watchdog observa a captura, não o sampler ou a conclusão da IA.
+        require(degradedAfterMs > 0) { "degradedAfterMs deve ser maior que zero" }
         require(correctionCooldownMs >= 0) { "correctionCooldownMs não pode ser negativo" }
     }
 }
@@ -67,9 +68,42 @@ public data class SessionSnapshot(
     val startedAtEpochMs: Long,
     val elapsedMs: Long,
     val config: SessionConfig,
+    /** Âncora externa para exibição; watchdog usa CaptureHeartbeat monotônico. */
     val lastFrameAtEpochMs: Long?,
     val failure: OliviaFailure? = null,
-)
+    val degradationCauses: Set<DegradationCause> = emptySet(),
+    /** Intenção a restaurar quando TODAS as causas forem resolvidas. */
+    val resumeState: SessionState = SessionState.STARTED,
+) {
+    init {
+        require(elapsedMs >= 0)
+        require(resumeState == SessionState.STARTED || resumeState == SessionState.PAUSED)
+        require((state == SessionState.DEGRADED) == degradationCauses.isNotEmpty()) {
+            "DEGRADED exige causa; outros estados não retêm causas ativas"
+        }
+    }
+}
+
+public enum class DegradationCause { CAPTURE_UNAVAILABLE, ANALYSIS_UNAVAILABLE, AUDIO_UNAVAILABLE }
+
+/**
+ * Grafo de transições, não um executor de efeitos. O coordenador (FE-02) verifica
+ * causas, intenção e callbacks antes de aplicar uma aresta permitida.
+ */
+public object SessionTransitions {
+    public fun allows(from: SessionState, to: SessionState): Boolean = to in when (from) {
+        SessionState.IDLE -> setOf(SessionState.STARTING)
+        SessionState.STARTING -> setOf(SessionState.STARTED, SessionState.STOPPING, SessionState.ERROR)
+        SessionState.STARTED -> setOf(SessionState.PAUSED, SessionState.DEGRADED, SessionState.STOPPING)
+        SessionState.PAUSED -> setOf(SessionState.STARTED, SessionState.DEGRADED, SessionState.STOPPING)
+        SessionState.DEGRADED -> setOf(SessionState.STARTED, SessionState.PAUSED, SessionState.STOPPING)
+        SessionState.STOPPING -> setOf(SessionState.STOPPED, SessionState.ERROR)
+        SessionState.STOPPED -> setOf(SessionState.PROCESSING, SessionState.STARTING)
+        SessionState.PROCESSING -> setOf(SessionState.READY, SessionState.ERROR, SessionState.STOPPED)
+        SessionState.READY -> setOf(SessionState.STARTING)
+        SessionState.ERROR -> setOf(SessionState.IDLE)
+    }
+}
 
 public data class OliviaFailure(
     val code: FailureCode,

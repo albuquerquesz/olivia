@@ -3,7 +3,6 @@ package com.olivia.companion.session
 import com.olivia.companion.R
 import com.olivia.core.Direction
 import com.olivia.core.SessionSignal
-import java.util.Locale
 
 /** Intenções sonoras traduzidas para arquivos WAV locais. */
 internal enum class AudioCue(val resourceId: Int) {
@@ -41,25 +40,18 @@ internal fun cueFor(signal: SessionSignal): AudioCue = when (signal) {
     SessionSignal.SESSION_STOPPED -> AudioCue.SESSION_STOPPED
     SessionSignal.CONNECTION_LOST -> AudioCue.CONNECTION_LOST
     SessionSignal.CONNECTION_RESTORED -> AudioCue.CONNECTION_RESTORED
+    SessionSignal.ANALYSIS_UNAVAILABLE, SessionSignal.AUDIO_UNAVAILABLE -> AudioCue.CONNECTION_LOST
+    SessionSignal.ANALYSIS_RESTORED, SessionSignal.AUDIO_RESTORED -> AudioCue.CONNECTION_RESTORED
     SessionSignal.VOICE_COMMAND_ERROR -> AudioCue.VOICE_COMMAND_ERROR
     SessionSignal.VOICE_INPUT_UNAVAILABLE -> AudioCue.VOICE_INPUT_UNAVAILABLE
 }
 
 internal fun spokenTextFor(direction: Direction, magnitude: Double?): String {
-    val degrees = magnitude?.let { String.format(Locale.US, "%.0f", it) } ?: "alguns"
-    return when (direction) {
-        Direction.TURN_LEFT -> "Vire uns $degrees graus à esquerda."
-        Direction.TURN_RIGHT -> "Vire uns $degrees graus à direita."
-        Direction.MOVE_CLOSER -> "Chegue um pouco mais perto da peça."
-        Direction.MOVE_BACK -> "Afaste um pouco a câmera da peça."
-        Direction.RAISE -> "Levante um pouco a câmera."
-        Direction.LOWER -> "Abaixe um pouco a câmera."
-        Direction.FACE_THE_LIGHT -> "Vire a peça para a luz."
-        Direction.AVOID_BACKLIGHT -> "Evite a luz atrás da peça."
-        Direction.LEAVE_THE_SHADOW -> "A sua mão está fazendo sombra na peça."
-        Direction.LEVEL_HORIZON_LEFT -> "Endireite o horizonte à esquerda."
-        Direction.LEVEL_HORIZON_RIGHT -> "Endireite o horizonte à direita."
-    }
+    return com.olivia.core.GuidanceCatalogue.phrase(
+        com.olivia.core.VisualDiagnosis(direction.kind, com.olivia.core.Severity.MAJOR,
+            com.olivia.core.Confidence(1f), direction),
+        com.olivia.core.AudioMode.VOICE,
+    )
 }
 
 internal fun spokenTextFor(signal: SessionSignal): String = when (signal) {
@@ -69,6 +61,10 @@ internal fun spokenTextFor(signal: SessionSignal): String = when (signal) {
     SessionSignal.SESSION_STOPPED -> "Sessão encerrada"
     SessionSignal.CONNECTION_LOST -> "Conexão perdida"
     SessionSignal.CONNECTION_RESTORED -> "Conexão restaurada"
+    SessionSignal.ANALYSIS_UNAVAILABLE -> "Análise indisponível"
+    SessionSignal.ANALYSIS_RESTORED -> "Análise retomada"
+    SessionSignal.AUDIO_UNAVAILABLE -> "Áudio indisponível"
+    SessionSignal.AUDIO_RESTORED -> "Áudio retomado"
     SessionSignal.VOICE_COMMAND_ERROR -> "Não entendi o comando"
     SessionSignal.VOICE_INPUT_UNAVAILABLE -> "Comandos de voz indisponíveis"
 }

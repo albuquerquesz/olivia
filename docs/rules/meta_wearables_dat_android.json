@@ -17,8 +17,7 @@
     "O wake word e os comandos de voz continuam locais no celular. O preview inicial não inclui as voice commands da Meta como superfície de desenvolvimento.",
     "Usar apenas mwdat-core, mwdat-camera e mwdat-mockdevice no MVP. Não adicionar mwdat-display: o produto não depende de display nos óculos.",
     "Usar MockDeviceKit antes do dia 18 para validar lifecycle, frames, ausência de dispositivo e recuperação.",
-    "Fixar a versão do DAT em um version catalog, mas conferir a versão disponível no GitHub Packages no momento da implementação.",
-    "O onboarding pede RECORD_AUDIO para o wake word e comandos locais; no flavor de óculos pede também as permissões Bluetooth do Android. Pareamento e autorização dos óculos continuam no Meta AI."
+    "Fixar a versão do DAT em um version catalog, mas conferir a versão disponível no Maven Central no momento da implementação."
   ],
   "android_setup": {
     "build_system": "Gradle Kotlin DSL com version catalog",
@@ -27,14 +26,13 @@
       "value": "0.9.0",
       "observed_at": "2026-09-04",
       "source": "README público do repositório do SDK",
-      "note": "Declarado em apps/android/gradle/libs.versions.toml; reconferir no GitHub Packages antes de subir."
+      "note": "Declarado em apps/android/gradle/libs.versions.toml; reconferir no Maven Central antes de subir."
     },
-    "private_repository": "https://maven.pkg.github.com/facebook/meta-wearables-dat-android",
-    "required_secret": {
-      "name": "GITHUB_TOKEN",
-      "alternative": "github_token em local.properties",
-      "scope": "Personal access token classic com read:packages",
-      "handling": "Nunca versionar; usar secret de CI e local.properties ignorado pelo Git."
+    "artifact_repository": "Maven Central (com.meta.wearable)",
+    "registered_integration_credentials": {
+      "names": ["MWDAT_APPLICATION_ID", "MWDAT_CLIENT_TOKEN"],
+      "alternative": "mwdat_application_id e mwdat_client_token em local.properties",
+      "handling": "Nunca versionar; usar secret de CI e local.properties ignorado pelo Git. Em Developer Mode, usar os placeholders explícitos 0/0."
     },
     "artifacts": [
       "com.meta.wearable:mwdat-core",
@@ -44,20 +42,7 @@
     "manifest": {
       "application_id": "Obrigatório; obtido no Wearables Developer Center",
       "analytics_opt_out": "Definir com.meta.wearable.mwdat.ANALYTICS_OPT_OUT=true",
-      "crash_reporting_opt_out": "Definir com.meta.wearable.mwdat.CRASH_REPORTING_OPT_OUT=true para o MVP orientado à privacidade",
-      "runtime_permissions": {
-        "RECORD_AUDIO": "Obrigatória para o wake word e os comandos locais no celular.",
-        "BLUETOOTH_CONNECT": "Solicitada no flavor glasses para a conexão com o DAT no Android 12+.",
-        "BLUETOOTH_SCAN": "Solicitada no flavor glasses para descoberta/reconexão do DAT no Android 12+, com neverForLocation.",
-        "not_requested": [
-          "CAMERA",
-          "ACCESS_FINE_LOCATION",
-          "POST_NOTIFICATIONS",
-          "BLUETOOTH_ADVERTISE",
-          "READ_MEDIA_VIDEO",
-          "READ_MEDIA_AUDIO"
-        ]
-      }
+      "crash_reporting_opt_out": "Definir com.meta.wearable.mwdat.CRASH_REPORTING_OPT_OUT=true para o MVP orientado à privacidade"
     }
   },
   "capabilities_for_olivia": [
@@ -74,6 +59,22 @@
     "Não assumir publicação pública: o toolkit está em developer preview e distribuição é controlada por organização, projeto e release channel.",
     "Não usar display como canal de interação; a experiência Olivia é guiada por áudio."
   ],
+  "sdd_capability_review": {
+    "date": "2026-09-12",
+    "tasks": ["INT-00", "BE-00", "BE-12", "INT-04", "INT-05", "INT-06"],
+    "setup_spec": "docs/spec-driven-development/02-meta-wearables-sdk/spec.md",
+    "native_spec": "docs/spec-driven-development/07-gravacao-nativa-e-importacao/spec.md",
+    "status": "not_hardware_validated",
+    "capabilities_to_prove_independently": [
+      "Controle mãos-livres de início e fim da gravação nativa; sessão DAT de streaming não basta.",
+      "Gravação nativa 3K com áudio simultânea ao streaming DAT.",
+      "Take nativo preservado e íntegro após queda de Bluetooth.",
+      "Transferência e importação do take para o companion app somente após STOPPED."
+    ],
+    "fallback_limit": "Seleção manual de arquivo é fallback de importação/revisão, não prova das outras capacidades; o adapter Android aceita apenas URI content:// validada e copia somente para cache privado; incompatibilidade não autoriza reconstrução de vídeo do stream.",
+    "testing_limit": "Docker testa componentes de domínio e transportes controlados; MockDeviceKit exige camada Android e não comprova Bluetooth/firmware físico.",
+    "evidence_matrix": "docs/spec-driven-development/07-gravacao-nativa-e-importacao/CAPABILITY_MATRIX.md"
+  },
   "agent_reference": {
     "static_docs": "https://wearables.developer.meta.com/llms.txt",
     "live_docs_mcp": "https://mcp.developer.meta.com/wearables",

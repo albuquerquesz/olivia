@@ -5,12 +5,19 @@
 # macOS:   sdk.dir=/Users/<voce>/Library/Android/sdk
 sdk.dir=
 
-# Personal access token (classic) com escopo read:packages, usado pelo repositório
-# Maven do Meta Wearables DAT. Alternativa: variável de ambiente GITHUB_TOKEN.
-# Só é necessário quando o INT-00 ligar os artefatos mwdat; o flavor mock não usa.
-github_token=
+# Credenciais da integração registrada no Wearables Developer Center. Nunca versionar.
+# Alternativas de CI: MWDAT_APPLICATION_ID e MWDAT_CLIENT_TOKEN.
+# Em Developer Mode, mantenha ambas vazias: o build usa 0/0 explicitamente.
+mwdat_application_id=
+mwdat_client_token=
 
-# Chave do Picovoice para o wake word local. Nunca versionar a chave.
-picovoice_access_key=
-# Arquivo .ppn customizado para "Oi, Olivia" em app/src/main/assets/.
+# Somente no flavor glassesDebug: ativa MockDeviceKit com a camera traseira do telefone.
+# Nao use para demonstrar hardware real; deixe false/vazio para os oculos pareados.
+mwdat_mock_device_kit=false
+
+# Wake word local; chave e modelo customizado não são versionados.
+picovoice_access_key=REPLACE_WITH_PICOVOICE_ACCESS_KEY
 picovoice_keyword_path=olivia_android.ppn
+picovoice_porcupine_model_path=porcupine_params_pt.pv
+picovoice_rhino_context_path=olivia-rhino_pt_android_v4_1_0.rhn
+picovoice_rhino_model_path=rhino_params_pt.pv

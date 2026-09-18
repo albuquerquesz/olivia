@@ -1,0 +1,71 @@
+name: Publish Olivia Developer APK
+
+on:
+  workflow_run:
+    workflows: ["Olivia Wearables APKs"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: publish-developer-apk
+  cancel-in-progress: true
+
+jobs:
+  publish-developer-release:
+    name: Publish developer APK release
+    if: >-
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.head_branch == 'prod')
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download developer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: olivia-developer-wearables-debug
+          path: artifacts/developer
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Publish developer APK as private prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_tag="developer-latest"
+          release_files=(
+            "$GITHUB_WORKSPACE/artifacts/developer/olivia-developer-wearables-debug.apk"
+            "$GITHUB_WORKSPACE/artifacts/developer/SHA256SUMS"
+          )
+          test -s "${release_files[0]}"
+          test -s "${release_files[1]}"
+
+          if gh release view "$release_tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$release_tag" "${release_files[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
+            gh release edit "$release_tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "${{ github.event.workflow_run.head_sha }}" \
+              --draft=false \
+              --prerelease \
+              --title "Olivia Developer APK (latest)" \
+              --notes "Private APK for Wearables Developer and MockDeviceKit. This artifact does not prove physical hardware."
+            gh api --method PATCH \
+              "repos/$GITHUB_REPOSITORY/git/refs/tags/$release_tag" \
+              -f "sha=${{ github.event.workflow_run.head_sha }}" \
+              -F force=true >/dev/null
+          else
+            gh release create "$release_tag" "${release_files[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "${{ github.event.workflow_run.head_sha }}" \
+              --title "Olivia Developer APK (latest)" \
+              --notes "Private APK for Wearables Developer and MockDeviceKit. This artifact does not prove physical hardware." \
+              --prerelease
+          fi

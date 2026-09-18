@@ -302,7 +302,7 @@ fun OliviaApp(
                 OliviaRecordingScreen(
                     state = uiState,
                     onNavigateBack = {
-                        if (uiState.isLive) viewModel.cancel()
+                        if (uiState.isLive) viewModel.stop()
                         navController.popBackStack()
                     },
                 )

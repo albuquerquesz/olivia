@@ -19,12 +19,6 @@ cp local.properties.example local.properties
 Preencha `sdk.dir`. Se `ANDROID_HOME` já estiver definido no ambiente, o Gradle
 encontra o SDK sozinho e `local.properties` fica opcional.
 
-Para habilitar o comando de voz no dispositivo, preencha `picovoice_access_key` e
-coloque o modelo `.ppn` customizado para “Oi, Olivia” em `app/src/main/assets/`
-(ou informe um caminho absoluto em `picovoice_keyword_path`). O reconhecimento do
-comando usa o serviço on-device do Android; sem chave, modelo ou serviço local o
-adapter fica indisponível e o app informa essa condição.
-
 ## Build
 
 ```sh
@@ -34,33 +28,41 @@ adapter fica indisponível e o app informa essa condição.
 O APK sai em `app/build/outputs/apk/mock/debug/`. Os demais flavors seguem o mesmo
 padrão (`assembleGlassesDebug`).
 
-O Modo Sinal usa os WAVs curtos versionados em `app/src/main/res/raw/`; eles não são
-gerados durante a sessão. Na validação interna do flavor `mock`, uma fixture local de
-vídeo torna o handoff reproduzível: o app prepara `olivia-markers.json` e abre o
-chooser do Android com os dois arquivos. O flavor `glasses` continua aguardando o
-`RecordingSource` nativo de BE-12 e informa honestamente quando o vídeo real ainda não
-está disponível.
-
 ## Flavors
 
 | Flavor    | applicationId              | Fonte da sessão                    |
 | --------- | -------------------------- | ---------------------------------- |
-| `mock`    | `com.olivia.companion.mock` | Validação interna, sem SDK         |
+| `mock`    | `com.olivia.companion.mock` | Óculos simulados, sem SDK          |
 | `glasses` | `com.olivia.companion`      | Ray-Ban Meta via DAT               |
 
-Os dois flavors instalam lado a lado. O `mock` existe somente para validação interna e
-deve continuar subindo sem hardware; não representa um modo do produto.
+Os dois flavors instalam lado a lado. O `mock` é o caminho de demo offline garantido; o
+`glasses` pode usar o MockDeviceKit com `mwdat_mock_device_kit=true` para simular a câmera dos
+óculos no telefone.
 
 ## Versões
 
 Tudo — Kotlin, Compose, AGP, SDKs e os artefatos do DAT — fica em
 [`gradle/libs.versions.toml`](gradle/libs.versions.toml). Os artefatos `mwdat` estão
-declarados mas ainda não aplicados: a autenticação no GitHub Packages, o
-`APPLICATION_ID` e o smoke test do MockDeviceKit são da task INT-00.
+resolvidos do Maven Central e exclusivos do flavor `glasses`. O registro no Wearables
+Developer Center está configurado localmente; o smoke test do MockDeviceKit passou no Moto G60.
+Ele usa a câmera do telefone como feed simulado e não substitui a validação dos óculos físicos.
+
+## Contratos e testes do domínio
+
+O `:core` usa contratos 2.0.0; veja a [migração](../../docs/spec-driven-development/00-contratos-e-fronteiras/implementation.md).
+O [runner de integração](../../infra/testing/README.md) permite testar o mesmo módulo em Docker/JVM sem Android SDK ou DAT, com tarefas separadas de unitários e integração. Os testes desta primeira entrega foram escritos, mas ainda não executados.
+
+## Artefatos oficiais
+
+- `olivia-developer-wearables-debug`: flavor `glassesDebug` com `MWDAT_MOCK_DEVICE_KIT=true`, usa o Wearables SDK e MockDeviceKit.
+- `olivia-production-wearables-release`: flavor `glassesRelease` com `MWDAT_MOCK_DEVICE_KIT=false`, usa DAT fisico e Play Integrity.
+- `mockDebug`: fallback offline legado; nao usa DAT nem MockDeviceKit.
+
+O workflow oficial e [android-wearables-apks.yml](../../.github/workflows/android-wearables-apks.yml). Os requisitos de secrets e assinatura estao em [ANDROID_CI_ARTIFACTS.md](../../docs/ANDROID_CI_ARTIFACTS.md).
 
 ## Segredos
 
-`local.properties`, tokens, keystores e APKs são ignorados pelo Git. O token do DAT
-entra por `GITHUB_TOKEN` no ambiente ou por `github_token` em `local.properties`.
-O `picovoice_access_key` também fica somente em `local.properties` ou no ambiente
-`PICOVOICE_ACCESS_KEY`; áudio do microfone não é enviado à nuvem pela integração.
+`local.properties`, tokens, keystores e APKs são ignorados pelo Git. Para uma integração
+registrada, `mwdat_application_id` e `mwdat_client_token` entram por `local.properties`
+ou pelas variáveis de CI `MWDAT_APPLICATION_ID` e `MWDAT_CLIENT_TOKEN`. Em Developer Mode,
+os placeholders explícitos `0/0` são usados.

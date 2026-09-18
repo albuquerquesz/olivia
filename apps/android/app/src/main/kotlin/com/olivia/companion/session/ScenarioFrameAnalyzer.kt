@@ -13,7 +13,7 @@ import com.olivia.core.DiagnosisKind
 import com.olivia.core.Severity
 
 internal class ScenarioFrameAnalyzer(
-    private val clock: () -> Long = { System.currentTimeMillis() },
+    private val clock: com.olivia.core.OliviaClock = com.olivia.core.SystemOliviaClock(),
 ) : FrameAnalyzer {
     override suspend fun analyze(frame: Frame): Result<FrameAnalysis> {
         if (
@@ -27,7 +27,7 @@ internal class ScenarioFrameAnalyzer(
 
         val marker = frame.bytes.firstOrNull()?.toInt()
             ?: return Result.failure(IllegalArgumentException("Frame de cenário sem marcador"))
-        val analyzedAt = clock()
+        val analyzedAt = clock.now()
         if (marker == SessionScenario.FRAMING_MARKER) {
             return analysisResult(
                 frame = frame,
@@ -37,7 +37,6 @@ internal class ScenarioFrameAnalyzer(
                     severity = Severity.MAJOR,
                     confidence = Confidence(0.91f),
                     direction = Direction.TURN_RIGHT,
-                    magnitude = 20.0,
                 ),
             )
         }
@@ -62,7 +61,6 @@ internal class ScenarioFrameAnalyzer(
                     severity = Severity.MINOR,
                     confidence = Confidence(0.74f),
                     direction = Direction.LEVEL_HORIZON_LEFT,
-                    magnitude = 8.0,
                 ),
             )
         }
@@ -74,16 +72,18 @@ internal class ScenarioFrameAnalyzer(
 
     private fun analysisResult(
         frame: Frame,
-        analyzedAt: Long,
+        analyzedAt: com.olivia.core.ClockReading,
         diagnosis: VisualDiagnosis?,
     ): Result<FrameAnalysis> = Result.success(
         FrameAnalysis(
-            sessionId = frame.sessionId,
-            frameCapturedAtEpochMs = frame.capturedAtEpochMs,
-            analyzedAtEpochMs = analyzedAt,
-            latencyMs = (analyzedAt - frame.capturedAtEpochMs).coerceAtLeast(0),
+            frameStamp = frame.stamp,
+            analyzedAt = analyzedAt,
+            latencyMs = analyzedAt.elapsedSince(frame.stamp.receivedAt),
             source = AnalyzerSource.MOCK,
-            diagnoses = listOfNotNull(diagnosis),
+            diagnoses = DiagnosisKind.entries.map { kind ->
+                diagnosis?.takeIf { it.kind == kind }
+                    ?: VisualDiagnosis(kind, Severity.OK, Confidence(0.95f), null)
+            },
         ),
     )
 }

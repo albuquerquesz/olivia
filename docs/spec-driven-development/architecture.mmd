@@ -1,0 +1,37 @@
+flowchart LR
+  subgraph Glasses[Ray-Ban Meta]
+    Camera[Camera DAT]
+    Native[Gravacao nativa - capacidade a provar]
+    Speaker[Alto-falantes]
+  end
+  subgraph Phone[Android Olivia]
+    Voice[Mic celular - comandos locais]
+    Session[SessionCoordinator]
+    Gateway[GlassesGateway adapter DAT]
+    Sampler[Sampler 0.5 fps]
+    Locator[Gemini: localiza ROI da peça]
+    LocalVision[Visão local: framing, luz e horizonte]
+    Guidance[Direcao e confirmacao]
+    Audio[TTS e WAV local]
+    Timeline[Timeline de metadados locais]
+    Import[RecordingSource apos STOPPED]
+    Whisper[Whisper local]
+    Cuts[Cortes e exportacao]
+  end
+  Cloud[Firebase AI Logic - Gemini]
+  Voice --> Session
+  Session --> Gateway
+  Camera --> Gateway --> Sampler --> Locator
+  Locator -->|frame efemero HTTPS| Cloud
+  Cloud -->|ROI normalizada| Locator
+  Sampler --> LocalVision
+  Locator --> LocalVision
+  LocalVision -->|diagnostico fechado| Guidance --> Audio --> Speaker
+  Gateway -->|saude da captura| Session
+  Guidance --> Timeline
+  Native -.->|importacao a validar| Import
+  Import --> Whisper --> Cuts
+  Timeline --> Cuts
+  Lab[Docker - testes e stubs somente]
+  Lab -.->|integra contratos offline| Sampler
+  Legacy[Elysia e Postgres existentes - fora do runtime MVP]

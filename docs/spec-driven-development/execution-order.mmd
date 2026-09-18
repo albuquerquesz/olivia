@@ -1,0 +1,27 @@
+flowchart TD
+  subgraph Hoje[Hoje — freeze pré-hardware]
+    C[Contratos 2.0.0 + SH-01 draft] --> I[Infra, CI e evidências]
+    C --> D[DAT boundary + MockDeviceKit]
+    D --> S[Captura, preview e estados]
+    I --> F[Fixtures, sampler e replay]
+    C --> F
+    F --> A[ROI Firebase + visão local]
+    F --> G[Voz, direção, áudio e timeline]
+    S --> G
+    A --> G
+    G --> P[STOPPED, importação, Whisper e cortes]
+    I --> Sec[Privacidade e cleanup]
+    P --> Freeze[APK + roteiro + fallback congelados]
+    Sec --> Freeze
+  end
+  subgraph Amanha[Amanhã — H0 com hardware]
+    Freeze --> Pair[Pareamento + DAT real]
+    Pair --> Camera[A1: frame, preview e loop]
+    Camera --> Audio[INT-05: voz e tons nos óculos]
+    Camera --> Native[A2: vídeo nativo 3K simultâneo]
+    Native --> Drop[A3: queda Bluetooth sem perder take]
+    Drop --> Import[A4/A5: STOPPED, importação e alinhamento]
+    Audio --> Check[Checkpoints, bateria e pitch]
+    Import --> Check
+  end
+  Check --> O[Otimização 900 ms depois]

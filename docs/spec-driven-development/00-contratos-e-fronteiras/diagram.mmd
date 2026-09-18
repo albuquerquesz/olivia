@@ -1,0 +1,12 @@
+flowchart LR
+  Contract[Core Kotlin 2.0.0] --> Session[Grafo de transicoes e causas]
+  Clock[OliviaClock monotonic e epoch] --> Contract
+  Fence[CaptureFence e heartbeat] --> Contract
+  Contract --> Analyze[FrameAnalyzer]
+  Contract --> Guide[Guidance e Timeline]
+  Contract --> Media[RecordingSource e PostProcessor]
+  DAT[Adapter DAT] --> Contract
+  Firebase[Adapter Firebase] --> Contract
+  Mock[Mocks] --> Contract
+  Contract --> Codec[ContractJson timeline e review]
+  Docker[Runner Docker offline] -.-> Contract
