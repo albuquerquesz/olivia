@@ -7,8 +7,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -153,8 +155,9 @@ fun OliviaWelcomeScreen(
 
 @Composable
 private fun OnboardingIntro() {
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    Column {
         OnboardingVisualCard()
+        Spacer(modifier = Modifier.height(96.dp))
         OnboardingHeading(
             title = "Grave com as mãos livres",
             description = "A Olivia observa o enquadramento, a luz e o horizonte, e orienta você por áudio.",
@@ -209,7 +212,7 @@ private fun OnboardingVisualCard(imageRes: Int? = null) {
                 painter = painterResource(R.drawable.olivia_logo),
                 contentDescription = "Olivia",
                 modifier = Modifier
-                    .size(176.dp)
+                    .size(128.dp)
                     .clip(RoundedCornerShape(24.dp)),
                 contentScale = ContentScale.Crop,
             )
