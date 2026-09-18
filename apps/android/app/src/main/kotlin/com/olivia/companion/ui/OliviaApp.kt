@@ -169,8 +169,13 @@ fun OliviaApp(
     val onboardingPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { _ ->
-        audioPermissionGranted = hasPermission(context, Manifest.permission.RECORD_AUDIO)
-        bluetoothPermissionGranted = hasBluetoothPermission(context, bluetoothPermissionRequired)
+        val audioGranted = hasPermission(context, Manifest.permission.RECORD_AUDIO)
+        val bluetoothGranted = hasBluetoothPermission(context, bluetoothPermissionRequired)
+        audioPermissionGranted = audioGranted
+        bluetoothPermissionGranted = bluetoothGranted
+        if (audioGranted && (!bluetoothPermissionRequired || bluetoothGranted)) {
+            completeOnboarding()
+        }
     }
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
