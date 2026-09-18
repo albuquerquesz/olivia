@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -14,6 +15,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -412,7 +414,6 @@ private fun OliviaBottomBar(
         horizontalArrangement = when {
             showNavigation && isLive -> Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             showNavigation -> Arrangement.spacedBy(12.dp)
-            isLive -> Arrangement.spacedBy(8.dp, Alignment.End)
             else -> Arrangement.Center
         },
     ) {
@@ -457,29 +458,42 @@ private fun OliviaBottomBar(
                 }
             }
         }
-        AnimatedVisibility(
-            visible = isLive,
-            enter = fadeIn(OliviaMotion.footer()) + expandHorizontally(
-                animationSpec = OliviaMotion.footer(),
-                expandFrom = Alignment.Start,
-            ),
-            exit = fadeOut(OliviaMotion.footer()) + shrinkHorizontally(
-                animationSpec = OliviaMotion.footer(),
-                shrinkTowards = Alignment.Start,
-            ),
-        ) {
-            OliviaPauseButton(
-                isPaused = isPaused,
-                onClick = if (isPaused) onResume else onPause,
-                modifier = Modifier.size(56.dp),
-            )
+        AnimatedContent(
+            targetState = isLive,
+            transitionSpec = {
+                (fadeIn(OliviaMotion.footer()) + expandHorizontally(
+                    animationSpec = OliviaMotion.footer(),
+                    expandFrom = Alignment.CenterHorizontally,
+                )) togetherWith (fadeOut(OliviaMotion.footer()) + shrinkHorizontally(
+                    animationSpec = OliviaMotion.footer(),
+                    shrinkTowards = Alignment.CenterHorizontally,
+                ))
+            },
+            label = "recording controls",
+        ) { live ->
+            if (live) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OliviaPauseButton(
+                        isPaused = isPaused,
+                        onClick = if (isPaused) onResume else onPause,
+                        modifier = Modifier.size(56.dp),
+                    )
+                    OliviaStopButton(
+                        onClick = onStop,
+                        modifier = Modifier.size(56.dp),
+                    )
+                }
+            } else {
+                OliviaRecordButton(
+                    selected = currentRoute == OliviaDestination.RECORD.route,
+                    onClick = onRecordClick,
+                    modifier = Modifier.size(72.dp),
+                )
+            }
         }
-        OliviaRecordButton(
-            live = isLive,
-            selected = !isLive && currentRoute == OliviaDestination.RECORD.route,
-            onClick = if (isLive) onStop else onRecordClick,
-            modifier = Modifier.size(if (isLive) 56.dp else 72.dp),
-        )
     }
 }
 
@@ -593,7 +607,6 @@ private fun OliviaPauseButton(
 
 @Composable
 private fun OliviaRecordButton(
-    live: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -605,7 +618,6 @@ private fun OliviaRecordButton(
         OliviaMotion.press(),
         label = "record press",
     )
-    val description = if (live) "Parar gravação" else OliviaDestination.RECORD.label
     Box(
         modifier = modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
@@ -614,58 +626,85 @@ private fun OliviaRecordButton(
             .selectable(
                 selected = selected,
                 onClick = onClick,
-                role = if (live) Role.Button else Role.Tab,
+                role = Role.Tab,
                 interactionSource = interactionSource,
                 indication = null,
             )
-            .semantics { contentDescription = description },
+            .semantics { contentDescription = OliviaDestination.RECORD.label },
         contentAlignment = Alignment.Center,
     ) {
-        if (live) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .border(3.dp, OliviaRecordingRed, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp)
-                        .background(OliviaRecordingRed, CircleShape),
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .shadow(
+                    elevation = 4.dp,
+                    shape = CircleShape,
+                    ambientColor = OliviaBlueActionShadow,
+                    spotColor = OliviaBlueActionShadow,
                 )
-                Icon(
-                    imageVector = Icons.Filled.Stop,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = CircleShape,
-                        ambientColor = OliviaBlueActionShadow,
-                        spotColor = OliviaBlueActionShadow,
-                    )
-                    .background(
-                        brush = Brush.verticalGradient(
-                            listOf(OliviaBlueActionStart, OliviaBlueActionEnd),
-                        ),
-                        shape = CircleShape,
+                .background(
+                    brush = Brush.verticalGradient(
+                        listOf(OliviaBlueActionStart, OliviaBlueActionEnd),
                     ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Mic,
-                    contentDescription = null,
-                    tint = OliviaBlueActionOn,
-                    modifier = Modifier.size(28.dp),
-                )
-            }
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Mic,
+                contentDescription = null,
+                tint = OliviaBlueActionOn,
+                modifier = Modifier.size(28.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun OliviaStopButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        pressScale(pressed),
+        OliviaMotion.press(),
+        label = "stop press",
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .heightIn(min = 48.dp)
+            .widthIn(min = 48.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .semantics { contentDescription = "Parar gravação" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .border(3.dp, OliviaRecordingRed, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
+                    .background(OliviaRecordingRed, CircleShape),
+            )
+            Icon(
+                imageVector = Icons.Filled.Stop,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
