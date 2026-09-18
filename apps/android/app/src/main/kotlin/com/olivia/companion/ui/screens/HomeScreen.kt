@@ -164,14 +164,14 @@ private fun HomeQuickActions(
             onClick = onOpenRecord,
         )
         HomeQuickAction(
-            label = "Ajustes",
-            icon = Icons.Outlined.Settings,
-            onClick = onOpenSettings,
-        )
-        HomeQuickAction(
             label = "Takes",
             icon = Icons.Outlined.History,
             onClick = onSeeAllTakes,
+        )
+        HomeQuickAction(
+            label = "Ajustes",
+            icon = Icons.Outlined.Settings,
+            onClick = onOpenSettings,
         )
     }
 }
@@ -198,7 +198,6 @@ private fun RowScope.HomeQuickAction(
             else MaterialTheme.colorScheme.surface,
             contentColor = if (highlighted) Color.White
             else MaterialTheme.colorScheme.onSurface,
-            border = if (highlighted) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth(),
