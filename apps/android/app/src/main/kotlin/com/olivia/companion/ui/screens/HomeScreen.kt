@@ -164,14 +164,14 @@ private fun HomeQuickActions(
             onClick = onOpenRecord,
         )
         HomeQuickAction(
-            label = "Takes",
-            icon = Icons.Outlined.History,
-            onClick = onSeeAllTakes,
-        )
-        HomeQuickAction(
             label = "Ajustes",
             icon = Icons.Outlined.Settings,
             onClick = onOpenSettings,
+        )
+        HomeQuickAction(
+            label = "Takes",
+            icon = Icons.Outlined.History,
+            onClick = onSeeAllTakes,
         )
     }
 }
@@ -204,7 +204,7 @@ private fun RowScope.HomeQuickAction(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = label, modifier = Modifier.size(32.dp))
+                Icon(icon, contentDescription = label, modifier = Modifier.size(28.dp))
             }
         }
         Text(
