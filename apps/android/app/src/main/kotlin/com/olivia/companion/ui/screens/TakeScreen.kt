@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import com.olivia.companion.ui.OliviaButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -101,13 +101,12 @@ fun OliviaTakeScreen(
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TimelineSection(take.events)
 
-        OutlinedButton(
+        OliviaButton(
             onClick = onExport,
             enabled = exportState.status != ExportStatus.SHARING,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 52.dp),
-            shape = RoundedCornerShape(16.dp),
         ) {
             Text(
                 if (exportState.status == ExportStatus.SHARING) {
