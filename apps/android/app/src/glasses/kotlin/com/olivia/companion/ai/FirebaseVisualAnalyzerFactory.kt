@@ -44,6 +44,7 @@ object FirebaseVisualAnalyzerFactory {
             localVisualAnalyzer = DeterministicLocalVisualAnalyzer(),
             lumaDecoder = AndroidFrameLumaDecoder(),
             motionEstimator = OpenCvSparseMotionEstimator(),
+            localRoiProposer = OpenCvWorkAreaProposer(),
         )
         Result.success(hybrid)
     } catch (_: Throwable) {

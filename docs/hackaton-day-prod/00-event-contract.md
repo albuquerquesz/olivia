@@ -4,7 +4,7 @@
 
 1. “Oi, Olivia, gravar” roda localmente no microfone do celular.
 2. DAT entrega frames; o app analisa um a cada 2 segundos (0,5 fps).
-3. Gemini devolve somente ROI normalizada/confiança; Android calcula enquadramento, luz e horizonte.
+3. OpenCV pode propor uma ROI inicial efêmera e conservadora; Gemini devolve somente ROI normalizada/confiança para validar/re-adquirir. Android calcula enquadramento, luz e horizonte.
 4. Thresholds, duas análises compatíveis e cooldown de 4 s decidem a orientação.
 5. TTS ou tom local é roteado pela saída de mídia Android.
 6. `STARTED`, `PAUSED`, `STOPPED` e `DEGRADED` permanecem invariantes.

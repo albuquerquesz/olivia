@@ -96,6 +96,11 @@ android {
             cmake {
                 abiFilters += "arm64-v8a"
                 arguments += "-DWHISPER_LIB_DIR=${rootProject.projectDir.absolutePath}/third_party/whisper-cpp"
+                // whisper.cpp's own CMakeLists only turns on -O3/LTO when CMAKE_BUILD_TYPE
+                // != Debug. AGP maps the Android debug build type to a Debug native build by
+                // default, which measured ~1000x slower on-device for this workload (nobody
+                // debugs whisper.cpp's C++ with a native debugger here) — force Release always.
+                arguments += "-DCMAKE_BUILD_TYPE=Release"
             }
         }
         buildConfigField("String", "PICOVOICE_ACCESS_KEY", buildConfigString(

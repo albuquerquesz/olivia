@@ -43,9 +43,10 @@ class AndroidPostTakeController(context: Context, private val demoSource: Record
         try {
             importer.fetch(asset).collect { }
             LocalPostProcessor(
-                transcriptProvider = WhisperLocalTranscriptProvider(appContext) { recording ->
-                    importer.localPathOf(recording.id)
-                },
+                transcriptProvider = WhisperLocalTranscriptProvider(
+                    context = appContext,
+                    resolveLocalPath = { recording -> importer.localPathOf(recording.id) },
+                ),
                 alignmentFor = { recording -> LinearMediaAlignment(session.id, recording.startedAtEpochMs, 0) },
             ).process(session.id, asset, events).also { result ->
                 if (result.isSuccess) importedSessions += session.id

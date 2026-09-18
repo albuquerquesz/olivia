@@ -1,6 +1,7 @@
 package com.olivia.companion.transcription
 
 import android.content.Context
+import android.util.Log
 import com.olivia.core.LocalTranscriptProvider
 import com.olivia.core.RecordingAsset
 import com.olivia.core.TranscriptSegment
@@ -25,10 +26,23 @@ class WhisperLocalTranscriptProvider(
                 if (!recording.hasAudioTrack) return@runCatching emptyList()
                 val path = resolveLocalPath(recording)
                     ?: throw IllegalStateException("Arquivo local da gravação indisponível para transcrição")
+
+                val decodeStart = System.currentTimeMillis()
                 val pcm = AudioDecoder.decodeToMonoPcm16k(path)
+                val decodeMs = System.currentTimeMillis() - decodeStart
+
+                val loadStart = System.currentTimeMillis()
                 val whisperContext = WhisperContext.createContextFromAsset(context.assets, modelAssetPath)
+                val loadMs = System.currentTimeMillis() - loadStart
                 try {
-                    parseSegments(whisperContext.transcribeData(pcm, printTimestamp = true))
+                    val inferStart = System.currentTimeMillis()
+                    val raw = whisperContext.transcribeData(pcm, printTimestamp = true)
+                    val inferMs = System.currentTimeMillis() - inferStart
+                    Log.i(
+                        LOG_TAG,
+                        "audioMs=${pcm.size * 1000L / 16_000} decodeMs=$decodeMs modelLoadMs=$loadMs inferMs=$inferMs",
+                    )
+                    parseSegments(raw)
                 } finally {
                     whisperContext.release()
                 }
@@ -60,6 +74,7 @@ class WhisperLocalTranscriptProvider(
             millis.toLong()
 
     private companion object {
+        private const val LOG_TAG = "WhisperTranscript"
         val TIMESTAMPED_LINE = Regex(
             """\[(\d{2}):(\d{2}):(\d{2})\.(\d{3}) --> (\d{2}):(\d{2}):(\d{2})\.(\d{3})]:\s*(.*)""",
         )

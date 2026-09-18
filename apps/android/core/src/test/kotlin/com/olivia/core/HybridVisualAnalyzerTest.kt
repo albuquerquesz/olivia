@@ -24,6 +24,18 @@ class HybridVisualAnalyzerTest {
     }
 
     @Test
+    fun `local proposal seeds the fast path before cloud localization returns`() {
+        val analyzer = hybrid(
+            proposer = LocalRoiProposer { localization(.68f) },
+        )
+
+        val first = requireNotNull(analyzer.processFast(frame(stamp(1)))).orThrow()
+
+        assertEquals(AnalyzerSource.LOCAL_ROI_LOCAL, first.source)
+        assertEquals(Direction.TURN_RIGHT, first.diagnoses.first { it.kind == DiagnosisKind.FRAMING }.direction)
+    }
+
+    @Test
     fun `low quality motion keeps output silent until reacquisition`() {
         val analyzer = hybrid(
             estimator = SparseMotionEstimator { _, _ -> MotionEstimate(MotionTransform.IDENTITY, 8, 1, 9f) },
@@ -50,6 +62,7 @@ class HybridVisualAnalyzerTest {
         estimator: SparseMotionEstimator = SparseMotionEstimator { _, _ ->
             MotionEstimate(MotionTransform.IDENTITY, 24, 20, .4f)
         },
+        proposer: LocalRoiProposer? = null,
     ): HybridVisualAnalyzer = HybridVisualAnalyzer(
         remote = object : FrameAnalyzer {
             override suspend fun analyze(frame: Frame): Result<FrameAnalysis> =
@@ -61,6 +74,7 @@ class HybridVisualAnalyzerTest {
             override fun decode(frame: Frame): LumaFrame = LumaFrame(4, 4, ByteArray(16) { 120 })
         },
         motionEstimator = estimator,
+        localRoiProposer = proposer,
     )
 
     private fun frame(stamp: FrameStamp): Frame = Frame(

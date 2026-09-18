@@ -20,8 +20,8 @@ public value class Confidence(public val value: Float) {
 }
 
 /** De onde veio o diagnóstico, para a demo conseguir provar o que é IA e o que é mock. */
-/** GEMINI_ROI_LOCAL distinguishes cloud localization from local visual diagnostics. */
-public enum class AnalyzerSource { MOCK, GEMINI_ROI_LOCAL, TRACKER_LOCAL }
+/** Sources stay explicit so a local proposal is never presented as a cloud-validated ROI. */
+public enum class AnalyzerSource { MOCK, GEMINI_ROI_LOCAL, LOCAL_ROI_LOCAL, TRACKER_LOCAL }
 
 @Serializable
 public data class VisualDiagnosis(
@@ -142,6 +142,16 @@ public data class LumaFrame(
 /** Android supplies decoded luma; core keeps all policy and math platform-independent. */
 public interface LocalVisualAnalyzer {
     public fun analyze(luma: LumaFrame, localization: WorkAreaLocalization): List<VisualDiagnosis>
+}
+
+/**
+ * Conservative, on-device first hypothesis for the visible work area.
+ *
+ * It receives only the in-memory luma frame and may decline to propose. A proposal is not a
+ * semantic identification and is reconciled with Gemini as soon as a cloud result arrives.
+ */
+public fun interface LocalRoiProposer {
+    public fun propose(luma: LumaFrame): WorkAreaLocalization?
 }
 
 /**

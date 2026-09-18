@@ -87,7 +87,7 @@
         "framing_large_offset_normalized": 0.25,
         "requires_two_consecutive_analyses": true
       },
-      "purpose": "Recebe somente a ROI normalizada da peça retornada pela IA e mede no celular o deslocamento de enquadramento, luminância na ROI e inclinação do horizonte. Produz diagnósticos fechados; não promete graus físicos. Valores são iniciais e exigem validação com fixtures antes do uso no loop real."
+      "purpose": "Recebe uma ROI normalizada: Gemini é a validação/re-aquisição remota e um propositor OpenCV local pode fornecer somente a hipótese inicial efêmera, explicitamente marcada como não validada. Mede no celular o deslocamento de enquadramento, luminância na ROI e inclinação do horizonte. Produz diagnósticos fechados; não promete graus físicos. Valores são iniciais e exigem validação com fixtures antes do uso no loop real."
     },
     {
       "id": "guidance_engine",
@@ -142,7 +142,7 @@
         "ROI normalizada da peça",
         "confiança de localização"
       ],
-      "purpose": "Localiza a área de trabalho no frame efêmero. Não devolve direção, severidade, luminância, horizonte, fala ou graus."
+      "purpose": "Valida e recupera a localização da área de trabalho no frame efêmero. Não devolve direção, severidade, luminância, horizonte, fala ou graus."
     },
     {
       "id": "camera",
@@ -193,6 +193,12 @@
       "to": "ai_checkpoint",
       "data": "Frame efêmero reduzido para localizar a ROI da peça",
       "transport": "HTTPS"
+    },
+    {
+      "from": "frame_sampler",
+      "to": "local_vision",
+      "data": "Hipótese inicial de ROI por OpenCV, somente em memória; pode se abster e Gemini permanece a validação/re-aquisição",
+      "transport": "local"
     },
     {
       "from": "ai_checkpoint",
@@ -262,7 +268,7 @@
     {
       "id": "ai",
       "requirement": "Uso de IA",
-      "evidence": "Gemini localiza a área de trabalho; o app converte a ROI em diagnóstico determinístico de enquadramento, luz e horizonte."
+      "evidence": "Gemini valida/relocaliza a área de trabalho; OpenCV pode propor a hipótese inicial local, explicitamente separada na origem da análise. O app converte a ROI em diagnóstico determinístico de enquadramento, luz e horizonte."
     },
     {
       "id": "camera",
@@ -326,7 +332,7 @@
     "privacy_gate": "Descarte local não comprova retenção zero no provedor; BE-10/13 exigem configuração e evidências externas antes de mídia real.",
     "metrics": "900 ms no loop e aproximadamente 8 s no pós-processamento permanecem metas; callback Android de áudio não comprova instante acústico nos óculos."
     ,
-    "local_vision_refactor": "Implementado a partir das orientações da organização em 16/09/2026: Gemini retorna somente ROI normalizada/confiança; Android calcula offset de enquadramento, luminância na ROI e horizonte. O caminho híbrido adiciona fluxo óptico esparso OpenCV em escala limitada, histórico de transformadas para compensar respostas tardias, reconciliação por IoU, histerese/persistência/supressão de movimento e métricas fast-path. Há testes JVM de tracking/replay e compilação Android; evidência de frame DAT/hardware, acústica Bluetooth e campanha Android de qualidade continuam pendências explícitas.",
+    "local_vision_refactor": "Implementado a partir das orientações da organização em 16/09/2026: Gemini retorna somente ROI normalizada/confiança; Android calcula offset de enquadramento, luminância na ROI e horizonte. O caminho híbrido adiciona um propositor OpenCV local conservador para hipótese inicial efêmera, fluxo óptico esparso em escala limitada, histórico de transformadas para compensar respostas tardias, reconciliação por IoU, histerese/persistência/supressão de movimento e métricas fast-path. A hipótese local pode se abster e nunca é apresentada como ROI validada por Gemini. Há testes JVM de tracking/replay e compilação Android; evidência de frame DAT/hardware, acústica Bluetooth e campanha Android de qualidade continuam pendências explícitas.",
     "whisper_transcription_integration": "Implementado em 18/09/2026: UnavailableLocalTranscriptProvider substituído por WhisperLocalTranscriptProvider real em app/src/main/kotlin/com/olivia/companion/transcription, sobre whisper.cpp vendorizado (tag v1.9.4, commit 927cfce3, MIT) com JNI/CMake próprios em app/src/main/jni/whisper — sem AAR paga de terceiro. Modelo ggml-base-q5_1 (multilíngue, quantizado, ~57 MB) embarcado em app/src/main/assets/whisper e fixado por hash em third_party/whisper-cpp/NOTICE.md. Idioma fixado em pt (jni.c) por thresholds locais, decodificação greedy, sem detecção automática de idioma. Build nativo restrito a arm64-v8a. Ainda pendente: benchmark real de latência/bateria em hardware físico (meta ~8 s de pós-processamento não medida), e primeira compilação Gradle/NDK local para validar o CMake — não executada nesta sessão."
   }
 }

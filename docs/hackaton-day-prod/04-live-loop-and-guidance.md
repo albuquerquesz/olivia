@@ -12,9 +12,9 @@
 
 ## Pipeline
 
-`frame efêmero → sampler → ROI Gemini → análise local → guidance → áudio → confirmação → timeline`
+`frame efêmero → propositor OpenCV local (se confiante) / ROI Gemini em paralelo → análise local → guidance → áudio → confirmação → timeline`
 
-Gemini devolve somente ROI/confiança. O Android calcula enquadramento, luminância e horizonte.
+O propositor OpenCV pode se abster e sua ROI é marcada como hipótese local; Gemini devolve somente ROI/confiança para validar ou recuperar a localização. O Android calcula enquadramento, luminância e horizonte.
 Não pedir/apresentar graus físicos, severidade da nuvem ou causa de sombra sem detector validado.
 
 ## Estados

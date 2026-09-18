@@ -43,7 +43,8 @@
       "purpose": "Classifica um frame em enquadramento, luz e horizonte.",
       "implementations": [
         "mock determinístico",
-        "Gemini via Firebase AI Logic"
+        "Gemini via Firebase AI Logic",
+        "híbrido: proposta inicial OpenCV local, tracking local e validação/re-aquisição Gemini"
       ],
       "members": [
         "analyze(frame): Result<FrameAnalysis>"
@@ -250,8 +251,8 @@
     "ownership": "Adapter libera intermediários descartados; consumidor libera os recebidos; não reter bytes. Implementação de buffers/sampler é BE-00/02."
   },
   "analysis_contract": {
-    "frame_analysis": "FrameAnalysis(frameStamp, analyzedAt: ClockReading, latencyMs >= 0, source in {MOCK,GEMINI_ROI_LOCAL,TRACKER_LOCAL}, diagnoses)",
-    "validation": "Diagnósticos são produzidos localmente a partir de uma ROI validada: confidence 0..1, tipos e direções compatíveis, OK sem direção/magnitude, magnitude finita/não negativa e sem categorias duplicadas. O parse externo aceita somente WorkAreaLocalization; política de abstenção é BE-03."
+    "frame_analysis": "FrameAnalysis(frameStamp, analyzedAt: ClockReading, latencyMs >= 0, source in {MOCK,GEMINI_ROI_LOCAL,LOCAL_ROI_LOCAL,TRACKER_LOCAL}, diagnoses)",
+    "validation": "Diagnósticos são produzidos localmente a partir de uma ROI com confidence 0..1, tipos e direções compatíveis, OK sem direção/magnitude, magnitude finita/não negativa e sem categorias duplicadas. LOCAL_ROI_LOCAL é hipótese OpenCV efêmera e não equivale a validação Gemini; pode se abster. O parse externo aceita somente WorkAreaLocalization; política de abstenção é BE-03."
   },
   "planned_analysis_contract_v3": {
     "status": "implemented_pending_live_validation",

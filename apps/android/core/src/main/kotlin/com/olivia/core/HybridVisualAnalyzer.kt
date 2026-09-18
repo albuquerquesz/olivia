@@ -17,12 +17,14 @@ public class HybridVisualAnalyzer(
     private val localVisualAnalyzer: LocalVisualAnalyzer,
     private val lumaDecoder: FrameLumaDecoder,
     private val motionEstimator: SparseMotionEstimator,
+    private val localRoiProposer: LocalRoiProposer? = null,
     private val tracker: RoiMotionTracker = RoiMotionTracker(),
     private val handInsideRoi: (LumaFrame, NormalizedRoi) -> Boolean = { _, _ -> false },
 ) : FrameAnalyzer, FastFrameProcessor {
     private val lock = Any()
     private var previousLuma: LumaFrame? = null
     private var latestSequence: Long? = null
+    private var localProposalAttempted: Boolean = false
     private val framingHysteresis = FramingHysteresis()
 
     override suspend fun analyze(frame: Frame): Result<FrameAnalysis> = remote.analyze(frame)
@@ -39,26 +41,25 @@ public class HybridVisualAnalyzer(
         val luma = decoded.downsampled(FAST_PATH_MAX_EDGE)
         val previous = previousLuma
         previousLuma = luma
-        if (previous == null || tracker.currentState() == RoiTrackerState.UNINITIALIZED) return@synchronized null
+        if (tracker.currentState() == RoiTrackerState.UNINITIALIZED) {
+            if (localProposalAttempted) return@synchronized null
+            localProposalAttempted = true
+            val proposal = localRoiProposer?.propose(luma) ?: return@synchronized null
+            if (!tracker.seed(proposal, frame.stamp.sequence, frame.stamp.receivedAt.monotonicMs)) {
+                return@synchronized null
+            }
+            // The first result is intentionally local and provisional. Guidance still requires
+            // its normal persistence gate, while Gemini continues in parallel to reconcile it.
+            return@synchronized localAnalysis(frame, luma, AnalyzerSource.LOCAL_ROI_LOCAL)
+        }
+        if (tracker.currentState() != RoiTrackerState.TRACKING) return@synchronized null
+        if (previous == null) return@synchronized null
         val estimate = runCatching { motionEstimator.estimate(previous, luma) }.getOrNull()
         val roiBeforeFrame = tracker.currentRoi()
         val hand = roiBeforeFrame?.let { runCatching { handInsideRoi(luma, it) }.getOrDefault(false) } ?: false
         val update = tracker.onFrame(frame.stamp, estimate, handInsideRoi = hand)
         if (!update.canSpeak) return@synchronized null
-        val localization = tracker.currentLocalization() ?: return@synchronized null
-        val diagnoses = localVisualAnalyzer.analyze(luma, localization)
-            .map { framingHysteresis.filter(it, localization.roi) }
-            .let { filtered -> suppressMotionCorrections(filtered, estimate, localization.roi) }
-        val analyzedAt = clock.now()
-        Result.success(
-            FrameAnalysis(
-                frameStamp = frame.stamp,
-                analyzedAt = if (analyzedAt.monotonicMs < frame.stamp.receivedAt.monotonicMs) frame.stamp.receivedAt else analyzedAt,
-                latencyMs = (analyzedAt.monotonicMs - frame.stamp.receivedAt.monotonicMs).coerceAtLeast(0),
-                source = AnalyzerSource.TRACKER_LOCAL,
-                diagnoses = diagnoses,
-            ),
-        )
+        localAnalysis(frame, luma, AnalyzerSource.TRACKER_LOCAL, estimate)
     }
 
     /** Called by the remote analyzer after schema validation; never receives raw bytes. */
@@ -77,12 +78,35 @@ public class HybridVisualAnalyzer(
     public fun reset(): Unit = synchronized(lock) {
         previousLuma = null
         latestSequence = null
+        localProposalAttempted = false
         tracker.reset()
         framingHysteresis.reset()
     }
 
     public fun currentTrackedRoi(): NormalizedRoi? = synchronized(lock) {
         if (tracker.currentState() == RoiTrackerState.TRACKING) tracker.currentRoi() else null
+    }
+
+    private fun localAnalysis(
+        frame: Frame,
+        luma: LumaFrame,
+        source: AnalyzerSource,
+        estimate: MotionEstimate? = null,
+    ): Result<FrameAnalysis>? {
+        val localization = tracker.currentLocalization() ?: return null
+        val diagnoses = localVisualAnalyzer.analyze(luma, localization)
+            .map { framingHysteresis.filter(it, localization.roi) }
+            .let { filtered -> suppressMotionCorrections(filtered, estimate, localization.roi) }
+        val analyzedAt = clock.now()
+        return Result.success(
+            FrameAnalysis(
+                frameStamp = frame.stamp,
+                analyzedAt = if (analyzedAt.monotonicMs < frame.stamp.receivedAt.monotonicMs) frame.stamp.receivedAt else analyzedAt,
+                latencyMs = (analyzedAt.monotonicMs - frame.stamp.receivedAt.monotonicMs).coerceAtLeast(0),
+                source = source,
+                diagnoses = diagnoses,
+            ),
+        )
     }
 
     private fun suppressMotionCorrections(
