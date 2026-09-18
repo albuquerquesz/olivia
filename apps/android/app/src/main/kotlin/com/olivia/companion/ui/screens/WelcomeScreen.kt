@@ -165,7 +165,7 @@ private fun OnboardingIntro() {
         OnboardingHeading(
             modifier = Modifier.fillMaxWidth(),
             title = "A Olivia guia seu próximo take",
-            description = "A Olivia observa o enquadramento, a luz e o horizonte, e orienta você por áudio.",
+            description = "Durante o take, o áudio indica quando corrigir o enquadramento, a luz ou o horizonte.",
             titleFontSize = 24,
             verticalSpacing = 8.dp,
             textAlign = TextAlign.Center,
