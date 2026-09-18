@@ -36,11 +36,12 @@ object FirebaseVisualAnalyzerFactory {
                 localizationSink = com.olivia.core.LocalizationSink { stamp, localization ->
                     hybrid.onRemoteLocalization(stamp, localization)
                 },
-                // The production guard remains 2 s. The local MockDeviceKit demo needs a
-                // longer first acquisition window because the Moto's measured remote p50 is
-                // just above that guard; this does not change the production contract.
-                timeoutMs = if (com.olivia.companion.BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) {
-                    MOCK_DEVICE_KIT_TIMEOUT_MS
+                // Physical Moto diagnostics also need to measure a completed acquisition:
+                // the 2 s release guard repeatedly cancelled before any cloud response.
+                // Sampling and local tracking remain independent of this network deadline.
+                timeoutMs = if (com.olivia.companion.BuildConfig.DEBUG ||
+                    com.olivia.companion.BuildConfig.MWDAT_USE_MOCK_DEVICE_KIT) {
+                    DIAGNOSTIC_TIMEOUT_MS
                 } else {
                     PRODUCTION_TIMEOUT_MS
                 },
@@ -63,6 +64,6 @@ object FirebaseVisualAnalyzerFactory {
     }
 
     private const val PRODUCTION_TIMEOUT_MS = 2_000L
-    private const val MOCK_DEVICE_KIT_TIMEOUT_MS = 8_000L
+    private const val DIAGNOSTIC_TIMEOUT_MS = 8_000L
     private const val TAG = "OliviaVisualTiming"
 }

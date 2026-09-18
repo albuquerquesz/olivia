@@ -1,6 +1,6 @@
 # Retomada da integração física — 18/09/2026
 
-Status: primeiro frame físico confirmado; aceite de preview e lifecycle ainda em validação.
+Status: `PASS_HARDWARE` para câmera/preview. ROI/Gemini e áudio acústico ainda pendentes.
 
 ## Escopo e artefato
 
@@ -69,3 +69,20 @@ já publicado antes de liberar o lock. O watchdog de captura ativa continua em 4
 
 Segunda compilação/instalação concluída com sucesso. Incluído teste de regressão de início lento
 com heartbeat e degradação após 4 s; teste automatizado ainda não executado.
+
+## Preview confirmado — 12:24–12:27
+
+No APK `2d0ade025044db7f3cd3aa282b06228ff1e02c3750186f895eb0321252b6be2c`:
+
+- 12:24:40: primeiro frame `DAT NV21 720×1280` e callback do tom inicial.
+- UI exibiu `Prévia ao vivo do stream da câmera dos óculos`; operador confirmou que a imagem
+  acompanha os movimentos, com atraso perceptível. Não há medição cena→tela.
+- Pausar exibiu `Orientação pausada`; retomar voltou a entregar frame da nova geração.
+- Terminar removeu o preview e o serviço `DatStreamingService`; controle voltou a `Iniciar sessão`.
+- Análise permaneceu degradada por `TIMEOUT` repetido em 2 s; captura e preview continuaram.
+
+Essa evidência fecha câmera/preview, sem provar gravação nativa, comando de voz no novo APK,
+qualidade da ROI, feedback ouvido nos óculos ou meta de 900 ms.
+
+O próximo APK de diagnóstico usa 8 s para chamadas Gemini, como o MockDeviceKit já usava,
+para medir resposta completa. Release físico mantém 2 s. Sampling e cooldown não foram alterados.

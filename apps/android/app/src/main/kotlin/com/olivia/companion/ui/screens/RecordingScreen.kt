@@ -466,6 +466,8 @@ private fun recordingPanelMessage(
     if (session?.state == SessionState.DEGRADED) return sessionStatusLabel(session) + ". As marcas foram preservadas."
     if (requiresPhysicalGlasses) {
         if (session == null) return "Diga: Oi, Olivia, gravar para iniciar o DAT."
+        if (session.state == SessionState.STOPPED) return "Sessão encerrada. As marcas foram preservadas."
+        if (session.state == SessionState.PAUSED) return "Orientação pausada. Diga: Oi, Olivia, retomar."
         if (session.state == SessionState.ERROR) {
             return "Não foi possível iniciar o DAT. Toque em Conectar Olivia no Meta AI."
         }
@@ -478,6 +480,9 @@ private fun recordingPanelMessage(
 
 private fun recordingConnectionLabel(state: OliviaUiState): String {
     if (state.backend.requiresPhysicalGlasses && state.session == null) return "Aguardando início"
+    if (state.session?.state == SessionState.STARTING) return "Conectando aos óculos"
+    if (state.session?.state == SessionState.STOPPED) return "Sessão encerrada"
+    if (state.session?.state == SessionState.PAUSED) return "Sessão pausada"
     return connectionLabel(state.connection)
 }
 

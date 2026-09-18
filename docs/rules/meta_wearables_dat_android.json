@@ -86,8 +86,8 @@
     "startup_readiness": "Após STREAMING, startCapture aguarda até 25 s pelo primeiro heartbeat de frame decodificado; timeout limpa recursos. O coordenador consome esse heartbeat ao retornar do adapter, antes de liberar o lock ao watchdog. Na captura ativa, 4 s sem frame continuam gerando DEGRADED.",
     "permission_flow": "Aguardar link CONNECTED/COMPATIBLE antes de consultar CAMERA; Denied abre RequestPermissionContract e o comando original aguarda o resultado por até 90 s. Erro de consulta não equivale a revogação.",
     "previous_session_evidence": "Histórico anexado registra CAMERA=GRANTED, sessão DAT STARTED e stream STREAMING, seguido de crash nativo no ImageReader. Isso não comprova frame decodificado nem STARTED no coordenador Olivia.",
-    "current_evidence": "Retomada às 12:14–12:16: APP_CHECK_READY, registration=REGISTERED, dev_mode=true e devices=1 COMPATIBLE; tentativas encerradas em 15 s por timeout de conexão, com leituras GATT expirando em 2000 ms. Preview físico ainda pendente.",
-    "validation": "Correção de configuração HEVC compilada e instalada por installGlassesDebug; primeiro frame físico ainda não validado.",
+    "current_evidence": "Após timeouts GATT iniciais, reinício dos óculos/transporte/apps restabeleceu CONNECTED/COMPATIBLE e câmera Granted. Frames DAT NV21 720×1280 às 12:22 e 12:24; operador confirmou preview acompanhando movimentos. Pausa/retomada/encerramento exercitados por debug. APP_CHECK_READY; ROI ainda expira no limite original de 2 s.",
+    "validation": "Correções de decoder e início compiladas/instaladas por installGlassesDebug; PASS_HARDWARE para câmera/preview, sem medição de atraso cena→tela ou áudio acústico. Teste de regressão do coordenador adicionado, sem executar suíte automatizada.",
     "privacy": "Somente estados e metadados agregados como evidência; nenhum frame, áudio bruto ou credencial persistido."
   },
   "agent_reference": {

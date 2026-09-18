@@ -23,7 +23,7 @@ menos 10 inferências reais com condições anotadas. Reportar p50/p95, tamanho 
 
 | Item | Resultado | Evidência sanitizada | Limitação/fallback |
 | --- | --- | --- | --- |
-| DAT físico / primeiro frame | `PENDING — GATT_TIMEOUT` | Retomada: `REGISTERED`, `dev_mode=true`, um device `COMPATIBLE`; leitura GATT expira antes da câmera | Decoder corrigido e instalado; primeiro frame/preview pendentes |
+| DAT físico / primeiro frame | `PASS_HARDWARE` | Frames `DAT NV21 720×1280` às 12:22 e 12:24; preview acompanhando movimentos confirmado pelo operador | Atraso visual não medido; não prova vídeo nativo, ROI ou áudio acústico |
 | voz/tons nos óculos | `PENDING` |  |  |
 | A1 início/fim nativo | `PENDING` |  |  |
 | A2 3K + DAT | `PENDING` |  |  |

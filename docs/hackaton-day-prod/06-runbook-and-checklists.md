@@ -13,15 +13,18 @@ registrar estado sanitizado, usar fallback e seguir.
 - [x] Fluxo oficial de autorização abriu o Meta AI.
 - [x] `glassesDebug` ajustado para Developer Mode DAT (`APPLICATION_ID=0`, `CLIENT_TOKEN=0`) e reinstalado.
 - [x] Developer Mode e registro local confirmados: `REGISTERED`, `dev_mode=true`, um device compatível.
-- [ ] `STARTED` e primeiro frame real observados.
-- [ ] Evidência `PASS_HARDWARE` salva sem anexar frame.
+- [x] Primeiro frame real `NV21 720×1280`, início com tom e preview acompanhando movimentos confirmados.
+- [x] Evidência `PASS_HARDWARE` de câmera/preview registrada sem anexar frame.
 
-### Retomada às 12:14–12:18
+### Retomada física — a partir de 12:14
 
 - [x] `APP_CHECK_READY` observado no APK instalado, sem novo cadastro de token.
 - [x] Mantido DAT `0.9.0`; decoder usa saída direta `MediaCodec.getOutputImage` para evitar o caminho `ImageReader` que sofreu crash.
 - [x] Removido envio duplicado da configuração HEVC; `installGlassesDebug` compilou e instalou a correção no Moto G60.
-- [ ] Primeiro frame/preview da correção: tentativas desta retomada ficaram em `CONNECTING`/`DISCONNECTED`, com timeout GATT antes da câmera.
+- [x] Timeout GATT superado após reinício dos óculos e do transporte/apps no Moto; frames físicos chegaram às 12:22 e 12:24.
+- [x] Watchdog de início corrigido: aguarda primeiro frame; preserva 4 s de degradação na captura ativa.
+- [x] Pausa/retomada/encerramento exercitados por controles de diagnóstico; serviço de câmera removido ao encerrar.
+- [ ] ROI/Gemini: timeout repetido em 2 s; APK debug com janela de diagnóstico de 8 s em validação.
 
 O histórico anterior registra câmera autorizada, sessão DAT `STARTED` e stream `STREAMING`.
 Esses estados do SDK não comprovam `STARTED` da Olivia, que exige heartbeat de frame decodificado.

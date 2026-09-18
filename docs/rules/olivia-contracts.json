@@ -254,6 +254,12 @@
     "frame_analysis": "FrameAnalysis(frameStamp, analyzedAt: ClockReading, latencyMs >= 0, source in {MOCK,GEMINI_ROI_LOCAL,LOCAL_ROI_LOCAL,TRACKER_LOCAL}, diagnoses)",
     "validation": "Diagnósticos são produzidos localmente a partir de uma ROI com confidence 0..1, tipos e direções compatíveis, OK sem direção/magnitude, magnitude finita/não negativa e sem categorias duplicadas. LOCAL_ROI_LOCAL é hipótese OpenCV efêmera e não equivale a validação Gemini; pode se abster. O parse externo aceita somente WorkAreaLocalization; política de abstenção é BE-03."
   },
+  "diagnostic_remote_timeout": {
+    "tasks": ["BE-03", "INT-04"],
+    "debug_and_mock_ms": 8000,
+    "physical_release_ms": 2000,
+    "reason": "Em 18/09, chamadas com frames físicos no Moto expiraram repetidamente em 2 s antes de uma resposta. glassesDebug usa janela de diagnóstico de 8 s para medir aquisição ROI. Não altera sampling 0,5 fps, cooldown de 4 s ou a meta de latência, ainda não validada."
+  },
   "planned_analysis_contract_v3": {
     "status": "implemented_pending_live_validation",
     "reason": "Orientação recebida da organização em 16/09/2026: não pedir geometria ou graus ao modelo de visão. O refactor está no código e em testes JVM; acesso Firebase, frame DAT e campanha de qualidade continuam pendentes de validação ao vivo.",

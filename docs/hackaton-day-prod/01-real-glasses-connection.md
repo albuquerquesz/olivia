@@ -65,4 +65,4 @@ A câmera autorizada e o stream iniciado constam no histórico anterior, mas o p
 não tem aceite: o crash nativo motivou a troca do decoder para saída direta MediaCodec.
 A correção adicional remove o envio duplicado de CSD; compilação/instalação concluídas.
 Nesta retomada, o transporte voltou a expirar na leitura GATT antes de abrir a câmera.
-Ver [evidência da retomada](checkpoint-1/retomada-dat.md). `PASS_HARDWARE` segue pendente.
+Esse timeout foi superado após reinício dos óculos/transporte/apps. Às 12:24, o preview mostrou frames físicos 720×1280 e o operador confirmou imagem acompanhando movimentos. `PASS_HARDWARE` para câmera/preview; demais capacidades independentes continuam pendentes. Ver [evidência da retomada](checkpoint-1/retomada-dat.md).
