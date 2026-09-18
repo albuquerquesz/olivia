@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarToday
@@ -195,7 +196,7 @@ private fun RowScope.HomeQuickAction(
             shape = RoundedCornerShape(18.dp),
             color = if (highlighted) MaterialTheme.colorScheme.primary
             else MaterialTheme.colorScheme.surface,
-            contentColor = if (highlighted) MaterialTheme.colorScheme.onPrimary
+            contentColor = if (highlighted) Color.White
             else MaterialTheme.colorScheme.onSurface,
             border = if (highlighted) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
@@ -203,7 +204,7 @@ private fun RowScope.HomeQuickAction(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
+                Icon(icon, contentDescription = label, modifier = Modifier.size(32.dp))
             }
         }
         Text(
