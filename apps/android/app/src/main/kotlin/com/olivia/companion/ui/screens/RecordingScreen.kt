@@ -46,10 +46,15 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 @Composable
-fun OliviaRecordingScreen(state: OliviaUiState) {
+fun OliviaRecordingScreen(
+    state: OliviaUiState,
+    onNavigateBack: () -> Unit,
+) {
     val degraded = state.session?.state == SessionState.DEGRADED
     val live = state.isLive
-    OliviaPage {
+    OliviaPage(
+        onNavigateBack = onNavigateBack.takeIf { !live },
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),

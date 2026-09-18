@@ -50,8 +50,14 @@ fun OliviaHomeScreen(
 }
 
 @Composable
-fun OliviaRecordingScreen(state: OliviaUiState) {
-    RecordingScreen(state = state)
+fun OliviaRecordingScreen(
+    state: OliviaUiState,
+    onNavigateBack: () -> Unit,
+) {
+    RecordingScreen(
+        state = state,
+        onNavigateBack = onNavigateBack,
+    )
 }
 
 @Composable

@@ -292,6 +292,7 @@ fun OliviaApp(
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     state = uiState,
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
             composable(OliviaDestination.SESSIONS.route) {
