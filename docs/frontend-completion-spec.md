@@ -61,8 +61,9 @@ recuperação, término, cadência de 2 s e o gap do mock.
 
 **Já existe:** contrato fechado para `gravar`, `pausar`, `retomar` e
 `terminar`; integração preparada para Porcupine e reconhecimento on-device;
-permissão de microfone; ciclo de vida; fallback de debug no mock; estados de
-disponibilidade e erro; aviso de disponibilidade também na tela `Gravar`.
+permissão de microfone; ciclo de vida; estados de disponibilidade e erro; aviso de
+disponibilidade também na tela `Gravar`. O flavor `mock` permanece somente como
+ambiente interno de validação e não expõe um modo ou controles de debug no produto.
 
 **Falta para fechar:**
 
@@ -77,8 +78,8 @@ disponibilidade e erro; aviso de disponibilidade também na tela `Gravar`.
   e retorno ao wake word após cada tentativa;
 - testar o celular distante na bancada e confirmar retorno audível para
   sucesso, erro e entrada indisponível;
-- garantir, por inspeção do APK/flavor e ensaio, que o fallback de debug só
-  aparece no backend mock e não é apresentado como fluxo principal;
+- confirmar, por inspeção do APK/flavor e ensaio, que o flavor de validação não
+  adiciona um modo de produto nem controles de debug à interface principal;
 - registrar aparelho/API, estado da permissão, conectividade e resultado de
   cada comando no comentário da issue.
 
@@ -224,7 +225,8 @@ O aceite visual precisa confirmar que continuam verdadeiras estas decisões:
   reconhecimento e retorno ao wake word.
 - [ ] Repetir com o celular distante na bancada e registrar os retornos
   audíveis de sucesso, erro e indisponibilidade.
-- [ ] Confirmar que somente o mock expõe controles de debug.
+- [x] Remover controles de debug da interface; manter o flavor `mock` apenas para
+  validação interna e testes automatizados.
 
 ### Fase 3 — fechar áudio (FE-04)
 

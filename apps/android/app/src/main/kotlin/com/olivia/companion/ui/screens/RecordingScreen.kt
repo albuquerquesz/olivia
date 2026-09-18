@@ -3,6 +3,7 @@ package com.olivia.companion.ui.screens
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import java.nio.ByteBuffer
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -14,6 +15,7 @@ import com.olivia.core.FrameFormat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +28,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
@@ -48,7 +51,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.olivia.companion.session.AudioFeedbackStatus
 import com.olivia.companion.session.LiveGuidanceStatus
 import com.olivia.companion.session.LivePreviewFrame
@@ -60,6 +66,7 @@ import com.olivia.companion.session.sessionStatusLabel
 import com.olivia.companion.ui.AudioModeOption
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.companion.ui.OliviaPanel
+import com.olivia.companion.ui.OliviaRecordingRed
 import com.olivia.companion.ui.PanelDetail
 import com.olivia.companion.ui.SectionTitle
 import com.olivia.core.AudioMode
@@ -67,6 +74,9 @@ import com.olivia.core.DegradationCause
 import com.olivia.core.Direction
 import com.olivia.core.GlassesConnection
 import com.olivia.core.SessionState
+import com.olivia.core.TimelineEventType
+import kotlin.math.PI
+import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
@@ -75,7 +85,7 @@ import androidx.compose.runtime.produceState
 @Composable
 fun OliviaRecordingScreen(
     state: OliviaUiState,
-    onOpenSettings: () -> Unit,
+    onNavigateBack: () -> Unit,
     onOpenVoiceSettings: () -> Unit = {},
     onConnectGlasses: () -> Unit = {},
     onAudioMode: (AudioMode) -> Unit,
@@ -90,68 +100,97 @@ fun OliviaRecordingScreen(
     val sessionState = session?.state ?: SessionState.IDLE
     val degraded = sessionState == SessionState.DEGRADED
     val live = state.isLive
-    OliviaPage {
-        OliviaPanel(
-            degraded = degraded,
-            compact = true,
-            contentPadding = PaddingValues(0.dp),
+    BackHandler(enabled = live, onBack = onNavigateBack)
+    OliviaPage(
+        onNavigateBack = onNavigateBack,
+        backButtonVisible = true,
+        verticalSpacing = 16.dp,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 400.dp, max = 480.dp),
+            OliviaPanel(
+                degraded = degraded,
+                compact = true,
+                contentPadding = PaddingValues(0.dp),
             ) {
-                GlassesCameraPreview(
-                    elapsedMs = state.elapsedMs,
-                    degraded = DegradationCause.CAPTURE_UNAVAILABLE in session?.degradationCauses.orEmpty(),
-                    simulated = !state.backend.requiresPhysicalGlasses,
-                    actualStreamExpected = state.backend.usesDatSdk,
-                    preview = state.livePreview,
-                    guidanceDirection = state.guidanceDirection,
-                    guidanceStatus = state.guidanceStatus,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                ConnectionStateBadge(
-                    label = recordingConnectionLabel(state),
+                Box(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(20.dp),
-                )
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(20.dp),
+                        .fillMaxWidth()
+                        .heightIn(min = 320.dp, max = 420.dp),
                 ) {
-                    Text(formatOffset(state.elapsedMs), style = MaterialTheme.typography.headlineSmall)
-                }
-                if (degraded || state.backend.requiresPhysicalGlasses) {
-                    Surface(
+                    GlassesCameraPreview(
+                        elapsedMs = state.elapsedMs,
+                        degraded = DegradationCause.CAPTURE_UNAVAILABLE in session?.degradationCauses.orEmpty(),
+                        simulated = !state.backend.requiresPhysicalGlasses,
+                        actualStreamExpected = state.backend.usesDatSdk,
+                        preview = state.livePreview,
+                        guidanceDirection = state.guidanceDirection,
+                        guidanceStatus = state.guidanceStatus,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    ConnectionStateBadge(
+                        label = recordingConnectionLabel(state),
                         modifier = Modifier
-                            .align(Alignment.BottomStart)
+                            .align(Alignment.TopEnd)
                             .padding(20.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        shape = RoundedCornerShape(12.dp),
-                    ) {
-                        Text(
-                            text = recordingPanelMessage(
-                                session = session,
-                                connection = state.connection,
-                                requiresPhysicalGlasses = state.backend.requiresPhysicalGlasses,
-                            ),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
+                    )
+                    if (live) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 20.dp),
+                            color = RecordingTimerBackground,
+                            contentColor = RecordingTimerContent,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = formatOffset(state.elapsedMs),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontSize = 16.sp,
+                                    lineHeight = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            )
+                        }
+                    }
+                    if (degraded || state.backend.requiresPhysicalGlasses) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(20.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
+                            contentColor = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                text = recordingPanelMessage(
+                                    session = session,
+                                    connection = state.connection,
+                                    requiresPhysicalGlasses = state.backend.requiresPhysicalGlasses,
+                                ),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
                     }
                 }
             }
+            WhisperTranscriptCard(
+                text = whisperFeedbackText(
+                    state = state,
+                    degraded = degraded,
+                    live = live,
+                ),
+            )
         }
         AudioAvailabilityNotice(
             mode = state.audioMode,
             status = state.audioStatus,
             message = state.audioStatusMessage,
         )
-        PanelDetail(guidanceStatusLabel(state.guidanceStatus), onPanel = false)
         PanelDetail(
             when (state.voiceState) {
                 com.olivia.companion.session.VoiceCommandState.LISTENING_FOR_WAKE_WORD ->
@@ -224,19 +263,82 @@ fun OliviaRecordingScreen(
                 }
             }
         }
-        OutlinedButton(
-            onClick = onOpenSettings,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            shape = RoundedCornerShape(20.dp),
+    }
+}
+
+private val RecordingTimerBackground = OliviaRecordingRed
+private val RecordingTimerContent = Color.White
+
+@Composable
+private fun WhisperTranscriptCard(text: String) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "Olivia no alto-falante. Transcrição: $text"
+            },
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shape = RoundedCornerShape(24.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Configurar áudio e dispositivo", modifier = Modifier.weight(1f))
-            Icon(
-                Icons.AutoMirrored.Outlined.ArrowForward,
-                contentDescription = null,
-                modifier = Modifier.padding(start = 8.dp).size(20.dp),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(MaterialTheme.colorScheme.onPrimary, CircleShape),
+                )
+                Text(
+                    text = "OLIVIA NO ALTO-FALANTE",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp,
+                    ),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+                )
+            }
+            Text(
+                text = text,
+                minLines = 2,
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontSize = 18.sp,
+                    lineHeight = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
             )
         }
     }
+}
+
+private fun whisperFeedbackText(
+    state: OliviaUiState,
+    degraded: Boolean,
+    live: Boolean,
+): String {
+    val latestCorrection = state.takes
+        .firstOrNull { it.title == "Take ao vivo" }
+        ?.events
+        ?.asSequence()
+        ?.filter { it.type == TimelineEventType.CORRECTION_ISSUED }
+        ?.lastOrNull()
+        ?.label
+    if (latestCorrection != null) return latestCorrection
+    if (degraded) {
+        return recordingPanelMessage(
+            session = state.session,
+            connection = state.connection,
+            requiresPhysicalGlasses = state.backend.requiresPhysicalGlasses,
+        )
+    }
+    if (live) return "Aguardando o próximo feedback da Olivia."
+    return "O feedback transcrito aparecerá depois que o take terminar."
 }
 
 @Composable
@@ -296,7 +398,7 @@ private fun GlassesCameraPreview(
             .clip(RoundedCornerShape(20.dp))
             .semantics { contentDescription = description },
     ) {
-        if (simulated) {
+        if (simulated && preview == null) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val horizonY = size.height * 0.58f
                 val hasFramingIssue = elapsedMs in 8_000L..20_000L

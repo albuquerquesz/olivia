@@ -16,17 +16,22 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 | Papel | sRGB para Compose |
 | --- | --- |
 | Fundo | #F1F3F7 |
-| Superfície e texto no azul | #FAFBFD |
-| Painel principal e ação/seleção | #142C4C |
-| Texto principal | #151A21 |
+| Superfície | #FAFBFD |
+| Painel principal e ação/seleção | #A9D3F2 |
+| Ação principal (topo) | #B8DCF4 |
+| Ação principal (base) | #86BCE1 |
+| Texto sobre ação principal | #FAFBFD |
+| Texto principal e no azul | #151A21 |
 | Texto secundário no branco | #526174 |
-| Texto secundário no azul | #DCE5F0 |
+| Texto secundário no azul | #526174 |
 | Superfície de seleção suave | #E8EEF5 |
 | Contorno funcional | #718198 |
 | Divisória decorativa | #DCE3EC |
 
 Neutros têm matiz frio. As cores sRGB aprovadas são os valores canônicos no app.
-Não usar cores dinâmicas do sistema que substituam essa paleta.
+Não usar cores dinâmicas do sistema que substituam essa paleta. A ação principal
+em gradiente usa os tons azuis aprovados em CTAs do onboarding, com sombra azul
+suave; o azul canônico #A9D3F2 continua sendo a base do tema.
 
 ## Tipografia e espaço
 
@@ -39,8 +44,9 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 - Sem títulos de página (Gravar, Sessões, Ajustes). A orientação vem do
   painel e da barra inferior.
-- Welcome: tela inicial, sem barra inferior. Título `Bem vindo a OlivIA`,
-  descrição curta e botão primary Entrar no rodapé, sem conta.
+- Welcome/onboarding: tela inicial, com fundo claro e três etapas fixas no mesmo
+  padrão visual. A etapa final solicita uma permissão por vez: microfone e, no flavor de
+  óculos, Bluetooth. Sem conta. Pareamento e autorização dos óculos ficam no Meta AI.
 - Início: painel com Dispositivo e Ray-Ban Meta; Últimos takes em cards (miniatura,
   título, badges de duração e data abaixo do título, seta) e atalho ver todos para Sessões.
   Sem inventar takes.
@@ -53,7 +59,7 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
   seções abertas. A seleção continua local à tela, sem nova integração com o
   motor de áudio. Sem botão Voltar.
 - Menu: cápsula flutuante baixa com Início, Sessões e Ajustes. Gravar fica fora,
-  à direita, na mesma altura, como anel navy com disco interno, sem rótulo.
+  à direita, na mesma altura, como anel azul com disco interno, sem rótulo.
   Superfície sólida 50% de raio, margem lateral 24dp, 8dp do fundo, contorno, sem
   sombra. Círculo e abas formam alvos acessíveis; abrir Gravar não inicia take.
 
@@ -65,10 +71,11 @@ Compose que respeitam a escala de duração do Android, inclusive zero.
 
 ## Rastreabilidade e validação
 
-Refinamento visual de FE-01 (SH-03, SH-04, FE-00) e FE-05 (FE-01, FE-04).
+Refinamento visual de FE-01 (SH-03, SH-04, FE-00) e FE-05 (FE-01, FE-04), com
+onboarding apoiado por INT-00 para as permissões do DAT.
 Não conclui essas tasks funcionais por si só. Contratos, hardware, IA e privacidade
 permanecem definidos nos JSON de docs/rules/.
 
 Compilar :app:assembleMockDebug com Java 21, instalar e reabrir no emulador.
-Conferir as quatro telas, toque central, seleção de áudio, fonte ampliada,
+Conferir as telas do onboarding, toque central, seleção de áudio, fonte ampliada,
 animações desativadas e insets. Não executar lint ou testes extras sem solicitação.

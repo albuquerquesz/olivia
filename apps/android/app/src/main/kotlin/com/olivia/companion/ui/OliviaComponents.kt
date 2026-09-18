@@ -1,25 +1,16 @@
 package com.olivia.companion.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,30 +26,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.BatteryFull
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
@@ -68,16 +53,81 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
 import com.olivia.core.AudioMode
-import kotlin.math.PI
-import kotlin.math.sin
+import com.olivia.core.GlassesConnection
+
+internal enum class OliviaButtonVariant {
+    Primary,
+    PrimaryGradient,
+}
+
+@Composable
+internal fun OliviaButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    variant: OliviaButtonVariant = OliviaButtonVariant.Primary,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(12.dp.takeIf { variant == OliviaButtonVariant.PrimaryGradient } ?: 20.dp)
+    val isGradient = variant == OliviaButtonVariant.PrimaryGradient
+    val contentColor = when {
+        !enabled -> colors.onSurfaceVariant
+        isGradient -> OliviaBlueActionOn
+        else -> colors.onPrimary
+    }
+    val background = when {
+        !enabled -> Brush.verticalGradient(listOf(colors.surfaceVariant, colors.surfaceVariant))
+        isGradient -> Brush.verticalGradient(listOf(OliviaBlueActionStart, OliviaBlueActionEnd))
+        else -> Brush.verticalGradient(listOf(colors.primary, colors.primary))
+    }
+    val shadowModifier = if (isGradient && enabled) {
+        Modifier.shadow(
+            elevation = 4.dp,
+            shape = shape,
+            ambientColor = OliviaBlueActionShadow,
+            spotColor = OliviaBlueActionShadow,
+        )
+    } else {
+        Modifier
+    }
+
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .then(shadowModifier),
+        shape = shape,
+        color = Color.Transparent,
+        contentColor = contentColor,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(background, shape)
+                .padding(horizontal = 24.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                content = content,
+            )
+        }
+    }
+}
 
 @Composable
 internal fun OliviaPage(
     onNavigateBack: (() -> Unit)? = null,
+    backButtonVisible: Boolean = true,
+    verticalSpacing: Dp = 32.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -87,17 +137,24 @@ internal fun OliviaPage(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp),
+            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
         ) {
             if (onNavigateBack != null) {
-                IconButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = CircleShape,
-                    ),
+                Box(
+                    modifier = Modifier.size(48.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
+                    if (backButtonVisible) {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = CircleShape,
+                            ),
+                        ) {
+                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Voltar")
+                        }
+                    }
                 }
             }
             content()
@@ -115,7 +172,6 @@ internal fun OliviaPanel(
     val colors = MaterialTheme.colorScheme
     val panelColor = colors.surface.takeIf { degraded } ?: colors.primary
     val panelContentColor = colors.onSurface.takeIf { degraded } ?: colors.onPrimary
-    val panelBorder = degraded.takeIf { it }?.let { BorderStroke(2.dp, colors.primary) }
     val panelMinHeight = 0.dp.takeIf { compact } ?: 248.dp
     val panelSpacing = 16.dp.takeIf { compact } ?: 24.dp
     Surface(
@@ -123,7 +179,6 @@ internal fun OliviaPanel(
         color = panelColor,
         contentColor = panelContentColor,
         shape = RoundedCornerShape(20.dp),
-        border = panelBorder,
     ) {
         Column(
             modifier = Modifier
@@ -195,7 +250,19 @@ internal fun SettingsOverline(text: String) {
 }
 
 @Composable
-internal fun SettingsAudioModeSelector(
+internal fun OliviaCardOverline(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium.copy(
+            fontWeight = FontWeight.Normal,
+            letterSpacing = 0.5.sp,
+        ),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+internal fun SettingsAudioModeTabs(
     audioMode: AudioMode,
     enabled: Boolean,
     onAudioMode: (AudioMode) -> Unit,
@@ -205,18 +272,18 @@ internal fun SettingsAudioModeSelector(
             .fillMaxWidth()
             .height(48.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MaterialTheme.colorScheme.surface)
             .selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SettingsAudioModeOption(
+        SettingsAudioModeTab(
             label = "Modo voz",
             selected = audioMode == AudioMode.VOICE,
             enabled = enabled,
             modifier = Modifier.weight(1f),
             onClick = { onAudioMode(AudioMode.VOICE) },
         )
-        SettingsAudioModeOption(
+        SettingsAudioModeTab(
             label = "Modo sinal",
             selected = audioMode == AudioMode.SIGNAL,
             enabled = enabled,
@@ -227,7 +294,7 @@ internal fun SettingsAudioModeSelector(
 }
 
 @Composable
-private fun SettingsAudioModeOption(
+private fun SettingsAudioModeTab(
     label: String,
     selected: Boolean,
     enabled: Boolean,
@@ -236,15 +303,15 @@ private fun SettingsAudioModeOption(
 ) {
     val background by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.onSurface.takeIf { selected }
-            ?: Color.Transparent,
+            ?: MaterialTheme.colorScheme.surfaceVariant,
         animationSpec = OliviaMotion.selection(),
-        label = "settings audio mode background",
+        label = "settings audio tab background",
     )
     val contentColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.surface.takeIf { selected }
-            ?: MaterialTheme.colorScheme.onSurfaceVariant,
+            ?: MaterialTheme.colorScheme.onSurface,
         animationSpec = OliviaMotion.selection(),
-        label = "settings audio mode content",
+        label = "settings audio tab content",
     )
     Box(
         modifier = modifier
@@ -254,7 +321,7 @@ private fun SettingsAudioModeOption(
                 selected = selected,
                 enabled = enabled,
                 onClick = onClick,
-                role = Role.RadioButton,
+                role = Role.Tab,
             )
             .semantics(mergeDescendants = true) {},
         contentAlignment = Alignment.Center,
@@ -299,193 +366,150 @@ internal fun SettingsMetricRow(
     }
 }
 
-private data class DeviceMetric(
-    val icon: ImageVector,
-    val value: String,
-    val label: String,
-)
-
-private val OfflineDeviceMetrics = listOf(
-    DeviceMetric(Icons.Outlined.BatteryFull, "78%", "bateria dos óculos"),
-    DeviceMetric(Icons.Outlined.Videocam, "3K", "30 fps nativo"),
-    DeviceMetric(Icons.Outlined.Storage, "12,4 GB", "livres de 32"),
-)
-
 @Composable
-internal fun DeviceOverview() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onPrimary) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 260.dp)
-                        .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 12.dp),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    DeviceIdentity()
-                    DeviceMetrics(OfflineDeviceMetrics)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DeviceMetrics(metrics: List<DeviceMetric>) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        metrics.forEach { metric ->
-            DeviceMetricInline(metric, Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun DeviceMetricInline(metric: DeviceMetric, modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.semantics(mergeDescendants = true) {
-            contentDescription = "${metric.label}: ${metric.value}"
-        },
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(metric.icon, contentDescription = null, modifier = Modifier.size(14.dp))
-        Text(metric.value, style = MaterialTheme.typography.labelMedium)
-    }
-}
-
-@Composable
-private fun DeviceIdentity() {
-    DeviceIdentityLayout()
-}
-
-@Composable
-private fun DeviceIdentityLayout() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            DeviceIdentityCopy()
-        }
-        WayfarerProductImage(Modifier.align(Alignment.CenterHorizontally))
-    }
-}
-
-@Composable
-private fun DeviceIdentityCopy(modifier: Modifier = Modifier) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        Text("Ray-Ban Meta", style = MaterialTheme.typography.titleMedium)
-        Text(
-            "Companion app no celular",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.inverseOnSurface,
-        )
-    }
-}
-
-@Composable
-internal fun RecordVideoCta(
-    onClick: () -> Unit,
-    waveformActive: Boolean = false,
-) {
+internal fun DeviceOverview(connection: GlassesConnection) {
     Surface(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 120.dp),
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(24.dp),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 148.dp)
+                .padding(start = 20.dp, top = 16.dp, end = 12.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
+                OliviaCardOverline("ORIENTAÇÃO POR ÁUDIO")
                 Text(
-                    "Oi, Olivia, Gravar",
-                    modifier = Modifier.widthIn(max = 220.dp),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    "Ray-Ban Meta",
+                    style = MaterialTheme.typography.headlineSmall,
                 )
-                Text(
-                    "Grave com os óculos.",
-                    modifier = Modifier.widthIn(max = 220.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.86f),
+                Row(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DeviceMetaBadge(Icons.Outlined.BatteryStd, "--%")
+                    DeviceMetaBadge(Icons.Outlined.Videocam, "1920 × 1080")
+                }
+                ConnectionStatusBadge(
+                    connection = connection,
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
-            VoiceWaveform(active = waveformActive)
+            Box(
+                modifier = Modifier
+                    .size(width = 164.dp, height = 116.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                WayfarerProductImage(
+                    width = 164.dp,
+                    height = 84.dp,
+                )
+            }
         }
     }
 }
 
+private data class ConnectionStatusStyle(
+    val label: String,
+    val containerColor: Color,
+    val contentColor: Color,
+)
+
 @Composable
-private fun VoiceWaveform(active: Boolean) {
-    val color = MaterialTheme.colorScheme.onPrimary
-    val progress = if (active) {
-        val transition = rememberInfiniteTransition(label = "voice waveform")
-        val animatedProgress by transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 900),
-                repeatMode = RepeatMode.Restart,
-            ),
-            label = "voice waveform progress",
+private fun ConnectionStatusBadge(
+    connection: GlassesConnection,
+    modifier: Modifier = Modifier,
+) {
+    val style = when (connection) {
+        GlassesConnection.CONNECTED -> ConnectionStatusStyle(
+            label = "Conectado",
+            containerColor = OliviaStatusConnected,
+            contentColor = OliviaStatusConnectedOn,
         )
-        animatedProgress
-    } else {
-        0.5f
+        GlassesConnection.DISCONNECTED -> ConnectionStatusStyle(
+            label = "Sem frame",
+            containerColor = OliviaStatusWarning,
+            contentColor = OliviaStatusWarningOn,
+        )
+        GlassesConnection.UNAVAILABLE -> ConnectionStatusStyle(
+            label = "Indisponível",
+            containerColor = OliviaStatusUnavailable,
+            contentColor = OliviaStatusUnavailableOn,
+        )
     }
-    Canvas(modifier = Modifier.size(width = 42.dp, height = 44.dp)) {
-        val heights = List(5) { index ->
-            val wave = ((sin((progress + index * 0.2f) * 2f * PI) + 1f) / 2f).toFloat()
-            0.36f + wave * 0.64f
-        }
-        val spacing = size.width / heights.size
-        heights.forEachIndexed { index, fraction ->
-            val x = spacing * index + spacing / 2f
-            val halfHeight = size.height * fraction / 2f
-            drawLine(
-                color = color,
-                start = Offset(x, size.height / 2f - halfHeight),
-                end = Offset(x, size.height / 2f + halfHeight),
-                strokeWidth = 4.dp.toPx(),
-                cap = StrokeCap.Round,
+    Surface(
+        modifier = modifier.semantics {
+            contentDescription = "Status da conexão dos óculos: ${style.label}"
+        },
+        shape = RoundedCornerShape(percent = 50),
+        color = style.containerColor,
+        contentColor = style.contentColor,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .background(style.contentColor, CircleShape),
+            )
+            Text(
+                style.label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
             )
         }
     }
 }
 
 @Composable
-private fun WayfarerProductImage(modifier: Modifier = Modifier) {
+private fun DeviceMetaBadge(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+) {
+    Surface(
+        shape = RoundedCornerShape(percent = 50),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+@Composable
+private fun WayfarerProductImage(
+    modifier: Modifier = Modifier,
+    width: Dp = 260.dp,
+    height: Dp = 120.dp,
+) {
     Image(
         painter = painterResource(R.drawable.rayban_meta_wayfarer_gen2),
         contentDescription = "Ray-Ban Meta Wayfarer Gen 2",
         modifier = modifier
-            .size(width = 260.dp, height = 120.dp)
+            .size(width = width, height = height)
             .graphicsLayer {
                 translationY = 8.dp.toPx()
                 clip = false
@@ -528,60 +552,4 @@ internal fun PanelDetail(text: String, onPanel: Boolean = true) {
 @Composable
 internal fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-}
-
-@Composable
-internal fun AudioModeOption(label: String, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    val selectedBackground = colors.onPrimary.takeIf { selected } ?: colors.primary
-    val selectedForeground = colors.primary.takeIf { selected } ?: colors.onPrimary
-    val background by animateColorAsState(
-        selectedBackground,
-        OliviaMotion.selection(),
-        label = "audio option background",
-    )
-    val foreground by animateColorAsState(
-        selectedForeground,
-        OliviaMotion.selection(),
-        label = "audio option foreground",
-    )
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        0.97f.takeIf { pressed } ?: 1f,
-        OliviaMotion.press(),
-        label = "audio option press",
-    )
-    Surface(
-        modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale },
-        shape = RoundedCornerShape(16.dp),
-        color = background,
-        contentColor = foreground,
-        border = BorderStroke(1.dp, colors.inverseOnSurface),
-    ) {
-        Row(
-            modifier = Modifier
-                .selectable(
-                    selected = selected,
-                    enabled = enabled,
-                    onClick = onClick,
-                    role = Role.RadioButton,
-                    interactionSource = interactionSource,
-                    indication = null,
-                )
-                .semantics(mergeDescendants = true) {}
-                .heightIn(min = 48.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (selected) {
-                Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-            }
-            if (!selected) {
-                Spacer(Modifier.size(18.dp))
-            }
-            Text(label, style = MaterialTheme.typography.labelLarge)
-        }
-    }
 }

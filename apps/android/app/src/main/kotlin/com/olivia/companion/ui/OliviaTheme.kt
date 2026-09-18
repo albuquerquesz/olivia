@@ -18,36 +18,48 @@ internal object OliviaMotion {
     val travel = 8.dp
 
     fun <T> navigation() = tween<T>(durationMillis = 220, easing = EaseOut)
+    fun <T> footer() = tween<T>(durationMillis = 200, easing = EaseOut)
     fun <T> selection() = tween<T>(durationMillis = 180, easing = EaseOut)
     fun <T> press() = tween<T>(durationMillis = 150, easing = EaseOut)
 }
 
 private val Paper = Color(0xFFFAFBFD)
 private val Canvas = Color(0xFFF1F3F7)
-private val Navy = Color(0xFF2F5298)
+private val OliviaBlue = Color(0xFFA9D3F2)
 private val Ink = Color(0xFF151A21)
 private val Mist = Color(0xFFE8EEF5)
+internal val OliviaBlueActionStart = Color(0xFFB8DCF4)
+internal val OliviaBlueActionEnd = Color(0xFF86BCE1)
+internal val OliviaBlueActionOn = Paper
+internal val OliviaBlueActionShadow = Color(0x3388BFE8)
+internal val OliviaRecordingRed = Color(0xFFD32F2F)
+internal val OliviaStatusConnected = Color(0xFFDDF4E5)
+internal val OliviaStatusConnectedOn = Color(0xFF216E45)
+internal val OliviaStatusWarning = Color(0xFFFFF0CC)
+internal val OliviaStatusWarningOn = Color(0xFF755B00)
+internal val OliviaStatusUnavailable = Color(0xFFFDE2E1)
+internal val OliviaStatusUnavailableOn = Color(0xFFA52A2A)
 
 private val OliviaLightColors = lightColorScheme(
-    primary = Navy,
-    onPrimary = Paper,
+    primary = OliviaBlue,
+    onPrimary = Ink,
     primaryContainer = Mist,
-    onPrimaryContainer = Navy,
-    secondary = Navy,
-    onSecondary = Paper,
+    onPrimaryContainer = Ink,
+    secondary = OliviaBlue,
+    onSecondary = Ink,
     secondaryContainer = Mist,
-    onSecondaryContainer = Navy,
-    tertiary = Navy,
-    onTertiary = Paper,
+    onSecondaryContainer = Ink,
+    tertiary = OliviaBlue,
+    onTertiary = Ink,
     tertiaryContainer = Mist,
-    onTertiaryContainer = Navy,
+    onTertiaryContainer = Ink,
     background = Canvas,
     onBackground = Ink,
     surface = Paper,
     onSurface = Ink,
     surfaceVariant = Mist,
     onSurfaceVariant = Color(0xFF526174),
-    surfaceTint = Navy,
+    surfaceTint = OliviaBlue,
     surfaceBright = Paper,
     surfaceDim = Mist,
     surfaceContainerLowest = Paper,
@@ -55,9 +67,9 @@ private val OliviaLightColors = lightColorScheme(
     surfaceContainer = Mist,
     surfaceContainerHigh = Mist,
     surfaceContainerHighest = Mist,
-    inverseSurface = Navy,
-    inverseOnSurface = Color(0xFFDCE5F0),
-    inversePrimary = Paper,
+    inverseSurface = OliviaBlue,
+    inverseOnSurface = Color(0xFF526174),
+    inversePrimary = Ink,
     outline = Color(0xFF718198),
     outlineVariant = Color(0xFFDCE3EC),
 )

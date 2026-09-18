@@ -11,11 +11,26 @@ import com.olivia.companion.ui.screens.OliviaSettingsScreen as SettingsScreen
 import com.olivia.companion.ui.screens.OliviaTakeScreen as TakeScreen
 import com.olivia.companion.ui.screens.OliviaWelcomeScreen as WelcomeScreen
 import com.olivia.core.AudioMode
+import com.olivia.core.RecordingAsset
 import com.olivia.core.SessionId
 
 @Composable
-fun OliviaWelcomeScreen(onEnter: () -> Unit) {
-    WelcomeScreen(onEnter = onEnter)
+fun OliviaWelcomeScreen(
+    audioPermissionGranted: Boolean,
+    bluetoothPermissionRequired: Boolean,
+    bluetoothPermissionGranted: Boolean,
+    onRequestAudioPermission: () -> Unit,
+    onRequestBluetoothPermission: () -> Unit,
+    onEnter: () -> Unit,
+) {
+    WelcomeScreen(
+        audioPermissionGranted = audioPermissionGranted,
+        bluetoothPermissionRequired = bluetoothPermissionRequired,
+        bluetoothPermissionGranted = bluetoothPermissionGranted,
+        onRequestAudioPermission = onRequestAudioPermission,
+        onRequestBluetoothPermission = onRequestBluetoothPermission,
+        onEnter = onEnter,
+    )
 }
 
 @Composable
@@ -23,12 +38,14 @@ fun OliviaHomeScreen(
     state: OliviaUiState,
     onSeeAllTakes: () -> Unit,
     onOpenRecord: () -> Unit,
+    onOpenSettings: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     HomeScreen(
         state = state,
         onSeeAllTakes = onSeeAllTakes,
         onOpenRecord = onOpenRecord,
+        onOpenSettings = onOpenSettings,
         onOpenTake = onOpenTake,
     )
 }
@@ -36,7 +53,7 @@ fun OliviaHomeScreen(
 @Composable
 fun OliviaRecordingScreen(
     state: OliviaUiState,
-    onOpenSettings: () -> Unit,
+    onNavigateBack: () -> Unit,
     onOpenVoiceSettings: () -> Unit = {},
     onConnectGlasses: () -> Unit = {},
     onAudioMode: (AudioMode) -> Unit,
@@ -49,7 +66,7 @@ fun OliviaRecordingScreen(
 ) {
     RecordingScreen(
         state = state,
-        onOpenSettings = onOpenSettings,
+        onNavigateBack = onNavigateBack,
         onOpenVoiceSettings = onOpenVoiceSettings,
         onConnectGlasses = onConnectGlasses,
         onAudioMode = onAudioMode,
@@ -73,22 +90,14 @@ fun OliviaTakeScreen(
     onNavigateBack: () -> Unit,
     exportState: ExportState = ExportState(),
     onExport: () -> Unit = {},
-    canImport: Boolean = false,
-    working: Boolean = false,
-    onImport: () -> Unit = {},
-    onExportMarks: () -> Unit = {},
-    onDiscard: () -> Unit = {},
+    recordingPathResolver: suspend (RecordingAsset) -> String? = { null },
 ) {
     TakeScreen(
         take = take,
         onNavigateBack = onNavigateBack,
         exportState = exportState,
         onExport = onExport,
-        canImport = canImport,
-        working = working,
-        onImport = onImport,
-        onExportMarks = onExportMarks,
-        onDiscard = onDiscard,
+        recordingPathResolver = recordingPathResolver,
     )
 }
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,7 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.ui.OliviaPage
-import com.olivia.companion.ui.SettingsAudioModeSelector
+import com.olivia.companion.ui.SettingsAudioModeTabs
 import com.olivia.companion.ui.SettingsCard
 import com.olivia.companion.ui.SettingsDivider
 import com.olivia.companion.ui.SettingsMetricRow
@@ -30,7 +31,7 @@ fun OliviaSettingsScreen(
 ) {
     OliviaPage {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(
@@ -44,7 +45,7 @@ fun OliviaSettingsScreen(
             )
             SettingsCard {
                 SettingsOverline("Voz da Olivia")
-                SettingsAudioModeSelector(
+                SettingsAudioModeTabs(
                     audioMode = audioMode,
                     enabled = !live,
                     onAudioMode = onAudioMode,
@@ -71,7 +72,24 @@ fun OliviaSettingsScreen(
                         title = "Watchdog de sessão",
                         description = "Após 4 s sem frame, a sessão fica em modo reduzido",
                     ) {
-                        Switch(checked = true, onCheckedChange = null)
+                        Switch(
+                            checked = true,
+                            onCheckedChange = null,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.surface,
+                                checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                checkedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                uncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.surface,
+                                uncheckedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                disabledCheckedThumbColor = MaterialTheme.colorScheme.surface,
+                                disabledCheckedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                disabledCheckedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                disabledUncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
+                                disabledUncheckedTrackColor = MaterialTheme.colorScheme.surface,
+                                disabledUncheckedBorderColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        )
                     }
                 }
             }

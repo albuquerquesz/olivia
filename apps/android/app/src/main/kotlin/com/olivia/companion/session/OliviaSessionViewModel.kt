@@ -52,6 +52,7 @@ class OliviaSessionViewModel(
     voiceCommandSource: VoiceCommandSource? = null,
     private val voiceCommandSourceFactory: (() -> VoiceCommandSource)? = null,
     private val initialTakes: List<TakeSummary> = emptyList(),
+    private val recordingSource: RecordingSource? = null,
 ) : ViewModel() {
     private var activeVoiceCommandSource: VoiceCommandSource? = voiceCommandSource
     private val commands = Mutex()
@@ -168,6 +169,14 @@ class OliviaSessionViewModel(
 
     fun take(sessionId: SessionId): TakeSummary? = _uiState.value.takes.firstOrNull { it.sessionId == sessionId }
 
+    suspend fun localRecordingPath(asset: RecordingAsset): String? = try {
+        recordingSource?.localPathOf(asset.id)
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Exception) {
+        null
+    }
+
     fun importTake(sessionId: SessionId, uri: String) = launchOperation {
         val stopped = runtime.snapshot.value?.takeIf { it.id == sessionId && it.state == SessionState.STOPPED }
             ?: error("Encerre o take antes de importar o vídeo.")
@@ -274,6 +283,7 @@ class OliviaSessionViewModel(
                 voiceCommandSource = AndroidVoiceCommandSourceFactory.create(application),
                 voiceCommandSourceFactory = { AndroidVoiceCommandSourceFactory.create(application) },
                 initialTakes = seedTakes().takeIf { ActiveBackend.current.id == "mock" }.orEmpty(),
+                recordingSource = ActiveBackend.createRecordingSource(application),
             ) as T
         }
     }

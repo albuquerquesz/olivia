@@ -2,24 +2,25 @@ package com.olivia.companion.ui
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.provider.Settings
+import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -27,8 +28,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,9 +42,13 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,8 +57,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -63,14 +66,17 @@ import androidx.compose.runtime.setValue
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -78,8 +84,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import androidx.activity.compose.BackHandler
 import androidx.navigation.compose.NavHost
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -88,12 +95,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.olivia.companion.ActiveBackend
 import com.olivia.companion.session.OliviaSessionViewModel
 import com.olivia.companion.session.LocalSessionCommand
 import com.olivia.companion.session.SessionRuntimeFactory
 import com.olivia.companion.session.TakeSummary
-import com.olivia.companion.session.VoiceCommandState
+import com.olivia.core.RecordingAsset
 import com.olivia.core.SessionId
+import com.olivia.core.SessionState
 import kotlinx.coroutines.launch
 
 private enum class OliviaDestination(val route: String, val label: String, val icon: ImageVector) {
@@ -112,14 +121,15 @@ private val OliviaSideDestinations = listOf(
 private const val WELCOME_ROUTE = "welcome"
 private const val TAKE_ROUTE = "take/{sessionId}"
 
-private fun openVoiceSettings(context: android.content.Context) {
-    val voiceSettings = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)
-    val settingsIntent = if (voiceSettings.resolveActivity(context.packageManager) != null) {
-        voiceSettings
-    } else {
-        Intent(Settings.ACTION_SETTINGS)
-    }
-    context.startActivity(settingsIntent)
+private fun hasPermission(context: Context, permission: String): Boolean =
+    ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+private fun hasBluetoothPermission(context: Context, required: Boolean): Boolean {
+    if (!required || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+    return listOf(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_SCAN,
+    ).all { hasPermission(context, it) }
 }
 
 private fun bottomBarPadding(showBottomBar: Boolean) =
@@ -132,7 +142,7 @@ private fun pressScale(pressed: Boolean): Float {
 
 @Composable
 private fun navigationColor(selected: Boolean) =
-    MaterialTheme.colorScheme.primary.takeIf { selected }
+    MaterialTheme.colorScheme.onSurface.takeIf { selected }
         ?: MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
@@ -144,22 +154,34 @@ fun OliviaApp(
     ),
 ) {
     val context = LocalContext.current
-    var audioPermissionGranted by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED,
-        )
-    }
-    val audioPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        audioPermissionGranted = granted
-    }
     val lifecycleOwner = LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val bluetoothPermissionRequired = ActiveBackend.current.usesDatSdk
+    var audioPermissionGranted by remember {
+        mutableStateOf(hasPermission(context, Manifest.permission.RECORD_AUDIO))
+    }
+    var bluetoothPermissionGranted by remember(bluetoothPermissionRequired) {
+        mutableStateOf(hasBluetoothPermission(context, bluetoothPermissionRequired))
+    }
+    val completeOnboarding = {
+        navController.navigate(OliviaDestination.HOME.route) {
+            popUpTo(WELCOME_ROUTE) { inclusive = true }
+        }
+    }
+    val onboardingPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { _ ->
+        val audioGranted = hasPermission(context, Manifest.permission.RECORD_AUDIO)
+        val bluetoothGranted = hasBluetoothPermission(context, bluetoothPermissionRequired)
+        audioPermissionGranted = audioGranted
+        bluetoothPermissionGranted = bluetoothGranted
+        if (audioGranted && (!bluetoothPermissionRequired || bluetoothGranted)) {
+            completeOnboarding()
+        }
+    }
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
     val snackbar = remember { androidx.compose.material3.SnackbarHostState() }
@@ -200,15 +222,34 @@ fun OliviaApp(
         }
     }
 
-    LaunchedEffect(currentRoute, audioPermissionGranted) {
-        if (
-            currentRoute != null &&
-            currentRoute != WELCOME_ROUTE &&
-            !audioPermissionGranted && !permissionRequested &&
-            uiState.voiceState != VoiceCommandState.UNAVAILABLE
-        ) {
-            permissionRequested = true
-            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    val window = (context as? Activity)?.window
+    val systemBarColor = MaterialTheme.colorScheme.background
+
+    SideEffect {
+        window?.let {
+            it.statusBarColor = systemBarColor.toArgb()
+            it.navigationBarColor = systemBarColor.toArgb()
+            WindowCompat.getInsetsController(it, it.decorView).apply {
+                isAppearanceLightStatusBars = true
+                isAppearanceLightNavigationBars = true
+            }
+        }
+    }
+
+    val requestAudioPermission = {
+        if (!audioPermissionGranted) {
+            onboardingPermissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
+        }
+    }
+    val requestBluetoothPermission = {
+        if (bluetoothPermissionRequired) {
+            val missingPermissions = listOf(
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN,
+            ).filterNot { hasPermission(context, it) }
+            if (missingPermissions.isNotEmpty()) {
+                onboardingPermissionLauncher.launch(missingPermissions.toTypedArray())
+            }
         }
     }
 
@@ -238,7 +279,10 @@ fun OliviaApp(
         }
     }
 
-    Scaffold(snackbarHost = { androidx.compose.material3.SnackbarHost(snackbar) }) { innerPadding ->
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+    ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             NavHost(
                 navController = navController,
@@ -265,11 +309,12 @@ fun OliviaApp(
         ) {
             composable(WELCOME_ROUTE) {
                 OliviaWelcomeScreen(
-                    onEnter = {
-                        navController.navigate(OliviaDestination.HOME.route) {
-                            popUpTo(WELCOME_ROUTE) { inclusive = true }
-                        }
-                    },
+                    audioPermissionGranted = audioPermissionGranted,
+                    bluetoothPermissionRequired = bluetoothPermissionRequired,
+                    bluetoothPermissionGranted = bluetoothPermissionGranted,
+                    onRequestAudioPermission = requestAudioPermission,
+                    onRequestBluetoothPermission = requestBluetoothPermission,
+                    onEnter = completeOnboarding,
                 )
             }
             composable(OliviaDestination.HOME.route) {
@@ -283,7 +328,16 @@ fun OliviaApp(
                         }
                     },
                     onOpenRecord = {
-                        navController.navigate(OliviaDestination.RECORD.route)
+                        navController.navigate(OliviaDestination.RECORD.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onOpenSettings = {
+                        navController.navigate(OliviaDestination.SETTINGS.route) {
+                            popUpTo(OliviaDestination.HOME.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     },
                     onOpenTake = { sessionId ->
                         navController.navigate("take/${sessionId.value}")
@@ -293,12 +347,9 @@ fun OliviaApp(
             composable(OliviaDestination.RECORD.route) {
                 OliviaRecordingScreen(
                     state = uiState,
-                    onOpenSettings = {
-                        navController.navigate(OliviaDestination.SETTINGS.route) {
-                            popUpTo(OliviaDestination.HOME.route) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                    onNavigateBack = {
+                        if (uiState.isLive) viewModel.stop()
+                        navController.popBackStack()
                     },
                     onOpenVoiceSettings = { openVoiceSettings(context) },
                     onConnectGlasses = {
@@ -334,21 +385,14 @@ fun OliviaApp(
                 arguments = listOf(navArgument("sessionId") { type = NavType.StringType }),
             ) { entry ->
                 val sessionId = SessionId(entry.arguments?.getString("sessionId").orEmpty())
-                val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-                    if (uri != null) viewModel.importTake(sessionId, uri.toString())
-                }
                 TakeRouteContent(
                     take = viewModel.take(sessionId),
                     takes = uiState.takes,
                     exportState = uiState.exportState,
                     onExport = { viewModel.exportTake(sessionId) },
-                    canImport = uiState.session?.id == sessionId && uiState.session?.state == com.olivia.core.SessionState.STOPPED && !uiState.working,
-                    working = uiState.working,
-                    onImport = { picker.launch("video/*") },
-                    onExportMarks = { viewModel.exportMarks(sessionId) },
-                    onDiscard = { viewModel.discardMedia(sessionId) },
                     onOpenTake = { id -> navController.navigate("take/${id.value}") },
                     onNavigateBack = { navController.popBackStack() },
+                    recordingPathResolver = viewModel::localRecordingPath,
                 )
             }
             composable(OliviaDestination.SETTINGS.route) {
@@ -362,6 +406,21 @@ fun OliviaApp(
             if (showBottomBar) {
                 OliviaBottomBar(
                     currentRoute = currentRoute,
+                    showNavigation = currentRoute != OliviaDestination.RECORD.route,
+                    isLive = uiState.isLive,
+                    isPaused = uiState.session?.state == SessionState.PAUSED,
+                    onRecordClick = {
+                        if (currentRoute == OliviaDestination.RECORD.route) {
+                            viewModel.start()
+                        } else {
+                            navController.navigate(OliviaDestination.RECORD.route) {
+                                launchSingleTop = true
+                            }
+                        }
+                    },
+                    onPause = viewModel::pause,
+                    onResume = viewModel::resume,
+                    onStop = viewModel::stop,
                     onDestinationSelected = { destination ->
                         val returningFromRecord =
                             destination == OliviaDestination.HOME &&
@@ -380,85 +439,12 @@ fun OliviaApp(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .navigationBarsPadding()
-                        .offset(y = 12.dp)
+                        .offset(y = 24.dp)
                         .padding(start = 16.dp, end = 16.dp)
                         .widthIn(max = 600.dp)
-                    .fillMaxWidth(),
+                        .fillMaxWidth(),
                 )
             }
-            VoiceListeningOverlay(
-                state = uiState.voiceState,
-                modifier = Modifier.matchParentSize().zIndex(2f),
-            )
-        }
-    }
-}
-
-/**
- * Assistant-style, non-interactive feedback for the local command window.
- *
- * Porcupine's wake-word listening remains silent; this overlay is deliberately driven by Rhino's
- * command-window state. It therefore appears only after the wake word and never claims that a
- * command is being captured while permission is missing, the activity is paused, or the engine
- * has failed. The overlay has no pointer input and does not alter navigation.
- */
-@Composable
-private fun VoiceListeningOverlay(
-    state: VoiceCommandState,
-    modifier: Modifier = Modifier,
-) {
-    // Porcupine remains silently armed for the wake word. The visible Assistant-like affordance
-    // starts only after the wake word opens Rhino's short command window.
-    if (state != VoiceCommandState.LISTENING_FOR_COMMAND) return
-
-    val transition = rememberInfiniteTransition(label = "voice-listening-edge")
-    val alpha by transition.animateFloat(
-        initialValue = 0.62f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "voice-listening-alpha",
-    )
-    val colors = listOf(
-        Color(0xFF8B5CF6),
-        MaterialTheme.colorScheme.primary,
-        Color(0xFF22C55E),
-        Color(0xFF8B5CF6),
-    )
-    val message = "Ouvindo comando"
-
-    Box(modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(4.dp)
-                .graphicsLayer {
-                    this.alpha = alpha
-                }
-                .border(
-                    BorderStroke(3.dp, Brush.sweepGradient(colors)),
-                    RoundedCornerShape(24.dp),
-                )
-                .semantics {
-                    contentDescription = message
-                },
-        )
-        Surface(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 8.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            shape = RoundedCornerShape(50),
-            tonalElevation = 3.dp,
-        ) {
-            Text(
-                text = message,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-                style = MaterialTheme.typography.labelMedium,
-            )
         }
     }
 }
@@ -469,13 +455,9 @@ private fun TakeRouteContent(
     takes: List<TakeSummary>,
     exportState: com.olivia.companion.session.ExportState,
     onExport: () -> Unit,
-    canImport: Boolean,
-    working: Boolean,
-    onImport: () -> Unit,
-    onExportMarks: () -> Unit,
-    onDiscard: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
     onNavigateBack: () -> Unit,
+    recordingPathResolver: suspend (RecordingAsset) -> String?,
 ) {
     if (take != null) {
         OliviaTakeScreen(
@@ -483,11 +465,7 @@ private fun TakeRouteContent(
             onNavigateBack = onNavigateBack,
             exportState = exportState,
             onExport = onExport,
-            canImport = canImport,
-            working = working,
-            onImport = onImport,
-            onExportMarks = onExportMarks,
-            onDiscard = onDiscard,
+            recordingPathResolver = recordingPathResolver,
         )
         return
     }
@@ -497,43 +475,82 @@ private fun TakeRouteContent(
 @Composable
 private fun OliviaBottomBar(
     currentRoute: String?,
+    showNavigation: Boolean,
+    isLive: Boolean,
+    isPaused: Boolean,
     onDestinationSelected: (OliviaDestination) -> Unit,
+    onRecordClick: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onStop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.height(IntrinsicSize.Min).selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = when {
+            showNavigation && !isLive -> Arrangement.spacedBy(12.dp)
+            isLive -> Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+            else -> Arrangement.Center
+        },
     ) {
-        Surface(
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(percent = 50),
-            color = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        AnimatedVisibility(
+            visible = showNavigation && !isLive,
+            modifier = if (showNavigation) Modifier.weight(1f) else Modifier,
+            enter = fadeIn(OliviaMotion.footer()) + expandHorizontally(
+                animationSpec = OliviaMotion.footer(),
+                expandFrom = Alignment.Start,
+            ),
+            exit = fadeOut(OliviaMotion.footer()) + shrinkHorizontally(
+                animationSpec = OliviaMotion.footer(),
+                shrinkTowards = Alignment.Start,
+            ),
         ) {
-            Row(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
+                    .height(72.dp),
+                shape = RoundedCornerShape(percent = 50),
+                color = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
-                OliviaSideDestinations.forEach { destination ->
-                    OliviaNavigationItem(
-                        destination = destination,
-                        selected = currentRoute == destination.route,
-                        onClick = { onDestinationSelected(destination) },
-                    )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OliviaSideDestinations.forEach { destination ->
+                        OliviaNavigationItem(
+                            destination = destination,
+                            selected = currentRoute == destination.route,
+                            enabled = !isLive,
+                            onClick = { onDestinationSelected(destination) },
+                        )
+                    }
                 }
             }
         }
+        AnimatedVisibility(
+            visible = isLive,
+            enter = fadeIn(OliviaMotion.footer()),
+            exit = fadeOut(OliviaMotion.footer()),
+        ) {
+            OliviaPauseButton(
+                isPaused = isPaused,
+                onClick = if (isPaused) onResume else onPause,
+                modifier = Modifier.size(72.dp),
+            )
+        }
         OliviaRecordButton(
-            selected = currentRoute == OliviaDestination.RECORD.route,
-            onClick = { onDestinationSelected(OliviaDestination.RECORD) },
-            modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+            live = isLive,
+            selected = !isLive && currentRoute == OliviaDestination.RECORD.route,
+            onClick = if (isLive) onStop else onRecordClick,
+            modifier = Modifier.size(72.dp),
         )
     }
 }
@@ -542,6 +559,7 @@ private fun OliviaBottomBar(
 private fun OliviaNavigationItem(
     destination: OliviaDestination,
     selected: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -562,6 +580,7 @@ private fun OliviaNavigationItem(
         modifier = modifier
             .selectable(
                 selected = selected,
+                enabled = enabled,
                 onClick = onClick,
                 role = Role.Tab,
                 interactionSource = interactionSource,
@@ -573,23 +592,80 @@ private fun OliviaNavigationItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(
-            destination.icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale; scaleY = scale },
-        )
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(
+                    color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                destination.icon,
+                contentDescription = null,
+                tint = if (selected) MaterialTheme.colorScheme.onPrimary else color,
+                modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale; scaleY = scale },
+            )
+        }
         Text(
             destination.label,
             color = color,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            ),
             textAlign = TextAlign.Center,
         )
     }
 }
 
 @Composable
+private fun OliviaPauseButton(
+    isPaused: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        pressScale(pressed),
+        OliviaMotion.press(),
+        label = "pause press",
+    )
+    val description = if (isPaused) "Retomar gravação" else "Pausar gravação"
+    val icon = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause
+
+    Surface(
+        modifier = modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .heightIn(min = 48.dp)
+            .widthIn(min = 56.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .semantics(mergeDescendants = true) {
+                contentDescription = description
+            },
+        shape = RoundedCornerShape(percent = 50),
+        color = MaterialTheme.colorScheme.onSurface,
+        contentColor = Color.White,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp))
+        }
+    }
+}
+
+@Composable
 private fun OliviaRecordButton(
+    live: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -609,25 +685,70 @@ private fun OliviaRecordButton(
             .selectable(
                 selected = selected,
                 onClick = onClick,
-                role = Role.Tab,
+                role = if (live) Role.Button else Role.Tab,
                 interactionSource = interactionSource,
                 indication = null,
             )
-            .semantics { contentDescription = OliviaDestination.RECORD.label },
+            .semantics {
+                contentDescription = if (live) "Parar gravação" else OliviaDestination.RECORD.label
+            },
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape),
+        AnimatedContent(
+            targetState = live,
+            transitionSpec = {
+                fadeIn(OliviaMotion.footer()) togetherWith fadeOut(OliviaMotion.footer())
+            },
+            modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
+            label = "record button content",
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
-            )
+            if (it) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .border(3.dp, OliviaRecordingRed, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp)
+                            .background(OliviaRecordingRed, CircleShape),
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.Stop,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .shadow(
+                            elevation = 4.dp,
+                            shape = CircleShape,
+                            ambientColor = OliviaBlueActionShadow,
+                            spotColor = OliviaBlueActionShadow,
+                        )
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(OliviaBlueActionStart, OliviaBlueActionEnd),
+                            ),
+                            shape = CircleShape,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Mic,
+                        contentDescription = null,
+                        tint = OliviaBlueActionOn,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+            }
         }
     }
 }

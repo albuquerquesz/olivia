@@ -1,67 +1,293 @@
 package com.olivia.companion.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.olivia.companion.R
+import com.olivia.companion.ui.OliviaButton
+import com.olivia.companion.ui.OliviaButtonVariant
+import com.olivia.companion.ui.OliviaBlueActionOn
+
+private const val IntroPage = 0
+private const val HowItWorksPage = 1
+private const val PermissionPage = 2
+private const val OnboardingPageCount = 3
+
+private enum class OnboardingPermission {
+    Microphone,
+    Bluetooth,
+}
+
+private fun pendingPermission(
+    audioPermissionGranted: Boolean,
+    bluetoothPermissionRequired: Boolean,
+    bluetoothPermissionGranted: Boolean,
+): OnboardingPermission? = when {
+    !audioPermissionGranted -> OnboardingPermission.Microphone
+    bluetoothPermissionRequired && !bluetoothPermissionGranted -> OnboardingPermission.Bluetooth
+    else -> null
+}
 
 @Composable
-fun OliviaWelcomeScreen(onEnter: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
+fun OliviaWelcomeScreen(
+    audioPermissionGranted: Boolean,
+    bluetoothPermissionRequired: Boolean,
+    bluetoothPermissionGranted: Boolean,
+    onRequestAudioPermission: () -> Unit,
+    onRequestBluetoothPermission: () -> Unit,
+    onEnter: () -> Unit,
+) {
+    var page by rememberSaveable { mutableIntStateOf(0) }
+    val currentPage = page.coerceIn(0, OnboardingPageCount - 1)
+    val permission = pendingPermission(
+        audioPermissionGranted = audioPermissionGranted,
+        bluetoothPermissionRequired = bluetoothPermissionRequired,
+        bluetoothPermissionGranted = bluetoothPermissionGranted,
+    ).takeIf { currentPage == PermissionPage }
+
+    BackHandler(enabled = currentPage > IntroPage) {
+        page = currentPage - 1
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 24.dp, top = 40.dp, end = 24.dp, bottom = 24.dp)
+                .padding(bottom = 124.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            AnimatedContent(
+                targetState = currentPage,
+                label = "onboarding page",
+            ) { currentPage ->
+                when (currentPage) {
+                    IntroPage -> OnboardingIntro()
+                    HowItWorksPage -> OnboardingHowItWorks()
+                    PermissionPage -> when (permission) {
+                        OnboardingPermission.Microphone -> OnboardingPermissionPage(
+                            title = "Dê voz à Olivia",
+                            description = "Use o microfone do celular para iniciar e controlar o take por voz. O áudio do take não alimenta a IA.",
+                        )
+                        OnboardingPermission.Bluetooth -> OnboardingPermissionPage(
+                            title = "Conecte seus óculos",
+                            description = "O celular faz a ponte com os Ray-Ban Meta durante o take, com autorização do app Meta AI.",
+                        )
+                        null -> OnboardingReady()
+                    }
+                }
+            }
+        }
+
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 24.dp)
-                .widthIn(max = 600.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+                .offset(y = 20.dp)
+                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 0.dp),
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            OliviaButton(
+                onClick = {
+                    when {
+                        currentPage < PermissionPage -> page = currentPage + 1
+                        permission == OnboardingPermission.Microphone -> onRequestAudioPermission()
+                        permission == OnboardingPermission.Bluetooth -> onRequestBluetoothPermission()
+                        else -> onEnter()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp),
+                variant = OliviaButtonVariant.PrimaryGradient,
             ) {
                 Text(
-                    stringResource(R.string.welcome_title),
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Center,
+                    text = onboardingButtonLabel(
+                        page = currentPage,
+                        permission = permission,
+                    ),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        color = OliviaBlueActionOn,
+                        fontWeight = FontWeight.ExtraBold,
+                    ),
                 )
-                Text(
-                    stringResource(R.string.welcome_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            Button(
-                onClick = onEnter,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
-                Text(stringResource(R.string.welcome_enter), style = MaterialTheme.typography.labelLarge)
             }
         }
     }
+}
+
+@Composable
+private fun OnboardingIntro() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(modifier = Modifier.height(320.dp))
+        OnboardingVisualCard()
+        Spacer(modifier = Modifier.height(16.dp))
+        OnboardingHeading(
+            modifier = Modifier.fillMaxWidth(),
+            title = "A Olivia guia seu próximo take",
+            description = "Enquanto você grava, o áudio aponta quando algo sair do lugar: enquadramento, luz ou horizonte.",
+            titleFontSize = 24,
+            verticalSpacing = 8.dp,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun OnboardingHowItWorks() {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        OnboardingVisualCard(imageRes = R.drawable.olivia_room_3)
+        OnboardingHeading(
+            title = "Como funciona",
+            description = "A Olivia analisa os frames dos óculos e orienta você por áudio.",
+        )
+    }
+}
+
+@Composable
+private fun OnboardingPermissionPage(
+    title: String,
+    description: String,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        OnboardingVisualCard(imageRes = R.drawable.olivia_cast)
+        OnboardingHeading(
+            title = title,
+            description = description,
+        )
+    }
+}
+
+@Composable
+private fun OnboardingReady() {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        OnboardingVisualCard(imageRes = R.drawable.olivia_cast)
+        OnboardingHeading(
+            title = "Tudo pronto para gravar",
+            description = "A Olivia está preparada para acompanhar seu próximo take sem interromper o trabalho.",
+        )
+    }
+}
+
+@Composable
+private fun OnboardingVisualCard(imageRes: Int? = null) {
+    if (imageRes == null) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.olivia_logo),
+                contentDescription = "Olivia",
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(24.dp)),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        return
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 260.dp, max = 320.dp),
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shape = RoundedCornerShape(28.dp),
+    ) {
+        Image(
+            painter = painterResource(imageRes),
+            contentDescription = "Olivia",
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(28.dp)),
+            contentScale = ContentScale.Crop,
+        )
+    }
+}
+
+@Composable
+private fun OnboardingHeading(
+    modifier: Modifier = Modifier,
+    title: String,
+    description: String? = null,
+    titleFontSize: Int = 24,
+    verticalSpacing: Dp = 8.dp,
+    textAlign: TextAlign = TextAlign.Start,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = titleFontSize.sp,
+                lineHeight = (titleFontSize + 8).sp,
+                fontWeight = FontWeight.Bold,
+            ),
+            textAlign = textAlign,
+        )
+        description?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = textAlign,
+            )
+        }
+    }
+}
+
+private fun onboardingButtonLabel(
+    page: Int,
+    permission: OnboardingPermission?,
+): String = when {
+    page == IntroPage -> "Começar"
+    page == HowItWorksPage -> "Continuar"
+    permission == OnboardingPermission.Microphone -> "Permitir microfone"
+    permission == OnboardingPermission.Bluetooth -> "Permitir Bluetooth"
+    else -> "Entrar na Olivia"
 }

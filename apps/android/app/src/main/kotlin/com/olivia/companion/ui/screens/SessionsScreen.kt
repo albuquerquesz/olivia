@@ -166,7 +166,7 @@ private fun TakeFilterPill(
         Surface(
             shape = RoundedCornerShape(percent = 50),
             color = colors.onSurface.takeIf { selected } ?: colors.surface,
-            contentColor = colors.onPrimary.takeIf { selected } ?: colors.onSurfaceVariant,
+            contentColor = colors.surface.takeIf { selected } ?: colors.onSurfaceVariant,
             border = BorderStroke(1.dp, colors.outlineVariant).takeIf { !selected },
         ) {
             Text(
@@ -204,7 +204,7 @@ private fun SessionTakeCard(
                 TakeThumbnail(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                        .clip(RoundedCornerShape(12.dp)),
                 )
                 Text(
                     modifier = Modifier

@@ -1,23 +1,30 @@
 package com.olivia.companion.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,6 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -33,12 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.session.OliviaUiState
 import com.olivia.companion.session.TakeSummary
-import com.olivia.companion.session.VoiceCommandState
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.formatRelativeDay
+import com.olivia.companion.R
 import com.olivia.companion.ui.DeviceOverview
+import com.olivia.companion.ui.OliviaCardOverline
 import com.olivia.companion.ui.OliviaPage
-import com.olivia.companion.ui.RecordVideoCta
 import com.olivia.core.SessionId
 
 @Composable
@@ -46,33 +54,181 @@ fun OliviaHomeScreen(
     state: OliviaUiState,
     onSeeAllTakes: () -> Unit,
     onOpenRecord: () -> Unit,
+    onOpenSettings: () -> Unit,
     onOpenTake: (SessionId) -> Unit,
 ) {
     val recent = state.takes.take(3)
     OliviaPage {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                DeviceOverview()
-                RecordVideoCta(
-                    onClick = onOpenRecord,
-                    waveformActive = state.voiceState == VoiceCommandState.LISTENING_FOR_COMMAND,
-                )
-            }
+            HomeHeader()
+            DeviceOverview(connection = state.connection)
+            VoiceCommandBar(onOpenRecord = onOpenRecord)
+            HomeQuickActions(
+                onOpenRecord = onOpenRecord,
+                onSeeAllTakes = onSeeAllTakes,
+                onOpenSettings = onOpenSettings,
+            )
             if (recent.isEmpty()) {
-                EmptyTakesCard(
-                    onOpenRecord = onOpenRecord,
-                    onSeeAllTakes = onSeeAllTakes,
-                )
+                EmptyTakesCard(onSeeAllTakes = onSeeAllTakes)
             } else {
                 RecentTakesCard(recent, onSeeAllTakes, onOpenTake)
             }
         }
+    }
+}
+
+@Composable
+private fun HomeHeader() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.olivia_logo),
+            contentDescription = "Logo da Olivia",
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(14.dp)),
+        )
+        Text(
+            "Olivia",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontSize = 20.sp,
+                lineHeight = 24.sp,
+            ),
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
+    Surface(
+        onClick = onOpenRecord,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 92.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Outlined.Mic,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(30.dp),
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                OliviaCardOverline("CONTROLE POR VOZ")
+                Text(
+                    "Oi, Olivia, gravar",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 18.sp,
+                        lineHeight = 24.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = "Abrir gravação",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeQuickActions(
+    onOpenRecord: () -> Unit,
+    onSeeAllTakes: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        HomeQuickAction(
+            label = "Gravar",
+            icon = Icons.Outlined.Mic,
+            highlighted = true,
+            onClick = onOpenRecord,
+        )
+        HomeQuickAction(
+            label = "Takes",
+            icon = Icons.Outlined.History,
+            onClick = onSeeAllTakes,
+        )
+        HomeQuickAction(
+            label = "Ajustes",
+            icon = Icons.Outlined.Settings,
+            onClick = onOpenSettings,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.HomeQuickAction(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    highlighted: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.weight(1f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Surface(
+            onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp),
+            shape = RoundedCornerShape(18.dp),
+            color = if (highlighted) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.surface,
+            contentColor = if (highlighted) Color.White
+            else MaterialTheme.colorScheme.onSurface,
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = label, modifier = Modifier.size(28.dp))
+            }
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = if (highlighted) FontWeight.Bold else FontWeight.Normal,
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
@@ -82,7 +238,10 @@ private fun RecentTakes(
     onOpenTake: (SessionId) -> Unit,
 ) {
     takes.forEach { take ->
-        TakePreviewCard(take = take, onClick = { onOpenTake(take.sessionId) })
+        TakePreviewCard(
+            take = take,
+            onClick = { onOpenTake(take.sessionId) },
+        )
     }
 }
 
@@ -143,8 +302,8 @@ private fun RecentTakesCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             RecentTakesHeader(onSeeAllTakes)
             RecentTakes(takes, onOpenTake)
@@ -154,7 +313,6 @@ private fun RecentTakesCard(
 
 @Composable
 private fun EmptyTakesCard(
-    onOpenRecord: () -> Unit,
     onSeeAllTakes: () -> Unit,
 ) {
     Surface(
@@ -166,8 +324,8 @@ private fun EmptyTakesCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 320.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .heightIn(min = 248.dp)
+                .padding(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             RecentTakesHeader(onSeeAllTakes)
@@ -196,29 +354,20 @@ private fun EmptyTakesCard(
                     textAlign = TextAlign.Center,
                 )
             }
-            Button(
-                onClick = onOpenRecord,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .fillMaxWidth(0.7f)
-                    .heightIn(min = 48.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
-                Text("Começar a gravar", style = MaterialTheme.typography.labelLarge)
-            }
         }
     }
 }
 
 @Composable
-private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
+private fun TakePreviewCard(
+    take: TakeSummary,
+    onClick: () -> Unit,
+) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 88.dp),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -229,10 +378,14 @@ private fun TakePreviewCard(take: TakeSummary, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TakeThumbnail()
+            TakeThumbnail(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(14.dp)),
+            )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
                     take.title,

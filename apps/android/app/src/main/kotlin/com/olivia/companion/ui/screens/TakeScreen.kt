@@ -1,36 +1,70 @@
 package com.olivia.companion.ui.screens
 
+import android.net.Uri
+import android.widget.VideoView
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import com.olivia.companion.ui.OliviaButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.olivia.companion.session.ExportState
 import com.olivia.companion.session.ExportStatus
 import com.olivia.companion.session.TakeSummary
-import com.olivia.companion.session.confirmationLabel
 import com.olivia.companion.session.eventTitle
 import com.olivia.companion.session.formatOffset
-import com.olivia.companion.session.isConfirmed
 import com.olivia.companion.ui.OliviaPage
-import com.olivia.companion.ui.OliviaPanel
-import com.olivia.companion.ui.PanelDetail
-import com.olivia.companion.ui.SectionTitle
-import com.olivia.companion.ui.StatusChip
 import com.olivia.core.CutReason
+import com.olivia.core.RecordingAsset
 import com.olivia.core.SuggestedCut
 import com.olivia.core.TimelineEvent
 import com.olivia.core.TimelineEventType
+import java.io.File
+import kotlin.math.max
+
+private val PreviewShape = RoundedCornerShape(24.dp)
 
 @Composable
 fun OliviaTakeScreen(
@@ -38,138 +72,423 @@ fun OliviaTakeScreen(
     onNavigateBack: () -> Unit,
     exportState: ExportState = ExportState(),
     onExport: () -> Unit = {},
-    canImport: Boolean = false,
-    working: Boolean = false,
-    onImport: () -> Unit = {},
-    onExportMarks: () -> Unit = {},
-    onDiscard: () -> Unit = {},
+    recordingPathResolver: suspend (RecordingAsset) -> String? = { null },
 ) {
-    OliviaPage(onNavigateBack = onNavigateBack) {
-        OliviaPanel {
-            Text("Revisão", style = MaterialTheme.typography.bodyLarge)
-            Text(formatOffset(take.durationMs), style = MaterialTheme.typography.headlineMedium)
-            PanelDetail("${take.correctionCount} correções · ${take.cutCount} cortes sugeridos")
-            if (take.review.recording?.id?.startsWith("mock-recording-") == true) {
-                PanelDetail("Vídeo de demonstração empacotado; não é uma gravação desta sessão.")
-            }
-            if (take.review.recording != null) {
-                OutlinedButton(
-                    onClick = onExport,
-                    enabled = !working && exportState.status != ExportStatus.SHARING,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    shape = RoundedCornerShape(20.dp),
-                ) {
-                    Text(
-                        if (exportState.status == ExportStatus.SHARING) {
-                            "Preparando compartilhamento…"
-                        } else {
-                            "Compartilhar take e marcações"
-                        },
-                    )
-                }
-            } else {
-                Text(
-                    "O vídeo nativo ainda não está disponível neste ambiente.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            exportState.message?.let { message ->
-                Text(
-                    message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (canImport) {
-            OutlinedButton(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
-                Text("Selecionar vídeo para revisão")
-            }
-        }
-        OutlinedButton(onClick = onExportMarks, enabled = !working, modifier = Modifier.fillMaxWidth()) {
-            Text("Compartilhar marcas do take")
-        }
-        if (take.review.recording != null) {
-            TextButton(onClick = onDiscard, enabled = !working, modifier = Modifier.fillMaxWidth()) {
-                Text("Descartar cópias locais")
-            }
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionTitle("Cortes sugeridos")
-            SuggestedCuts(take)
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionTitle("Timeline")
-            take.events.forEach { event -> TimelineRow(event) }
+    val recording = take.review.recording
+    var recordingPath by remember(recording?.id) { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(recording?.id) {
+        recordingPath = recording?.let { asset ->
+            runCatching { recordingPathResolver(asset) }.getOrNull()
         }
     }
-}
 
-@Composable
-private fun SuggestedCuts(take: TakeSummary) {
-    val cutEvents = take.events.filter { it.type == TimelineEventType.CUT_SUGGESTED }
-    if (cutEvents.isEmpty() && take.review.suggestedCuts.isEmpty()) {
-        Text(
-            "Nenhum corte neste take. Os cortes aparecem quando o pós-processamento terminar.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+    OliviaPage(onNavigateBack = onNavigateBack, verticalSpacing = 16.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                "Revisão do take",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            )
+        }
+
+        TakePreview(
+            title = take.title,
+            durationMs = take.durationMs,
+            recordingPath = recordingPath,
         )
-        return
-    }
-    if (cutEvents.isNotEmpty()) {
-        cutEvents.forEach { event -> TimelineRow(event) }
-        return
-    }
-    take.review.suggestedCuts.forEach { cut ->
-        SuggestedCutRow(cut)
+
+        SuggestedCutsSection(take)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        TimelineSection(take.events)
+
+        OliviaButton(
+            onClick = onExport,
+            enabled = exportState.status != ExportStatus.SHARING,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp),
+        ) {
+            Text(
+                if (exportState.status == ExportStatus.SHARING) {
+                    "Preparando exportação…"
+                } else {
+                    "Exportar vídeo"
+                },
+            )
+        }
+        exportState.message?.let { message ->
+            Text(
+                message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
 @Composable
-private fun SuggestedCutRow(cut: SuggestedCut) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+private fun TakePreview(
+    title: String,
+    durationMs: Long,
+    recordingPath: String?,
+) {
+    var isPlaying by remember(recordingPath) { mutableStateOf(false) }
+    var playbackFailed by remember(recordingPath) { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1.6f)
+            .clip(PreviewShape)
+            .background(colors.surfaceVariant),
+    ) {
+        if (recordingPath != null && !playbackFailed) {
+            RecordedVideo(
+                path = recordingPath,
+                isPlaying = isPlaying,
+                onCompleted = { isPlaying = false },
+                onError = {
+                    isPlaying = false
+                    playbackFailed = true
+                },
+            )
+            Surface(
+                onClick = { isPlaying = !isPlaying },
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(64.dp),
+                shape = CircleShape,
+                color = colors.primary,
+                contentColor = colors.onPrimary,
+            ) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Pausar prévia do take" else "Reproduzir prévia do take",
+                    modifier = Modifier.padding(18.dp),
+                )
+            }
+        } else {
+            PreviewPlaceholder()
+        }
+
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(12.dp),
+            color = colors.surfaceVariant,
+            shape = RoundedCornerShape(8.dp),
+        ) {
+            Text(
+                "$title · ${formatOffset(durationMs)}",
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecordedVideo(
+    path: String,
+    isPlaying: Boolean,
+    onCompleted: () -> Unit,
+    onError: () -> Unit,
+) {
+    val context = LocalContext.current
+    val videoView = remember(path) {
+        VideoView(context).apply {
+            setVideoURI(Uri.fromFile(File(path)))
+            setOnCompletionListener { onCompleted() }
+            setOnErrorListener { _, _, _ ->
+                onError()
+                true
+            }
+        }
+    }
+
+    DisposableEffect(videoView) {
+        onDispose { videoView.stopPlayback() }
+    }
+
+    AndroidView(
+        factory = { videoView },
+        modifier = Modifier.fillMaxSize(),
+        update = { view ->
+            if (isPlaying) {
+                view.start()
+            } else {
+                view.pause()
+            }
+        },
+    )
+}
+
+@Composable
+private fun PreviewPlaceholder() {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.surface),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
-            "${formatOffset(cut.startMs)} a ${formatOffset(cut.endMs)}",
+            "Prévia do vídeo indisponível",
             style = MaterialTheme.typography.labelLarge,
+            color = colors.onSurfaceVariant,
         )
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(cutReasonLabel(cut.reason), style = MaterialTheme.typography.bodyLarge)
-            StatusChip("Sugestão", inverted = false)
+    }
+}
+
+@Composable
+private fun SuggestedCutsSection(take: TakeSummary) {
+    val cutEvents = take.events.filter { it.type == TimelineEventType.CUT_SUGGESTED }
+    val cuts = take.review.suggestedCuts
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            "Cortes sugeridos",
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        ReviewCard {
+            when {
+                cuts.isNotEmpty() -> {
+                    val durationMs = max(
+                        take.durationMs,
+                        cuts.maxOfOrNull { it.endMs } ?: 0L,
+                    )
+                    cuts.forEach { cut ->
+                        SuggestedCutRow(cut = cut, durationMs = durationMs)
+                    }
+                }
+
+                cutEvents.isNotEmpty() -> {
+                    cutEvents.forEach { event -> CutEventRow(event) }
+                }
+
+                else -> {
+                    Text(
+                        "Nenhum corte sugerido para este take.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        "As sugestões aparecem depois do pós-processamento.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun SuggestedCutRow(cut: SuggestedCut, durationMs: Long) {
+    val total = durationMs.coerceAtLeast(1L)
+    val startFraction = (cut.startMs.toFloat() / total).coerceIn(0f, 1f)
+    val colors = MaterialTheme.colorScheme
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 34.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            formatOffset(cut.startMs),
+            modifier = Modifier.width(40.dp),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = colors.onSurface,
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(8.dp)
+                .clip(CircleShape)
+            .background(colors.surfaceVariant),
+        ) {
+            if (startFraction > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(startFraction)
+                        .fillMaxHeight()
+                        .background(colors.primary, CircleShape),
+                )
+            }
+        }
+        Text(
+            cutReasonLabel(cut.reason),
+            modifier = Modifier.widthIn(min = 68.dp, max = 96.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun CutEventRow(event: TimelineEvent) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            formatOffset(event.offsetMs),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(eventTitle(event), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 private fun cutReasonLabel(reason: CutReason): String = when (reason) {
-    CutReason.UNCORRECTED_DEVIATION -> "Correção não confirmada"
-    CutReason.DEGRADED_STRETCH -> "Trecho sem frame"
-    CutReason.SPEECH_RETAKE -> "Repetição na fala"
+    CutReason.UNCORRECTED_DEVIATION -> "Não confirmada"
+    CutReason.DEGRADED_STRETCH -> "Sem frame"
+    CutReason.SPEECH_RETAKE -> "Repetição"
     CutReason.SILENCE -> "Silêncio"
 }
 
 @Composable
-private fun TimelineRow(event: TimelineEvent) {
-    val confirmation = confirmationLabel(event)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text(formatOffset(event.offsetMs), style = MaterialTheme.typography.labelLarge)
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(eventTitle(event), style = MaterialTheme.typography.bodyLarge)
-            if (confirmation != null) {
-                StatusChip(
-                    confirmation,
-                    inverted = isConfirmed(event),
-                )
+private fun TimelineSection(events: List<TimelineEvent>) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ReviewSectionHeader("Timeline", "${events.size} eventos")
+        if (events.isEmpty()) {
+            Text(
+                "Nenhum evento registrado neste take.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            Column {
+                events.forEachIndexed { index, event ->
+                    TimelineRow(event = event, isLast = index == events.lastIndex)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun TimelineRow(event: TimelineEvent, isLast: Boolean) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .drawBehind {
+                val markerX = 6.dp.toPx()
+                drawCircle(
+                    color = colors.primary,
+                    radius = 4.dp.toPx(),
+                    center = Offset(markerX, 8.dp.toPx()),
+                )
+                if (!isLast) {
+                    drawLine(
+                        color = colors.outlineVariant,
+                        start = Offset(markerX, 16.dp.toPx()),
+                        end = Offset(markerX, size.height),
+                        strokeWidth = 1.dp.toPx(),
+                    )
+                }
+            }
+            .padding(start = 24.dp, bottom = 18.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    formatOffset(event.offsetMs),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.8.sp,
+                    ),
+                )
+                Surface(
+                    shape = RoundedCornerShape(percent = 50),
+                    color = colors.surfaceVariant,
+                    contentColor = colors.onSurfaceVariant,
+                ) {
+                    Text(
+                        timelineEventTag(event),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            letterSpacing = 0.4.sp,
+                            fontWeight = FontWeight.Normal,
+                        ),
+                    )
+                }
+            }
+            Text(
+                eventTitle(event),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    letterSpacing = 0.6.sp,
+                    fontWeight = FontWeight.Normal,
+                ),
+            )
+        }
+    }
+}
+
+private fun timelineEventTag(event: TimelineEvent): String = when (event.type) {
+    TimelineEventType.SESSION_STARTED,
+    TimelineEventType.SESSION_PAUSED,
+    TimelineEventType.SESSION_RESUMED,
+    TimelineEventType.SESSION_STOPPED -> "Sessão"
+
+    TimelineEventType.SESSION_DEGRADED,
+    TimelineEventType.SESSION_RECOVERED -> "Conexão"
+
+    TimelineEventType.DIAGNOSIS -> "Análise"
+    TimelineEventType.CORRECTION_ISSUED -> "Orientação"
+    TimelineEventType.CORRECTION_RESOLVED -> "Correção resolvida"
+    TimelineEventType.CUT_SUGGESTED -> "Corte"
+    TimelineEventType.ERROR -> "Erro"
+}
+
+@Composable
+private fun ReviewSectionHeader(title: String, detail: String? = null) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { heading() },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            title.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(
+                letterSpacing = 1.5.sp,
+                fontWeight = FontWeight.Medium,
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (detail != null) {
+            Spacer(Modifier.weight(1f))
+            Text(
+                detail,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReviewCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = PreviewShape,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
     }
 }
