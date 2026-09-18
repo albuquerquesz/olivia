@@ -19,7 +19,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +26,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -63,7 +61,6 @@ import com.olivia.companion.session.connectionLabel
 import com.olivia.companion.session.formatOffset
 import com.olivia.companion.session.guidanceStatusLabel
 import com.olivia.companion.session.sessionStatusLabel
-import com.olivia.companion.ui.AudioModeOption
 import com.olivia.companion.ui.OliviaPage
 import com.olivia.companion.ui.OliviaPanel
 import com.olivia.companion.ui.OliviaRecordingRed
@@ -88,7 +85,6 @@ fun OliviaRecordingScreen(
     onNavigateBack: () -> Unit,
     onOpenVoiceSettings: () -> Unit = {},
     onConnectGlasses: () -> Unit = {},
-    onAudioMode: (AudioMode) -> Unit,
     onStart: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
@@ -247,21 +243,6 @@ fun OliviaRecordingScreen(
                 working = state.working,
                 simulationAllowed = !state.backend.requiresPhysicalGlasses,
             )
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionTitle("Modo de feedback")
-            FlowRow(
-                modifier = Modifier.fillMaxWidth().selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                AudioModeOption("Voz", state.audioMode == AudioMode.VOICE, enabled = !live) {
-                    onAudioMode(AudioMode.VOICE)
-                }
-                AudioModeOption("Sinal", state.audioMode == AudioMode.SIGNAL, enabled = !live) {
-                    onAudioMode(AudioMode.SIGNAL)
-                }
-            }
         }
     }
 }

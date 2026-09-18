@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -57,6 +58,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -100,6 +102,7 @@ import com.olivia.companion.session.OliviaSessionViewModel
 import com.olivia.companion.session.LocalSessionCommand
 import com.olivia.companion.session.SessionRuntimeFactory
 import com.olivia.companion.session.TakeSummary
+import com.olivia.companion.session.VoiceCommandState
 import com.olivia.core.RecordingAsset
 import com.olivia.core.SessionId
 import com.olivia.core.SessionState
@@ -123,6 +126,16 @@ private const val TAKE_ROUTE = "take/{sessionId}"
 
 private fun hasPermission(context: Context, permission: String): Boolean =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+private fun openVoiceSettings(context: android.content.Context) {
+    val voiceSettings = Intent(Settings.ACTION_VOICE_INPUT_SETTINGS)
+    val settingsIntent = if (voiceSettings.resolveActivity(context.packageManager) != null) {
+        voiceSettings
+    } else {
+        Intent(Settings.ACTION_SETTINGS)
+    }
+    context.startActivity(settingsIntent)
+}
 
 private fun hasBluetoothPermission(context: Context, required: Boolean): Boolean {
     if (!required || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
@@ -366,7 +379,6 @@ fun OliviaApp(
                             )
                         }
                     },
-                    onAudioMode = viewModel::setAudioMode,
                     onStart = viewModel::start,
                     onPause = viewModel::pause,
                     onResume = viewModel::resume,
