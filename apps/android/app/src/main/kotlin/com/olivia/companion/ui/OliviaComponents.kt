@@ -372,11 +372,11 @@ internal fun DeviceOverview() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "Oi, Mariana!",
+                    "Ray-Ban Meta",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
-                    "Enquadramento, luz e horizonte no lugar.",
+                    "Vídeo nativo 3K · frames 720 × 1280",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
