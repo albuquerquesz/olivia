@@ -58,7 +58,10 @@ object FirebaseVisualAnalyzerFactory {
             localRoiProposer = OpenCvWorkAreaProposer(),
         )
         Result.success(hybrid)
-    } catch (_: Throwable) {
+    } catch (error: Throwable) {
+        if (com.olivia.companion.BuildConfig.DEBUG) {
+            Log.w(TAG, "factory create failed type=${error.javaClass.simpleName}")
+        }
         // Do not surface configuration/provider detail in UI, timeline, or logs.
         Result.failure(IllegalStateException("Firebase visual analysis unavailable"))
     }
