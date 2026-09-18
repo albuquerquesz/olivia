@@ -3,6 +3,7 @@ package com.olivia.companion.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -93,7 +94,10 @@ private fun HomeHeader() {
         )
         Text(
             "Olivia",
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontSize = 20.sp,
+                lineHeight = 24.sp,
+            ),
             fontWeight = FontWeight.Bold,
         )
     }
@@ -178,34 +182,37 @@ private fun RowScope.HomeQuickAction(
     highlighted: Boolean = false,
     onClick: () -> Unit,
 ) {
-    val containerColor = if (highlighted) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-    val contentColor = if (highlighted) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    Surface(
-        onClick = onClick,
-        modifier = Modifier
-            .weight(1f)
-            .heightIn(min = 82.dp),
-        shape = RoundedCornerShape(18.dp),
-        color = containerColor,
-        contentColor = contentColor,
-        border = if (highlighted) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    Column(
+        modifier = Modifier.weight(1f),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+        Surface(
+            onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp),
+            shape = RoundedCornerShape(18.dp),
+            color = if (highlighted) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.surface,
+            contentColor = if (highlighted) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurface,
+            border = if (highlighted) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium)
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = label, modifier = Modifier.size(24.dp))
+            }
         }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = if (highlighted) FontWeight.Bold else FontWeight.Normal,
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
