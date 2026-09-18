@@ -25,8 +25,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -461,13 +459,14 @@ private fun OliviaBottomBar(
             OliviaPauseButton(
                 isPaused = isPaused,
                 onClick = if (isPaused) onResume else onPause,
+                modifier = Modifier.size(56.dp),
             )
         }
         OliviaRecordButton(
             live = isLive,
             selected = !isLive && currentRoute == OliviaDestination.RECORD.route,
             onClick = if (isLive) onStop else onRecordClick,
-            modifier = Modifier.fillMaxHeight().aspectRatio(1f),
+            modifier = Modifier.size(if (isLive) 56.dp else 48.dp),
         )
     }
 }
@@ -595,6 +594,8 @@ private fun OliviaRecordButton(
         label = "record press",
     )
     val description = if (live) "Parar gravação" else OliviaDestination.RECORD.label
+    val actionColor = if (live) OliviaRecordingRed else MaterialTheme.colorScheme.primary
+    val iconColor = if (live) Color.White else MaterialTheme.colorScheme.onPrimary
     Box(
         modifier = modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
@@ -613,20 +614,20 @@ private fun OliviaRecordButton(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                .border(3.dp, actionColor, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(8.dp)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    .background(actionColor, CircleShape),
             )
             if (live) {
                 Icon(
                     imageVector = Icons.Filled.Stop,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
+                    tint = iconColor,
                     modifier = Modifier.size(20.dp),
                 )
             }
