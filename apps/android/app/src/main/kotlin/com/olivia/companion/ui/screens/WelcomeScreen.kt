@@ -118,7 +118,7 @@ fun OliviaWelcomeScreen(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(start = 24.dp, top = 16.dp, end = 24.dp, bottom = 0.dp),
         ) {
             OliviaButton(
                 onClick = {
