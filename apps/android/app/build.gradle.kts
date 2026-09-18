@@ -183,6 +183,15 @@ android {
                 debugAppCheckUsesPlayIntegrity.toString(),
             )
         }
+        create("debugV2") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".debugv2"
+            versionNameSuffix = "-debug-v2"
+            matchingFallbacks += listOf("debug")
+            // This APK is intentionally physical-only so it cannot silently fall back to
+            // MockDeviceKit while comparing it against the standalone DAT diagnostic.
+            buildConfigField("boolean", "MWDAT_USE_MOCK_DEVICE_KIT", "false")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(

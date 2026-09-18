@@ -57,6 +57,23 @@ como devia. O problema não está em "conectar aos óculos".
   documentado (`BLOCKED_BY_DAT_0_9_0`), não relacionado ao streaming de baixa resolução usado pra
   ROI/preview.
 
+## APK isolado DAT — controle no Samsung SM-A366E
+
+Em 18/09/2026 foi instalado `com.olivia.datdiagnostic`, um APK separado que não importa `:app`,
+`:core`, Firebase, App Check, Gemini, ROI, wake word ou TTS. Ele cria uma sessão DAT, pede
+`MEDIUM/24`, usa `compressVideo=false`, converte o I420 do SDK uma vez para NV21 e desenha somente
+o frame mais recente numa textura GPU. A Olivia (`com.olivia.companion`) não foi aberta nem
+reinstalada durante este controle.
+
+O stream iniciou após uma única autorização DAT. A tela mostrou inicialmente `504×896`, cerca de
+`25,2 fps`, gap de chegada de `30 ms` e PTS de `41 ms`. Na mesma sessão, sem alteração no APK,
+passou a mostrar `360×640`, cerca de `14,9 fps`, gap de `116 ms` e PTS de `66 ms`.
+
+Essa mudança ocorreu antes de qualquer processamento de produto e é compatível com a adaptação de
+qualidade/taxa do DAT sobre Bluetooth. Ela confirma que a taxa e a resolução solicitadas não são
+garantidas pelo transporte. Ainda não mede o atraso absoluto cena→tela, mas reduz a probabilidade de
+que ROI, Gemini, TTS ou a tela da Olivia sejam a causa primária dessa variação.
+
 ## Como demonstrar na banca
 
 1. Mostrar o pareamento/conexão funcionando de forma confiável (isso está sólido).

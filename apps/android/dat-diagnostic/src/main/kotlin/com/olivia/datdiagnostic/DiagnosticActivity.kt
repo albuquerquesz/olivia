@@ -1,7 +1,7 @@
 package com.olivia.datdiagnostic
 
 import android.Manifest
-import android.app.Activity
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
@@ -12,6 +12,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.meta.wearable.dat.camera.addCamera
 import com.meta.wearable.dat.camera.types.StreamConfiguration
@@ -41,10 +42,16 @@ class DiagnosticActivity : ComponentActivity() {
     private var lastArrival = 0L
     private var lastPts: Long? = null
 
-    private val bluetoothPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { start() }
+    private val bluetoothPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        val missing = it.filterValues { granted -> !granted }.keys
+        if (missing.isEmpty()) beginDatFlow() else setStatus("Permissões Android pendentes: ${missing.joinToString()}")
+    }
     private var datPermissionResult: ((PermissionStatus) -> Unit)? = null
     private val datPermission = registerForActivityResult(Wearables.RequestPermissionContract()) { result ->
-        result.getOrNull()?.let { datPermissionResult?.invoke(it) }
+        val status = result.getOrNull()
+        Log.i(TAG, "dat_permission_result=${status ?: "ERROR"}")
+        status?.let { datPermissionResult?.invoke(it) }
+        if (status == null) setStatus("Erro no pedido de permissão DAT; toque para tentar novamente")
         datPermissionResult = null
     }
 
@@ -63,7 +70,16 @@ class DiagnosticActivity : ComponentActivity() {
     }
 
     private fun start() {
-        bluetoothPermission.launch(arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.CAMERA))
+        val required = arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.CAMERA)
+        val missing = required.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) {
+            bluetoothPermission.launch(missing.toTypedArray())
+            return
+        }
+        beginDatFlow()
+    }
+
+    private fun beginDatFlow() {
         lifecycleScope.launch(Dispatchers.Default) {
             try {
                 Wearables.initialize(applicationContext)
@@ -75,7 +91,10 @@ class DiagnosticActivity : ComponentActivity() {
                 val cameraPermission = Wearables.checkPermissionStatus(Permission.CAMERA).getOrNull()
                 if (cameraPermission != PermissionStatus.Granted) {
                     withContext(Dispatchers.Main) {
-                        datPermissionResult = { result -> if (result == PermissionStatus.Granted) start() else setStatus("DAT câmera negada: $result") }
+                        datPermissionResult = { result ->
+                            if (result == PermissionStatus.Granted) beginDatFlow()
+                            else setStatus("DAT câmera negada: $result; toque para tentar novamente")
+                        }
                         datPermission.launch(Permission.CAMERA)
                     }
                     return@launch
