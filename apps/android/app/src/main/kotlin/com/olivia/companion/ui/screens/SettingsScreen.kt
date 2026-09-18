@@ -16,7 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.olivia.companion.ui.OliviaPage
-import com.olivia.companion.ui.SettingsAudioModeSelector
+import com.olivia.companion.ui.SettingsAudioModeTabs
 import com.olivia.companion.ui.SettingsCard
 import com.olivia.companion.ui.SettingsDivider
 import com.olivia.companion.ui.SettingsMetricRow
@@ -45,7 +45,7 @@ fun OliviaSettingsScreen(
             )
             SettingsCard {
                 SettingsOverline("Voz da Olivia")
-                SettingsAudioModeSelector(
+                SettingsAudioModeTabs(
                     audioMode = audioMode,
                     enabled = !live,
                     onAudioMode = onAudioMode,

@@ -252,7 +252,7 @@ internal fun SettingsOverline(text: String) {
 }
 
 @Composable
-internal fun SettingsAudioModeSelector(
+internal fun SettingsAudioModeTabs(
     audioMode: AudioMode,
     enabled: Boolean,
     onAudioMode: (AudioMode) -> Unit,
@@ -266,14 +266,14 @@ internal fun SettingsAudioModeSelector(
             .selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SettingsAudioModeOption(
+        SettingsAudioModeTab(
             label = "Modo voz",
             selected = audioMode == AudioMode.VOICE,
             enabled = enabled,
             modifier = Modifier.weight(1f),
             onClick = { onAudioMode(AudioMode.VOICE) },
         )
-        SettingsAudioModeOption(
+        SettingsAudioModeTab(
             label = "Modo sinal",
             selected = audioMode == AudioMode.SIGNAL,
             enabled = enabled,
@@ -284,7 +284,7 @@ internal fun SettingsAudioModeSelector(
 }
 
 @Composable
-private fun SettingsAudioModeOption(
+private fun SettingsAudioModeTab(
     label: String,
     selected: Boolean,
     enabled: Boolean,
@@ -295,13 +295,13 @@ private fun SettingsAudioModeOption(
         targetValue = MaterialTheme.colorScheme.onSurface.takeIf { selected }
             ?: MaterialTheme.colorScheme.surfaceVariant,
         animationSpec = OliviaMotion.selection(),
-        label = "settings audio mode background",
+        label = "settings audio tab background",
     )
     val contentColor by animateColorAsState(
         targetValue = MaterialTheme.colorScheme.surface.takeIf { selected }
             ?: MaterialTheme.colorScheme.onSurface,
         animationSpec = OliviaMotion.selection(),
-        label = "settings audio mode content",
+        label = "settings audio tab content",
     )
     Box(
         modifier = modifier
@@ -311,7 +311,7 @@ private fun SettingsAudioModeOption(
                 selected = selected,
                 enabled = enabled,
                 onClick = onClick,
-                role = Role.RadioButton,
+                role = Role.Tab,
             )
             .semantics(mergeDescendants = true) {},
         contentAlignment = Alignment.Center,
