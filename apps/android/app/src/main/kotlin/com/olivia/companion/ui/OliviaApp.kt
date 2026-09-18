@@ -1,6 +1,7 @@
 package com.olivia.companion.ui
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -55,6 +56,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,12 +64,14 @@ import androidx.compose.runtime.setValue
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -164,6 +168,24 @@ fun OliviaApp(
     }
     val showBottomBar = OliviaDestination.entries.any { it.route == currentRoute }
     val travelPx = with(LocalDensity.current) { OliviaMotion.travel.roundToPx() }
+    val isOnboarding = currentRoute == WELCOME_ROUTE
+    val window = (context as? Activity)?.window
+    val systemBarColor = if (isOnboarding) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.background
+    }
+
+    SideEffect {
+        window?.let {
+            it.statusBarColor = systemBarColor.toArgb()
+            it.navigationBarColor = systemBarColor.toArgb()
+            WindowCompat.getInsetsController(it, it.decorView).apply {
+                isAppearanceLightStatusBars = true
+                isAppearanceLightNavigationBars = true
+            }
+        }
+    }
 
     val requestAudioPermission = {
         if (!audioPermissionGranted) {
@@ -206,8 +228,16 @@ fun OliviaApp(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
+        containerColor = if (isOnboarding) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.background
+        },
+        contentColor = if (isOnboarding) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onBackground
+        },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             NavHost(

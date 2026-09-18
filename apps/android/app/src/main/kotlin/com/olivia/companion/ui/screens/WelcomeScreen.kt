@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.olivia.companion.R
 import com.olivia.companion.ui.OliviaButton
 import com.olivia.companion.ui.OliviaButtonVariant
+import com.olivia.companion.ui.OliviaBlueActionOn
 
 private const val IntroPage = 0
 private const val HowItWorksPage = 1
@@ -82,7 +83,7 @@ fun OliviaWelcomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.primary),
     ) {
         Column(
             modifier = Modifier
@@ -118,7 +119,7 @@ fun OliviaWelcomeScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.primary)
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -143,7 +144,10 @@ fun OliviaWelcomeScreen(
                         page = currentPage,
                         permission = permission,
                     ),
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        color = OliviaBlueActionOn,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 )
             }
         }
@@ -265,9 +269,9 @@ private fun OnboardingPageIndicator(page: Int, pageCount: Int) {
                     .size(width = if (page == index) 24.dp else 8.dp, height = 8.dp)
                     .background(
                         color = if (page == index) {
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.surface
                         } else {
-                            MaterialTheme.colorScheme.outlineVariant
+                            MaterialTheme.colorScheme.surfaceVariant
                         },
                         shape = CircleShape,
                     ),

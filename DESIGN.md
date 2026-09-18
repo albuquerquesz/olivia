@@ -18,9 +18,9 @@ O painel cresce com o conteúdo e a fonte; não impor 30% de altura às telas.
 | Fundo | #F1F3F7 |
 | Superfície | #FAFBFD |
 | Painel principal e ação/seleção | #BFDFFD |
-| Ação principal (topo) | #C9E5FA |
-| Ação principal (base) | #96C8ED |
-| Texto sobre ação principal | #151A21 |
+| Ação principal (topo) | #3979AE |
+| Ação principal (base) | #2E6EA2 |
+| Texto sobre ação principal | #FAFBFD |
 | Texto principal e no azul | #151A21 |
 | Texto secundário no branco | #526174 |
 | Texto secundário no azul | #526174 |
@@ -44,9 +44,9 @@ Margens laterais 24dp; intervalos 8, 16, 24 e 32dp. Painéis com raio 20dp e pad
 
 - Sem títulos de página (Gravar, Sessões, Ajustes). A orientação vem do
   painel e da barra inferior.
-- Welcome/onboarding: tela inicial, sem barra inferior e com três etapas fixas no mesmo
-  padrão visual. A etapa final solicita uma permissão por vez: microfone e, no flavor
-  de óculos, Bluetooth. Sem conta. Pareamento e autorização dos óculos ficam no Meta AI.
+- Welcome/onboarding: tela inicial, com fundo azul contínuo e três etapas fixas no mesmo
+  padrão visual. A etapa final solicita uma permissão por vez: microfone e, no flavor de
+  óculos, Bluetooth. Sem conta. Pareamento e autorização dos óculos ficam no Meta AI.
 - Início: painel com Dispositivo e Ray-Ban Meta; Últimos takes em cards (miniatura,
   título, badges de duração e data abaixo do título, seta) e atalho ver todos para Sessões.
   Sem inventar takes.
