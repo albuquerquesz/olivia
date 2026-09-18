@@ -152,7 +152,7 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
                 Icon(
                     Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                     contentDescription = "Abrir gravação",
-                    tint = MaterialTheme.colorScheme.onPrimary,
+                    tint = Color.White,
                     modifier = Modifier.size(22.dp),
                 )
             }
