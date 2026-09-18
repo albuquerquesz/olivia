@@ -161,13 +161,13 @@ private fun OnboardingIntro() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(288.dp))
         OnboardingVisualCard()
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         OnboardingHeading(
             modifier = Modifier.fillMaxWidth(),
             title = "Grave com as mãos livres",
             description = "A Olivia observa o enquadramento, a luz e o horizonte, e orienta você por áudio.",
             titleFontSize = 28,
-            verticalSpacing = 16.dp,
+            verticalSpacing = 8.dp,
             textAlign = TextAlign.Center,
         )
     }
