@@ -172,11 +172,6 @@ private fun WhisperTranscriptCard(text: String) {
                     fontWeight = FontWeight.Medium,
                 ),
             )
-            Text(
-                text = "Transcrição · PENDENTE",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.84f),
-            )
         }
     }
 }
