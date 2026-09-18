@@ -325,6 +325,7 @@ fun OliviaApp(
             if (showBottomBar) {
                 OliviaBottomBar(
                     currentRoute = currentRoute,
+                    showNavigation = currentRoute != OliviaDestination.RECORD.route,
                     isLive = uiState.isLive,
                     isPaused = uiState.session?.state == SessionState.PAUSED,
                     onRecordClick = {
@@ -391,6 +392,7 @@ private fun TakeRouteContent(
 @Composable
 private fun OliviaBottomBar(
     currentRoute: String?,
+    showNavigation: Boolean,
     isLive: Boolean,
     isPaused: Boolean,
     onDestinationSelected: (OliviaDestination) -> Unit,
@@ -403,15 +405,16 @@ private fun OliviaBottomBar(
     Row(
         modifier = modifier.height(IntrinsicSize.Min).selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (isLive) {
-            Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        } else {
-            Arrangement.spacedBy(12.dp)
+        horizontalArrangement = when {
+            showNavigation && isLive -> Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+            showNavigation -> Arrangement.spacedBy(12.dp)
+            isLive -> Arrangement.spacedBy(8.dp, Alignment.End)
+            else -> Arrangement.End
         },
     ) {
         AnimatedVisibility(
-            visible = !isLive,
-            modifier = Modifier.weight(1f),
+            visible = showNavigation && !isLive,
+            modifier = if (showNavigation) Modifier.weight(1f) else Modifier,
             enter = fadeIn(OliviaMotion.footer()) + expandHorizontally(
                 animationSpec = OliviaMotion.footer(),
                 expandFrom = Alignment.Start,
