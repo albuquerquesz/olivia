@@ -126,6 +126,7 @@ internal fun OliviaButton(
 @Composable
 internal fun OliviaPage(
     onNavigateBack: (() -> Unit)? = null,
+    verticalSpacing: Dp = 32.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -135,7 +136,7 @@ internal fun OliviaPage(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp),
+            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
         ) {
             if (onNavigateBack != null) {
                 IconButton(

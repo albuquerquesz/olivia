@@ -54,6 +54,7 @@ fun OliviaRecordingScreen(
     val live = state.isLive
     OliviaPage(
         onNavigateBack = onNavigateBack.takeIf { !live },
+        verticalSpacing = 16.dp,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -67,7 +68,7 @@ fun OliviaRecordingScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 320.dp, max = 360.dp),
+                        .heightIn(min = 280.dp, max = 320.dp),
                 ) {
                     GlassesCameraPreview(
                         elapsedMs = state.elapsedMs,
