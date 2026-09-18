@@ -5,6 +5,7 @@ import android.net.Uri
 import com.olivia.companion.media.AndroidLocalRecordingSource
 import com.olivia.companion.media.AndroidReviewExporter
 import com.olivia.companion.media.LocalReviewExport
+import com.olivia.companion.transcription.WhisperLocalTranscriptProvider
 import com.olivia.core.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
@@ -20,6 +21,7 @@ interface PostTakeController {
 
 /** Reuses the backend's validated local import and export; never touches live frames. */
 class AndroidPostTakeController(context: Context, private val demoSource: RecordingSource?) : PostTakeController {
+    private val appContext = context.applicationContext
     private val importer = AndroidLocalRecordingSource(context)
     private val exporter = AndroidReviewExporter(context)
     private val combinedExporter = AndroidSessionExportAdapter(context.applicationContext)
@@ -41,7 +43,9 @@ class AndroidPostTakeController(context: Context, private val demoSource: Record
         try {
             importer.fetch(asset).collect { }
             LocalPostProcessor(
-                transcriptProvider = UnavailableLocalTranscriptProvider,
+                transcriptProvider = WhisperLocalTranscriptProvider(appContext) { recording ->
+                    importer.localPathOf(recording.id)
+                },
                 alignmentFor = { recording -> LinearMediaAlignment(session.id, recording.startedAtEpochMs, 0) },
             ).process(session.id, asset, events).also { result ->
                 if (result.isSuccess) importedSessions += session.id

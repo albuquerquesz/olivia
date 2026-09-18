@@ -90,6 +90,14 @@ android {
         configuredAbiFilters?.let { filters ->
             ndk { abiFilters.addAll(filters) }
         }
+        // Local Whisper transcription (BE-12/BE-08) only ships an arm64 build of
+        // the vendored whisper.cpp; see third_party/whisper-cpp/NOTICE.md.
+        externalNativeBuild {
+            cmake {
+                abiFilters += "arm64-v8a"
+                arguments += "-DWHISPER_LIB_DIR=${rootProject.projectDir.absolutePath}/third_party/whisper-cpp"
+            }
+        }
         buildConfigField("String", "PICOVOICE_ACCESS_KEY", buildConfigString(
             localOrEnvironment("picovoice_access_key", "PICOVOICE_ACCESS_KEY").orEmpty(),
         ))
@@ -189,6 +197,18 @@ android {
         // Facebook/DAT runtime is ABI-compatible with libfbjni. A generated jniLibs source below
         // supplies that copy deterministically instead of letting pickFirst select OpenCV's one.
         jniLibs.pickFirsts += "lib/*/libc++_shared.so"
+    }
+
+    androidResources {
+        // Already-quantized ggml binaries barely shrink under AAPT compression, and storing
+        // them uncompressed avoids paying that decompression cost on every model load.
+        noCompress += "bin"
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/jni/whisper/CMakeLists.txt")
+        }
     }
 }
 

@@ -89,7 +89,7 @@ contagem de tokens e códigos de falha. A primeira chamada é marcada como `cold
 sessão; as demais reutilizam o mesmo modelo e são `hot`. A comparação direta com a Gemini
 Developer API e a região Agent Platform ficam explicitamente como `SKIPPED` até haver provider
 habilitado e credencial descartável fora do repositório. O resultado observado está em
-[`BE07_PRE_TTFT_BREAKDOWN_2026-09-16.md`](spec-driven-development/10-medicao-e-evidencias/BE07_PRE_TTFT_BREAKDOWN_2026-09-16.md).
+[plano de evidências do hackathon](hackaton-day-prod/05-privacy-and-evidence.md).
 
 ### Probe de streaming/TTFT
 

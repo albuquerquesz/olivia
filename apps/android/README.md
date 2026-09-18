@@ -49,7 +49,7 @@ Ele usa a câmera do telefone como feed simulado e não substitui a validação 
 
 ## Contratos e testes do domínio
 
-O `:core` usa contratos 2.0.0; veja a [migração](../../docs/spec-driven-development/00-contratos-e-fronteiras/implementation.md).
+O `:core` usa contratos 2.0.0; veja a [migração](../../docs/hackaton-day-prod/00-event-contract.md).
 O [runner de integração](../../infra/testing/README.md) permite testar o mesmo módulo em Docker/JVM sem Android SDK ou DAT, com tarefas separadas de unitários e integração. Os testes desta primeira entrega foram escritos, mas ainda não executados.
 
 ## Artefatos oficiais

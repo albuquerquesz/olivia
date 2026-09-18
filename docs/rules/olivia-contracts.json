@@ -286,7 +286,7 @@
     "task": "SH-04",
     "version": "2.0.0",
     "status": "implemented_pending_validation",
-    "migration": "docs/spec-driven-development/00-contratos-e-fronteiras/implementation.md",
+    "migration": "docs/hackaton-day-prod/00-event-contract.md",
     "tests": "apps/android/core/src/test",
     "runner": "infra/testing",
     "remaining": [

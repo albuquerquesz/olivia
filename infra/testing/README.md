@@ -2,7 +2,7 @@
 
 O runner reutiliza `apps/android/core` e o version catalog real, com um settings Gradle separado para não resolver AGP, SDK Android ou pacotes DAT. Inclui políticas de contratos, clocks, fence de captura e codec JSON com fixtures douradas. Os adapters de borda do ensaio são doubles identificados; não há teste de decoder de imagens ou SDK real nesta fatia.
 
-Implementado. O perfil offline foi executado em 17/09/2026 com Docker Desktop, sem `.env`, credenciais, banco ou óculos; o resultado sanitizado está em `docs/spec-driven-development/evidence/VALIDATION_RUN_2026-09-17.md`.
+Implementado. O perfil offline foi executado em 17/09/2026 com Docker Desktop, sem `.env`, credenciais, banco ou óculos. Ele é evidência somente de execução offline; o registro operacional e os limites do hardware estão em `docs/hackaton-day-prod/05-privacy-and-evidence.md`.
 
 ## Docker
 

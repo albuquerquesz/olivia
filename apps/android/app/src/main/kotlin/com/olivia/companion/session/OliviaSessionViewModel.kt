@@ -172,7 +172,12 @@ class OliviaSessionViewModel(
         val events = runtime.timelineFor(sessionId).getOrThrow()
         val review = runtime.processPostTake { postTake.importRecording(stopped, uri, events) }.getOrThrow()
         reviews[sessionId] = review
-        _uiState.update { it.copy(exportState = ExportState(message = "Vídeo e marcas prontos. A transcrição aguarda o modelo Whisper local.")) }
+        val message = if (review.transcript.isNotEmpty()) {
+            "Vídeo e marcas prontos. ${review.suggestedCuts.size} corte(s) sugerido(s) pela transcrição."
+        } else {
+            "Vídeo e marcas prontos. Transcrição local indisponível para este take."
+        }
+        _uiState.update { it.copy(exportState = ExportState(message = message)) }
         refreshTakes()
     }
 

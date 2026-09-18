@@ -62,8 +62,8 @@
   "sdd_capability_review": {
     "date": "2026-09-12",
     "tasks": ["INT-00", "BE-00", "BE-12", "INT-04", "INT-05", "INT-06"],
-    "setup_spec": "docs/spec-driven-development/02-meta-wearables-sdk/spec.md",
-    "native_spec": "docs/spec-driven-development/07-gravacao-nativa-e-importacao/spec.md",
+    "setup_spec": "docs/hackaton-day-prod/01-real-glasses-connection.md",
+    "native_spec": "docs/hackaton-day-prod/03-native-recording-and-storage.md",
     "status": "not_hardware_validated",
     "capabilities_to_prove_independently": [
       "Controle mãos-livres de início e fim da gravação nativa; sessão DAT de streaming não basta.",
@@ -73,7 +73,7 @@
     ],
     "fallback_limit": "Seleção manual de arquivo é fallback de importação/revisão, não prova das outras capacidades; o adapter Android aceita apenas URI content:// validada e copia somente para cache privado; incompatibilidade não autoriza reconstrução de vídeo do stream.",
     "testing_limit": "Docker testa componentes de domínio e transportes controlados; MockDeviceKit exige camada Android e não comprova Bluetooth/firmware físico.",
-    "evidence_matrix": "docs/spec-driven-development/07-gravacao-nativa-e-importacao/CAPABILITY_MATRIX.md"
+    "evidence_matrix": "docs/hackaton-day-prod/03-native-recording-and-storage.md"
   },
   "agent_reference": {
     "static_docs": "https://wearables.developer.meta.com/llms.txt",

@@ -1,9 +1,0 @@
-flowchart LR
-  Native[Take nativo - gate fisico] -.-> Transfer[Transferencia apos STOPPED]
-  Fixture[Arquivo de fixture] --> Source[RecordingSource]
-  Transfer --> Source
-  Source --> Validate[Validacao de midia]
-  Validate --> Map[Mapa sessao para midia]
-  Map --> Post[PostProcessor]
-  Clock[Timeline e ancoras] --> Map
-

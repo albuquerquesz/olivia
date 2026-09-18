@@ -1,9 +1,0 @@
-flowchart LR
-  Analysis[FrameAnalysis] --> Engine[GuidanceEngine]
-  Engine --> Audio[AudioFeedback]
-  Audio --> Tracker[CorrectionTracker]
-  Analysis -->|frame posterior| Tracker
-  Tracker --> Timeline[TimelineRepository local]
-  Timeline --> UI[Consumidor da timeline]
-  Timeline --> Post[PostProcessor]
-

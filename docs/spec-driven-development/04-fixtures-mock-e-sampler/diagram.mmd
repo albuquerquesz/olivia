@@ -1,9 +1,0 @@
-flowchart LR
-  Fixtures[Fixtures e manifesto] --> Replay[Replay e clock virtual]
-  Replay --> Sampler[Sampler 2000 ms]
-  Sampler --> Inflight[Uma analise em voo]
-  Inflight --> Mock[MockFrameAnalyzer]
-  Inflight --> Stub[Adapter de teste HTTP]
-  Sampler --> Dispose[Descarte de intermediarios]
-  Mock --> Events[Resultados deterministas]
-
