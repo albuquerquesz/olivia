@@ -309,7 +309,7 @@ private fun RecentTakesCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             RecentTakesHeader(onSeeAllTakes)
             RecentTakes(takes, onOpenTake)
