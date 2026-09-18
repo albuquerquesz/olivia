@@ -479,11 +479,11 @@ private fun OliviaBottomBar(
                     OliviaPauseButton(
                         isPaused = isPaused,
                         onClick = if (isPaused) onResume else onPause,
-                        modifier = Modifier.size(56.dp),
+                        modifier = Modifier.size(72.dp),
                     )
                     OliviaStopButton(
                         onClick = onStop,
-                        modifier = Modifier.size(56.dp),
+                        modifier = Modifier.size(72.dp),
                     )
                 }
             } else {
