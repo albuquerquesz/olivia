@@ -18,12 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Bluetooth
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material.icons.outlined.Videocam
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -108,12 +101,10 @@ fun OliviaWelcomeScreen(
                     HowItWorksPage -> OnboardingHowItWorks()
                     PermissionPage -> when (permission) {
                         OnboardingPermission.Microphone -> OnboardingPermissionPage(
-                            icon = Icons.Outlined.Mic,
                             title = "Dê voz à Olivia",
                             description = "Use o microfone do celular para iniciar e controlar o take por voz. O áudio do take não alimenta a IA.",
                         )
                         OnboardingPermission.Bluetooth -> OnboardingPermissionPage(
-                            icon = Icons.Outlined.Bluetooth,
                             title = "Conecte seus óculos",
                             description = "O celular faz a ponte com os Ray-Ban Meta durante o take, com autorização do app Meta AI.",
                         )
@@ -173,7 +164,7 @@ private fun OnboardingIntro() {
 @Composable
 private fun OnboardingHowItWorks() {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        OnboardingVisualCard(icon = Icons.Outlined.Videocam)
+        OnboardingVisualCard(imageRes = R.drawable.olivia_cast)
         OnboardingHeading(
             title = "Como funciona",
             description = "A Olivia analisa os frames dos óculos e orienta você por áudio.",
@@ -183,12 +174,11 @@ private fun OnboardingHowItWorks() {
 
 @Composable
 private fun OnboardingPermissionPage(
-    icon: ImageVector,
     title: String,
     description: String,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        OnboardingVisualCard(icon = icon)
+        OnboardingVisualCard(imageRes = R.drawable.olivia_room_3)
         OnboardingHeading(
             title = title,
             description = description,
@@ -199,7 +189,7 @@ private fun OnboardingPermissionPage(
 @Composable
 private fun OnboardingReady() {
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        OnboardingVisualCard(icon = Icons.Outlined.Check)
+        OnboardingVisualCard(imageRes = R.drawable.olivia_room_3)
         OnboardingHeading(
             title = "Tudo pronto para gravar",
             description = "A Olivia está preparada para acompanhar seu próximo take sem interromper o trabalho.",
@@ -208,7 +198,7 @@ private fun OnboardingReady() {
 }
 
 @Composable
-private fun OnboardingVisualCard(icon: ImageVector? = null) {
+private fun OnboardingVisualCard(imageRes: Int? = null) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -218,7 +208,16 @@ private fun OnboardingVisualCard(icon: ImageVector? = null) {
         shape = RoundedCornerShape(28.dp),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (icon == null) {
+            if (imageRes != null) {
+                Image(
+                    painter = painterResource(imageRes),
+                    contentDescription = "Olivia",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(28.dp)),
+                    contentScale = ContentScale.Crop,
+                )
+            } else {
                 Image(
                     painter = painterResource(R.drawable.olivia_logo),
                     contentDescription = "Olivia",
@@ -228,21 +227,6 @@ private fun OnboardingVisualCard(icon: ImageVector? = null) {
                         .clip(RoundedCornerShape(24.dp)),
                     contentScale = ContentScale.Crop,
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(128.dp)
-                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(40.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
             }
         }
     }
