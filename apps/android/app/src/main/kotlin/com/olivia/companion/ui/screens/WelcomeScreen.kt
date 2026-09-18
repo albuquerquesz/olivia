@@ -200,6 +200,23 @@ private fun OnboardingReady() {
 
 @Composable
 private fun OnboardingVisualCard(imageRes: Int? = null) {
+    if (imageRes == null) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.olivia_logo),
+                contentDescription = "Olivia",
+                modifier = Modifier
+                    .size(176.dp)
+                    .clip(RoundedCornerShape(24.dp)),
+                contentScale = ContentScale.Crop,
+            )
+        }
+        return
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -208,28 +225,14 @@ private fun OnboardingVisualCard(imageRes: Int? = null) {
         contentColor = MaterialTheme.colorScheme.onPrimary,
         shape = RoundedCornerShape(28.dp),
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (imageRes != null) {
-                Image(
-                    painter = painterResource(imageRes),
-                    contentDescription = "Olivia",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(28.dp)),
-                    contentScale = ContentScale.Crop,
-                )
-            } else {
-                Image(
-                    painter = painterResource(R.drawable.olivia_logo),
-                    contentDescription = "Olivia",
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(236.dp)
-                        .clip(RoundedCornerShape(24.dp)),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-        }
+        Image(
+            painter = painterResource(imageRes),
+            contentDescription = "Olivia",
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(28.dp)),
+            contentScale = ContentScale.Crop,
+        )
     }
 }
 
