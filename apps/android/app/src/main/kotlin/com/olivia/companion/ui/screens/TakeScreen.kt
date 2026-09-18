@@ -90,11 +90,6 @@ fun OliviaTakeScreen(
                 "Revisão do take",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             )
-            Text(
-                reviewSubtitle(take),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
 
         TakePreview(
@@ -131,17 +126,6 @@ fun OliviaTakeScreen(
             )
         }
     }
-}
-
-private fun reviewSubtitle(take: TakeSummary): String = when {
-    take.review.recording != null && take.review.transcript.isNotEmpty() ->
-        "Transcrição pronta · vídeo nativo registrado"
-    take.review.recording != null ->
-        "Vídeo nativo registrado · cortes e marcações disponíveis"
-    take.review.transcript.isNotEmpty() ->
-        "Transcrição pronta · vídeo nativo ainda não disponível"
-    else ->
-        "Cortes e marcações disponíveis · vídeo nativo ainda não disponível"
 }
 
 @Composable
