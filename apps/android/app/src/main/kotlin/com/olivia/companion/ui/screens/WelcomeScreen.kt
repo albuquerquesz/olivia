@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -68,8 +66,7 @@ fun OliviaWelcomeScreen(
     onEnter: () -> Unit,
 ) {
     var page by rememberSaveable { mutableIntStateOf(0) }
-    val pageCount = OnboardingPageCount
-    val currentPage = page.coerceIn(0, pageCount - 1)
+    val currentPage = page.coerceIn(0, OnboardingPageCount - 1)
     val permission = pendingPermission(
         audioPermissionGranted = audioPermissionGranted,
         bluetoothPermissionRequired = bluetoothPermissionRequired,
@@ -122,9 +119,7 @@ fun OliviaWelcomeScreen(
                 .background(MaterialTheme.colorScheme.primary)
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OnboardingPageIndicator(page = currentPage, pageCount = pageCount)
             OliviaButton(
                 onClick = {
                     when {
@@ -250,31 +245,6 @@ private fun OnboardingHeading(title: String, description: String? = null) {
                 text = it,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun OnboardingPageIndicator(page: Int, pageCount: Int) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        repeat(pageCount) { index ->
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 3.dp)
-                    .size(width = if (page == index) 24.dp else 8.dp, height = 8.dp)
-                    .background(
-                        color = if (page == index) {
-                            MaterialTheme.colorScheme.surface
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        },
-                        shape = CircleShape,
-                    ),
             )
         }
     }
