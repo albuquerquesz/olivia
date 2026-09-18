@@ -112,14 +112,13 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
         onClick = onOpenRecord,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 80.dp),
+            .heightIn(min = 92.dp),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -127,7 +126,7 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
                 Icons.Outlined.Mic,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(30.dp),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -142,7 +141,7 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
             }
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(44.dp)
                     .background(
                         color = MaterialTheme.colorScheme.primary,
                         shape = CircleShape,
@@ -153,7 +152,7 @@ private fun VoiceCommandBar(onOpenRecord: () -> Unit) {
                     Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                     contentDescription = "Abrir gravação",
                     tint = Color.White,
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(24.dp),
                 )
             }
         }
