@@ -357,7 +357,7 @@ internal fun DeviceOverview() {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 160.dp)
+                .heightIn(min = 148.dp)
                 .padding(start = 20.dp, top = 16.dp, end = 12.dp, bottom = 8.dp),
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -387,7 +387,7 @@ internal fun DeviceOverview() {
             }
             Box(
                 modifier = Modifier
-                    .size(width = 164.dp, height = 128.dp),
+                    .size(width = 164.dp, height = 116.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 WayfarerProductImage(
