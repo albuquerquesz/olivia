@@ -19,13 +19,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -101,19 +99,6 @@ fun OliviaWelcomeScreen(
                 .padding(bottom = 124.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            if (currentPage > IntroPage) {
-                IconButton(
-                    onClick = { page = currentPage - 1 },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.surface, CircleShape),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                        contentDescription = "Voltar",
-                    )
-                }
-            }
             AnimatedContent(
                 targetState = currentPage,
                 label = "onboarding page",
