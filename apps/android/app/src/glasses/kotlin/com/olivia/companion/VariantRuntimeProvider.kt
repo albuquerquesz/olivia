@@ -39,7 +39,9 @@ object VariantRuntimeProvider : BackendRuntimeProvider {
 
     override fun create(context: Context): SessionRuntime {
         val clock = SystemOliviaClock()
-        val analyzer = FirebaseVisualAnalyzerFactory.create(context, clock)
+        val analyzer = FirebaseVisualAnalyzerFactory.create(context, clock) {
+            AnalysisModeController.current
+        }
             .getOrElse {
                 if (BuildConfig.DEBUG) {
                     Log.w(TAG, "runtime create failed type=${it.javaClass.simpleName}")

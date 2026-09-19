@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.olivia.core.AnalysisTimingSink
+import com.olivia.core.AnalysisMode
 import com.olivia.core.FrameAnalyzer
 import com.olivia.core.DeterministicLocalVisualAnalyzer
 import com.olivia.core.GeminiFrameAnalyzer
@@ -18,7 +19,11 @@ import com.olivia.core.OliviaClock
  * runtime must keep reporting the physical-glasses path as unavailable.
  */
 object FirebaseVisualAnalyzerFactory {
-    fun create(context: Context, clock: OliviaClock): Result<FrameAnalyzer> = try {
+    fun create(
+        context: Context,
+        clock: OliviaClock,
+        analysisMode: () -> AnalysisMode = { AnalysisMode.AUTOMATIC },
+    ): Result<FrameAnalyzer> = try {
         val app = FirebaseApp.initializeApp(context.applicationContext)
             ?: throw IllegalStateException("Firebase app configuration unavailable")
         FirebaseAppCheckBootstrap.install(app)
@@ -30,6 +35,7 @@ object FirebaseVisualAnalyzerFactory {
                     timingSink = FirebaseTimingSink { stage, durationMs ->
                         Log.i(TAG, "firebase_timing stage=$stage ms=$durationMs")
                     },
+                    analysisMode = analysisMode,
                 ),
                 localVisualAnalyzer = DeterministicLocalVisualAnalyzer(),
                 lumaDecoder = AndroidFrameLumaDecoder(),

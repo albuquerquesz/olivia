@@ -71,10 +71,9 @@ public class SessionCoordinator(
         record(
             type = TimelineEventType.CORRECTION_ISSUED,
             sessionId = correction.capture.sessionId,
-            // The review needs the structured direction, never the phrase that was spoken.
-            // This keeps a future provider or catalogue change from turning the timeline into a
-            // store for free text.
-            label = correction.direction.name.lowercase(),
+            // Keep the structured direction for consumers while exposing the local Portuguese
+            // phrase as the human-readable review label.
+            label = GuidanceCatalogue.phrase(correction.diagnosis, AudioMode.VOICE),
             diagnosis = correction.diagnosis,
             direction = correction.direction,
             confidence = correction.confidence,

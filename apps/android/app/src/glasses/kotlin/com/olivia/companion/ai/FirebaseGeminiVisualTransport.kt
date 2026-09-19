@@ -16,6 +16,7 @@ import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.thinkingConfig
 import com.olivia.core.Frame
 import com.olivia.core.FrameFormat
+import com.olivia.core.AnalysisMode
 import com.olivia.core.GeminiVisualTransport
 import com.olivia.core.VisualTransportFailure
 import com.olivia.core.VisualTransportFailureCode
@@ -41,6 +42,7 @@ class FirebaseGeminiVisualTransport(
     modelName: String = DEFAULT_MODEL,
     private val maxEdgePx: Int = DEFAULT_MAX_EDGE_PX,
     private val timingSink: FirebaseTimingSink = FirebaseTimingSink { _, _ -> },
+    private val analysisMode: () -> AnalysisMode = { AnalysisMode.AUTOMATIC },
 ) : GeminiVisualTransport {
     private val model = firebaseAI.generativeModel(
         modelName = modelName,
@@ -61,6 +63,9 @@ class FirebaseGeminiVisualTransport(
     }
 
     override suspend fun classify(frame: Frame): Result<String> {
+        if (analysisMode() == AnalysisMode.PRIVACY) {
+            return Result.failure(VisualTransportFailure(VisualTransportFailureCode.LOCAL_ONLY))
+        }
         var decoded: Bitmap? = null
         var prepared: Bitmap? = null
         return try {
@@ -216,11 +221,13 @@ class FirebaseGeminiVisualTransport(
             app: FirebaseApp,
             modelName: String = DEFAULT_MODEL,
             timingSink: FirebaseTimingSink = FirebaseTimingSink { _, _ -> },
+            analysisMode: () -> AnalysisMode = { AnalysisMode.AUTOMATIC },
         ): FirebaseGeminiVisualTransport =
             FirebaseGeminiVisualTransport(
                 firebaseAI = FirebaseAI.getInstance(app, GenerativeBackend.googleAI()),
                 modelName = modelName,
                 timingSink = timingSink,
+                analysisMode = analysisMode,
             )
     }
 }

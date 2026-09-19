@@ -2,6 +2,8 @@ package com.olivia.companion.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -22,12 +24,15 @@ import com.olivia.companion.ui.SettingsDivider
 import com.olivia.companion.ui.SettingsMetricRow
 import com.olivia.companion.ui.SettingsOverline
 import com.olivia.core.AudioMode
+import com.olivia.core.AnalysisMode
 
 @Composable
 fun OliviaSettingsScreen(
     audioMode: AudioMode,
+    analysisMode: AnalysisMode,
     live: Boolean,
     onAudioMode: (AudioMode) -> Unit,
+    onAnalysisMode: (AnalysisMode) -> Unit,
 ) {
     OliviaPage {
         Column(
@@ -49,6 +54,23 @@ fun OliviaSettingsScreen(
                     audioMode = audioMode,
                     enabled = !live,
                     onAudioMode = onAudioMode,
+                )
+            }
+            SettingsCard {
+                SettingsOverline("Privacidade da análise")
+                AnalysisModeTabs(
+                    mode = analysisMode,
+                    enabled = !live,
+                    onMode = onAnalysisMode,
+                )
+                Text(
+                    if (analysisMode == AnalysisMode.AUTOMATIC) {
+                        "Envia partes efêmeras do vídeo para modelos de IA do Google. A anonimização é automática e a qualidade é melhor."
+                    } else {
+                        "Mantém a análise no celular, sem enviar frames. A privacidade é maior, mas a qualidade pode ser menor."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             SettingsCard {
@@ -94,6 +116,35 @@ fun OliviaSettingsScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AnalysisModeTabs(
+    mode: AnalysisMode,
+    enabled: Boolean,
+    onMode: (AnalysisMode) -> Unit,
+) {
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        androidx.compose.material3.FilterChip(
+            selected = mode == AnalysisMode.PRIVACY,
+            onClick = { onMode(AnalysisMode.PRIVACY) },
+            enabled = enabled,
+            label = { Text("Privacidade") },
+            modifier = Modifier.weight(1f),
+        )
+        androidx.compose.material3.FilterChip(
+            selected = mode == AnalysisMode.AUTOMATIC,
+            onClick = { onMode(AnalysisMode.AUTOMATIC) },
+            enabled = enabled,
+            label = { Text("Automático") },
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 

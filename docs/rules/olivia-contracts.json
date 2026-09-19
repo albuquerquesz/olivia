@@ -227,7 +227,7 @@
     "note": "Lista fechada. A IA não deve devolver categoria fora dela."
   },
   "privacy_invariants": [
-    "Preferências pequenas (como modo de áudio) ficam em DataStore privado no Android; não carregam identidade, mídia, URI, transcrição, timeline ou credencial.",
+    "Preferências pequenas (como modo de áudio e modo de análise) ficam em DataStore privado no Android; não carregam identidade, mídia, URI, transcrição, timeline ou credencial.",
     "O histórico local de Sessões pode guardar somente ID técnico, duração e contagens agregadas de diagnósticos/correções; não guarda frames, áudio, vídeo, URI ou texto de modelo.",
     "JSON/SRT de revisão só nascem após o take e permanecem privados até compartilhamento explícito pelo Android Sharesheet, com URI de leitura temporária; o vídeo original não é alterado.",
     "Frame é efêmero: classifique e descarte; não persista bytes, não escreva em log, não retenha após a análise retornar.",
@@ -252,7 +252,11 @@
   },
   "analysis_contract": {
     "frame_analysis": "FrameAnalysis(frameStamp, analyzedAt: ClockReading, latencyMs >= 0, source in {MOCK,GEMINI_ROI_LOCAL,LOCAL_ROI_LOCAL,TRACKER_LOCAL}, diagnoses)",
-    "validation": "Diagnósticos são produzidos localmente a partir de uma ROI com confidence 0..1, tipos e direções compatíveis, OK sem direção/magnitude, magnitude finita/não negativa e sem categorias duplicadas. LOCAL_ROI_LOCAL é hipótese OpenCV efêmera e não equivale a validação Gemini; pode se abster. O parse externo aceita somente WorkAreaLocalization; política de abstenção é BE-03."
+    "validation": "Diagnósticos são produzidos localmente a partir de uma ROI com confidence 0..1, tipos e direções compatíveis, OK sem direção/magnitude, magnitude finita/não negativa e sem categorias duplicadas. LOCAL_ROI_LOCAL é hipótese OpenCV efêmera e não equivale a validação Gemini; pode se abster. O parse externo aceita somente WorkAreaLocalization; política de abstenção é BE-03.",
+    "analysis_modes": {
+      "AUTOMATIC": "Permite enviar partes efêmeras do vídeo ao Gemini via Firebase AI Logic para localizar a ROI; a análise de enquadramento, luz e horizonte continua local.",
+      "PRIVACY": "Bloqueia o transporte Firebase antes da codificação/upload e usa somente a proposta/trilha local, que pode se abster ou ter qualidade menor."
+    }
   },
   "diagnostic_remote_timeout": {
     "tasks": ["BE-03", "INT-04"],

@@ -192,6 +192,13 @@ android {
             // MockDeviceKit while comparing it against the standalone DAT diagnostic.
             buildConfigField("boolean", "MWDAT_USE_MOCK_DEVICE_KIT", "false")
         }
+        create("debugV3") {
+            initWith(getByName("debugV2"))
+            applicationIdSuffix = ".debugv3"
+            versionNameSuffix = "-debug-v3"
+            matchingFallbacks += listOf("debugV2", "debug")
+            buildConfigField("boolean", "MWDAT_USE_MOCK_DEVICE_KIT", "false")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -272,6 +279,7 @@ dependencies {
     "glassesImplementation"(libs.firebase.appcheck.playintegrity)
     debugImplementation(libs.firebase.appcheck.debug)
     "debugV2Implementation"(libs.firebase.appcheck.debug)
+    "debugV3Implementation"(libs.firebase.appcheck.debug)
     // Test APK only: no debug provider is shipped in the release APK.
     androidTestImplementation(platform(libs.firebase.bom))
     androidTestImplementation(libs.firebase.ai)

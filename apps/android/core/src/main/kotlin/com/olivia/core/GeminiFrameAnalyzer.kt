@@ -33,7 +33,7 @@ public enum class AnalysisFailureCode { TRANSPORT, TIMEOUT, SCHEMA, CONFIGURATIO
  * unregistered App Check debug token). Keeping the marker in core lets the session UI show an
  * actionable setup message without exposing provider errors, response bodies, or frame data.
  */
-public enum class VisualTransportFailureCode { NETWORK, CONFIGURATION }
+public enum class VisualTransportFailureCode { NETWORK, CONFIGURATION, LOCAL_ONLY }
 
 public class VisualTransportFailure(
     public val code: VisualTransportFailureCode,
@@ -68,7 +68,9 @@ public class GeminiFrameAnalyzer(
                 throw AnalysisFailure(
                     when (code) {
                         VisualTransportFailureCode.CONFIGURATION -> AnalysisFailureCode.CONFIGURATION
-                        VisualTransportFailureCode.NETWORK, null -> AnalysisFailureCode.TRANSPORT
+                        VisualTransportFailureCode.NETWORK,
+                        VisualTransportFailureCode.LOCAL_ONLY,
+                        null -> AnalysisFailureCode.TRANSPORT
                     },
                 )
             }

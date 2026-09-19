@@ -397,8 +397,8 @@ internal fun DeviceOverview(connection: GlassesConnection) {
                     modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    DeviceMetaBadge(Icons.Outlined.BatteryStd, "--%")
-                    DeviceMetaBadge(Icons.Outlined.Videocam, "1920 × 1080")
+                    DeviceMetaBadge(Icons.Outlined.BatteryStd, "—")
+                    DeviceMetaBadge(Icons.Outlined.Videocam, "HD")
                 }
                 ConnectionStatusBadge(
                     connection = connection,
@@ -437,7 +437,7 @@ private fun ConnectionStatusBadge(
             contentColor = OliviaStatusConnectedOn,
         )
         GlassesConnection.DISCONNECTED -> ConnectionStatusStyle(
-            label = "Sem frame",
+            label = "Desconectado",
             containerColor = OliviaStatusWarning,
             contentColor = OliviaStatusWarningOn,
         )

@@ -23,6 +23,9 @@ public value class Confidence(public val value: Float) {
 /** Sources stay explicit so a local proposal is never presented as a cloud-validated ROI. */
 public enum class AnalyzerSource { MOCK, GEMINI_ROI_LOCAL, LOCAL_ROI_LOCAL, TRACKER_LOCAL }
 
+/** Controls whether the optional cloud ROI validation is allowed for a live take. */
+public enum class AnalysisMode { AUTOMATIC, PRIVACY }
+
 @Serializable
 public data class VisualDiagnosis(
     val kind: DiagnosisKind,

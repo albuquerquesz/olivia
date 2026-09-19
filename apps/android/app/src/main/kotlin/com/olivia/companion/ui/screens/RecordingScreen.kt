@@ -231,19 +231,6 @@ fun OliviaRecordingScreen(
                 )
             }
         }
-        if (!state.backend.requiresPhysicalGlasses || com.olivia.companion.BuildConfig.DEBUG) {
-            DebugActions(
-                sessionState = sessionState,
-                onStart = onStart,
-                onPause = onPause,
-                onResume = onResume,
-                onDegrade = onDegrade,
-                onRecover = onRecover,
-                onStop = onStop,
-                working = state.working,
-                simulationAllowed = !state.backend.requiresPhysicalGlasses,
-            )
-        }
     }
 }
 

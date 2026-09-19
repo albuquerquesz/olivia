@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.olivia.core.AudioMode
+import com.olivia.core.AnalysisMode
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -27,16 +28,32 @@ class OliviaPreferences(context: Context) {
         }
         .map { values -> values[AUDIO_MODE]?.let(::parseAudioMode) ?: AudioMode.VOICE }
 
+    val analysisMode: Flow<AnalysisMode> = appContext.oliviaPreferencesDataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { values -> values[ANALYSIS_MODE]?.let(::parseAnalysisMode) ?: AnalysisMode.AUTOMATIC }
+
     suspend fun setAudioMode(mode: AudioMode) {
         appContext.oliviaPreferencesDataStore.edit { values ->
             values[AUDIO_MODE] = mode.name
         }
     }
 
+    suspend fun setAnalysisMode(mode: AnalysisMode) {
+        appContext.oliviaPreferencesDataStore.edit { values ->
+            values[ANALYSIS_MODE] = mode.name
+        }
+    }
+
     private fun parseAudioMode(value: String): AudioMode =
         AudioMode.entries.firstOrNull { it.name == value } ?: AudioMode.VOICE
 
+    private fun parseAnalysisMode(value: String): AnalysisMode =
+        AnalysisMode.entries.firstOrNull { it.name == value } ?: AnalysisMode.AUTOMATIC
+
     private companion object {
         val AUDIO_MODE = stringPreferencesKey("audio_mode")
+        val ANALYSIS_MODE = stringPreferencesKey("analysis_mode")
     }
 }

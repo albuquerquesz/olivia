@@ -292,11 +292,13 @@ fun OliviaApp(
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+        ) { innerPadding ->
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             NavHost(
                 navController = navController,
                 startDestination = WELCOME_ROUTE,
@@ -410,8 +412,10 @@ fun OliviaApp(
             composable(OliviaDestination.SETTINGS.route) {
                 OliviaSettingsScreen(
                     audioMode = uiState.audioMode,
+                    analysisMode = uiState.analysisMode,
                     live = uiState.isLive,
                     onAudioMode = viewModel::setAudioMode,
+                    onAnalysisMode = viewModel::setAnalysisMode,
                 )
             }
             }
@@ -457,6 +461,31 @@ fun OliviaApp(
                         .fillMaxWidth(),
                 )
             }
+            }
+        }
+        if (uiState.voiceState == VoiceCommandState.LISTENING_FOR_COMMAND) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(3.dp)
+                    .border(
+                        BorderStroke(
+                            4.dp,
+                            Brush.sweepGradient(
+                                listOf(
+                                    Color(0xFF7C4DFF),
+                                    Color(0xFF00C2FF),
+                                    Color(0xFFFF4D8D),
+                                    Color(0xFF7C4DFF),
+                                ),
+                            ),
+                        ),
+                        RoundedCornerShape(26.dp),
+                    )
+                    .semantics {
+                        contentDescription = "Olivia está ouvindo o comando"
+                    },
+            )
         }
     }
 }

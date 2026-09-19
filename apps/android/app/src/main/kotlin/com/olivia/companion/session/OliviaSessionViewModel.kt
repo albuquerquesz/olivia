@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.olivia.companion.ActiveBackend
 import com.olivia.companion.GlassesBackend
 import com.olivia.companion.OliviaPreferences
+import com.olivia.companion.AnalysisModeController
 import com.olivia.core.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -25,6 +26,7 @@ private val busyStates = setOf(
 data class OliviaUiState(
     val backend: GlassesBackend,
     val audioMode: AudioMode,
+    val analysisMode: AnalysisMode,
     val session: SessionSnapshot?,
     val connection: GlassesConnection,
     val elapsedMs: Long,
@@ -47,7 +49,9 @@ class OliviaSessionViewModel(
     private val runtime: SessionRuntime,
     backend: GlassesBackend,
     audioModes: Flow<AudioMode>,
+    analysisModes: Flow<AnalysisMode>,
     private val saveAudioMode: suspend (AudioMode) -> Unit,
+    private val saveAnalysisMode: suspend (AnalysisMode) -> Unit,
     private val postTake: PostTakeController,
     voiceCommandSource: VoiceCommandSource? = null,
     private val voiceCommandSourceFactory: (() -> VoiceCommandSource)? = null,
@@ -61,7 +65,7 @@ class OliviaSessionViewModel(
     private val reviews = mutableMapOf<SessionId, SessionReview>()
     private val seededTakes = initialTakes
     private val _uiState = MutableStateFlow(OliviaUiState(
-        backend, AudioMode.VOICE, runtime.snapshot.value, runtime.connection.value,
+        backend, AudioMode.VOICE, AnalysisMode.AUTOMATIC, runtime.snapshot.value, runtime.connection.value,
         0, initialTakes, activeVoiceCommandSource?.state?.value ?: VoiceCommandState.UNAVAILABLE,
     ))
     private val _voiceNavigation = MutableSharedFlow<LocalSessionCommand>(extraBufferCapacity = 8)
@@ -70,9 +74,17 @@ class OliviaSessionViewModel(
 
     init {
         viewModelScope.launch {
-            audioModes.catch { emit(AudioMode.VOICE) }.collect { mode ->
+            combine(
+                audioModes.catch { emit(AudioMode.VOICE) },
+                analysisModes.catch { emit(AnalysisMode.AUTOMATIC) },
+            ) { audioMode, analysisMode -> audioMode to analysisMode }.collect { (audioMode, analysisMode) ->
                 commands.withLock {
-                    if (runtime.setAudioMode(mode).isSuccess) _uiState.update { it.copy(audioMode = mode) }
+                    if (runtime.setAudioMode(audioMode).isSuccess) {
+                        AnalysisModeController.current = analysisMode
+                        _uiState.update {
+                            it.copy(audioMode = audioMode, analysisMode = analysisMode)
+                        }
+                    }
                     preferencesReady.complete(Unit)
                 }
             }
@@ -158,6 +170,15 @@ class OliviaSessionViewModel(
             runtime.setAudioMode(mode).getOrThrow()
             saveAudioMode(mode)
             _uiState.update { it.copy(audioMode = mode) }
+        }
+    }
+
+    fun setAnalysisMode(mode: AnalysisMode) {
+        if (_uiState.value.isLive) return
+        launchOperation {
+            AnalysisModeController.current = mode
+            saveAnalysisMode(mode)
+            _uiState.update { it.copy(analysisMode = mode) }
         }
     }
 
@@ -278,7 +299,9 @@ class OliviaSessionViewModel(
                 runtime = SessionRuntimeFactory.create(application, ActiveBackend.current),
                 backend = ActiveBackend.current,
                 audioModes = preferences.audioMode,
+                analysisModes = preferences.analysisMode,
                 saveAudioMode = preferences::setAudioMode,
+                saveAnalysisMode = preferences::setAnalysisMode,
                 postTake = AndroidPostTakeController(application, ActiveBackend.createRecordingSource(application)),
                 voiceCommandSource = AndroidVoiceCommandSourceFactory.create(application),
                 voiceCommandSourceFactory = { AndroidVoiceCommandSourceFactory.create(application) },
