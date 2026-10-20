@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <sub>Criado com <a href="https://github.com/albuquerquesz/kubo">kubojs</a>.</sub>
+  Criado com <a href="https://github.com/albuquerquesz/kubo">kubojs</a>.
 </p>
 
 ## Uma ajuda durante o take
