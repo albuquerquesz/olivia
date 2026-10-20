@@ -1,4 +1,8 @@
-# olivia
+<h1 align="center">Olivia</h1>
+
+<p align="center">
+  Sua companhia para gravar com Ray-Ban Meta: orientação por áudio sobre enquadramento, luz e horizonte, com as mãos livres.
+</p>
 
 <p align="center">
   <img src="apps/android/app/src/main/res/drawable-nodpi/olivia_room_3.png" alt="Olivia usando óculos Ray-Ban Meta na tela de boas-vindas" width="420" />
