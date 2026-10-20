@@ -8,7 +8,9 @@
   <img src="apps/android/app/src/main/res/drawable-nodpi/olivia_room_3.png" alt="Olivia usando óculos Ray-Ban Meta na tela de boas-vindas" width="420" />
 </p>
 
-This project was created with [kubojs](https://github.com/albuquerquesz/kubo), a modern TypeScript stack that combines Elysia, and more.
+<p align="center">
+  <sub>This project was created with <a href="https://github.com/albuquerquesz/kubo">kubojs</a>, a modern TypeScript stack that combines Elysia, and more.</sub>
+</p>
 
 ## Features
 
