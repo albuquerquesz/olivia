@@ -25,6 +25,13 @@ Você pode começar, pausar e encerrar a sessão por voz. A Olivia confirma as c
 
 A Olivia é um protótipo em desenvolvimento para gravações curtas com Ray-Ban Meta. O app para Android conecta a experiência dos óculos ao celular, que acompanha a sessão e entrega as orientações por áudio. O projeto busca ajudar creators, como tatuadores, a registrar o próprio trabalho sem interromper o que estão fazendo.
 
+## Features
+
+- Controle da gravação por voz, com as mãos livres.
+- Avisos por áudio sobre enquadramento, luz e horizonte.
+- Confirmação das correções e marcações para consultar depois.
+- Sugestões de cortes para apoiar a edição após a gravação.
+
 <p align="center">
   <sub>Criado com <a href="https://github.com/albuquerquesz/kubo">kubojs</a>.</sub>
 </p>
