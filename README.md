@@ -8,6 +8,10 @@
   <img src="apps/android/app/src/main/res/drawable-nodpi/olivia_room_3.png" alt="Olivia usando óculos Ray-Ban Meta na tela de boas-vindas" width="420" />
 </p>
 
+<p align="center">
+  <sub>Criado com <a href="https://github.com/albuquerquesz/kubo">kubojs</a>.</sub>
+</p>
+
 ## Uma ajuda durante o take
 
 Ao gravar um vídeo, nem sempre dá para parar o trabalho e conferir a tela do celular. A Olivia foi pensada para quem precisa manter as mãos livres: ela acompanha a imagem captada pelos óculos e fala quando a peça sai do enquadramento, fica na sombra ou o horizonte inclina.
@@ -31,7 +35,3 @@ A Olivia é um protótipo em desenvolvimento para gravações curtas com Ray-Ban
 - Avisos por áudio sobre enquadramento, luz e horizonte.
 - Confirmação das correções e marcações para consultar depois.
 - Sugestões de cortes para apoiar a edição após a gravação.
-
-<p align="center">
-  <sub>Criado com <a href="https://github.com/albuquerquesz/kubo">kubojs</a>.</sub>
-</p>
